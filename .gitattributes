@@ -1,0 +1,12 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Notebooks: run `nbstripout --install` so outputs never enter history.
+*.ipynb filter=nbstripout diff=ipynb
+
+# Treat these as binary (no diff spam, no accidental merge)
+*.pt      binary
+*.pth     binary
+*.parquet binary
+*.pdf     binary
+*.png     binary

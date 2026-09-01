@@ -1,0 +1,92 @@
+# ---------------------------------------------------------------------------
+# PRIVATE ZONE — never leaves this machine.
+# Everything under private/ is ignored except its README, which documents
+# what belongs there. Do not add exceptions to this block.
+# ---------------------------------------------------------------------------
+private/**
+!private/
+!private/README.md
+
+# ---------------------------------------------------------------------------
+# Secrets & credentials
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*_credentials.json
+config/secrets.yaml
+**/api_keys*
+
+# ---------------------------------------------------------------------------
+# Data — tracked by pointer, not by bytes.
+# Directory READMEs and small manifests/checksums are public; payloads are not.
+# ---------------------------------------------------------------------------
+# Raw payloads: 495 MB of structures + the source archive. Re-obtainable from
+# Zenodo (10.5281/zenodo.20026661, CC0), so it is referenced, not vendored.
+data/raw/**
+!data/raw/README.md
+!data/raw/**/*.manifest.json
+!data/raw/**/*.sha256
+
+# Interim is regenerable from raw; safe to delete, so not tracked.
+data/interim/**
+!data/interim/README.md
+
+# data/processed/ IS tracked on purpose (652 KB total): the curated compound
+# table and the materialised split files are what make every result in
+# paper/manuscript.md reproducible without the 495 MB download.
+
+# ---------------------------------------------------------------------------
+# Results — figures/tables are regenerable; metrics JSON is small and public
+# so reviewers can diff numbers across commits.
+# ---------------------------------------------------------------------------
+results/figures/**
+!results/figures/README.md
+!results/**/README.md
+!results/metrics/**
+!results/tables/**
+!results/legacy_prior_run/**
+
+# Model checkpoints & caches
+models/
+checkpoints/
+*.ckpt
+*.pt
+*.pth
+*.safetensors
+*.joblib
+*.pkl
+.cache/
+wandb/
+mlruns/
+lightning_logs/
+outputs/
+multirun/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Notebooks — strip outputs before committing (see .gitattributes / nbstripout)
+.ipynb_checkpoints/
+notebooks/**/*-scratch.ipynb
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
