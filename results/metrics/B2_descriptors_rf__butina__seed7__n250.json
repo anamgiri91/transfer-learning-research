@@ -1,0 +1,18 @@
+{
+  "arm": "B2_descriptors_rf",
+  "metrics": {
+    "mae": 0.43360153350826014,
+    "pearson": 0.28840122862261125,
+    "precision_at_10pct": 0.4,
+    "r2": -0.17980549098873633,
+    "rmse": 0.5810995030442225,
+    "spearman": 0.20544355609961368
+  },
+  "n_test": 98,
+  "n_train": 250,
+  "seconds": 1.09,
+  "seed": 7,
+  "source_script": "scripts/run_arms.py",
+  "split": "butina",
+  "target": "eva71_2a"
+}

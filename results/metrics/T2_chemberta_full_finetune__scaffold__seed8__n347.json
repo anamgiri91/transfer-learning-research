@@ -1,0 +1,18 @@
+{
+  "arm": "T2_chemberta_full_finetune",
+  "metrics": {
+    "mae": 0.46677489199735683,
+    "pearson": 0.6873483341823138,
+    "precision_at_10pct": 0.5,
+    "r2": 0.41504120630773234,
+    "rmse": 0.577038450719806,
+    "spearman": 0.5678846264655444
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "seconds": 183.15,
+  "seed": 8,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}

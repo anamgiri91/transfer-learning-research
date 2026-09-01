@@ -1,0 +1,18 @@
+{
+  "arm": "B1_ecfp_histgb",
+  "metrics": {
+    "mae": 0.5057348791345387,
+    "pearson": 0.6914478312500828,
+    "precision_at_10pct": 0.2,
+    "r2": 0.4102513921829094,
+    "rmse": 0.6216520975488943,
+    "spearman": 0.49554322926172456
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "seconds": 4.16,
+  "seed": 6,
+  "source_script": "scripts/run_arms.py",
+  "split": "butina",
+  "target": "eva71_2a"
+}
