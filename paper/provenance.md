@@ -27,6 +27,19 @@ belong in the paper.
 | Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
 | Table 0 — split leakage + NN-similarity audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
 
+## Verification
+
+| Check | Script | What it guarantees |
+|---|---|---|
+| Tables are generated, not typed | `scripts/render_manuscript_tables.py` | Every results table in the manuscript is written from `results/tables/*.csv`; `--check` fails if stale |
+| Prose numbers are re-derived | `scripts/verify_manuscript.py` | 93 numeric claims re-computed from artefacts; non-zero exit on mismatch |
+| Split integrity | `tests/test_splits.py` | No compound or scaffold straddles train/test |
+| All of the above | `make verify` | Runs tests + freshness check + claim verification |
+
+Bit-reproducibility was verified by re-running each stage and comparing
+checksums: `eva71_2a.csv` and all 30 split files are byte-identical, and
+re-running B1/B2/T1/T2 cells reproduces their metrics exactly.
+
 ## Reproduction order
 
 ```bash
@@ -36,6 +49,8 @@ python scripts/audit_splits.py                         # -> table0
 python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold random butina
 python scripts/run_arms.py --arms T2 --splits scaffold   # fine-tune, ~2 h on CPU
 python scripts/make_report.py --require-seeds 10         # -> tables + figures
+python scripts/render_manuscript_tables.py               # -> manuscript tables
+python scripts/verify_manuscript.py                      # -> checks every claim
 ```
 
 ## Excluded from the paper

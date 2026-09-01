@@ -19,21 +19,29 @@ descriptors + random forest; ChemBERTa-2 frozen linear probe; ChemBERTa-2 full
 fine-tune) are compared on identical materialised splits across 10 seeds and
 four training-set sizes, with 520 evaluated runs.
 
-**Pretraining does not help.** Both transfer arms are worse than the ECFP4
-baseline on scaffold-split RMSE, and neither reaches the baseline's full-data
-score at any training size, so both have a data-efficiency ratio of zero. The
-deficit does not shrink in the low-data regime where transfer is supposed to
-pay. The strongest arm is a random forest on RDKit descriptors.
+**On this dataset, pretraining did not help.** The frozen probe is
+significantly worse than the ECFP4 baseline (paired Wilcoxon, Holm-corrected
+p = 0.012); the fine-tune is also worse but does not reach significance
+(p = 0.074, inconclusive at 10 seeds). Neither reaches the baseline's full-data
+RMSE at any training size, so both have a data-efficiency ratio of zero, and
+the deficit does not shrink in the low-data regime where transfer is supposed
+to pay. The two baselines are statistically indistinguishable from each other
+(p = 0.56); the nominal best is a random forest on RDKit descriptors, but we do
+not claim it beats gradient-boosted fingerprints.
 
-Three secondary results bear on how such benchmarks should be run. First,
-transfer degrades fastest under a genuinely strict split: from scaffold to
-Butina clustering, the frozen probe retains 13% of its R² against the
-baselines' 40–50%. Second, scaffold splitting is barely harder than random
-splitting on this dataset — it shares zero Bemis–Murcko scaffolds with
-training, yet 29% of its test compounds still have a training neighbour at
-Tanimoto ≥ 0.7. Third, raw RMSE is not comparable across splitting strategies,
-because stricter splits yield lower-variance test folds; a variance-normalised
-measure is required, and its absence inverts the apparent difficulty ordering.
+Three secondary observations bear on how such benchmarks should be run. First,
+the transfer arm degrades more than the baselines under a stricter split: from
+scaffold to Butina clustering, the frozen probe retains 13% of its R² against
+the baselines' 40–50%. Second, scaffold splitting was not harder than random
+splitting here — it shares zero Bemis–Murcko scaffolds with training, yet 29%
+of its test compounds still have a training neighbour at Tanimoto ≥ 0.7. Third,
+raw RMSE is not comparable across splitting strategies, because stricter splits
+yield lower-variance test folds; a variance-normalised measure is required, and
+its absence inverts the apparent difficulty ordering.
+
+These are single-target, single-assay results with one pretrained encoder. They
+constrain claims about *this* regime; they are not a general verdict on
+molecular pretraining.
 
 Affinities are measured on CVA16 2A protease as a five-residue surrogate for
 EV-A71. The pretraining-corpus decontamination ablation was not performed, so
@@ -148,7 +156,7 @@ structure quality → 0 compounds dropped for replicate disagreement → **494
 unique compounds out**, spanning **272 Bemis–Murcko scaffolds**.
 
 **The fidelity claim is supported, and it is worth being precise about how.**
-Of 494 compounds, 137 carry more than one measurement. The maximum replicate
+Of 494 compounds, 133 carry more than one measurement. The maximum replicate
 spread across the entire dataset is **0.49 log units**, and **no compound
 exceeds the 1-log gate** [→ `eva71_2a.curation.json`, `max_replicate_spread`].
 The gate therefore removed nothing — it is reported as a passed audit, not as a
@@ -244,55 +252,103 @@ overlap of that magnitude, and is reported as optimism rather than performance.
 Scaffold split, median over 10 seeds, full training fold (n = 347), with
 bootstrap 95% CI on the median (resampled over seeds):
 
+<!-- TABLE:full_data START -->
 | Arm | RMSE | 95% CI | Spearman ρ | R² |
 |---|---|---|---|---|
-| B2 descriptors + RF | **0.586** | [0.539, 0.647] | 0.636 | 0.513 |
-| B1 ECFP4 + HistGB | 0.603 | [0.537, 0.637] | **0.670** | 0.507 |
+| B0 median | 0.852 | [0.805, 0.924] | — | -0.045 |
+| B1 ECFP4 + HistGB | 0.603 | [0.537, 0.636] | 0.670 | 0.507 |
+| B2 descriptors + RF | 0.586 | [0.539, 0.647] | 0.636 | 0.513 |
 | T1 ChemBERTa probe | 0.637 | [0.607, 0.661] | 0.612 | 0.421 |
-| B0 median | 0.852 | [0.805, 0.924] | — | −0.045 |
+| T2 ChemBERTa fine-tune | 0.662 | [0.607, 0.688] | 0.614 | 0.405 |
+<!-- TABLE:full_data END -->
 
-Every trained arm clears the B0 floor, so all are learning. **The pretrained
-arm is last.** T1's CI does not overlap B1's median, and the ordering holds at
-every training-set size on the curve (Figure 1), not only at full data.
+Every trained arm clears the B0 floor, so all are learning, and **both
+pretrained arms rank below both baselines.** T1's bootstrap CI excludes B1's
+median (B1 0.603 vs T1's CI lower bound 0.607), and T2's does likewise. The
+ordering is not an artefact of the endpoint: across the learning curve,
 
-The baselines' curves are also not monotonic: B1 reaches 0.584 at n = 250 and
-worsens to 0.603 at n = 347. This is an early-stopping artefact — the
-validation fraction is carved from an already-small training fold — and is
-within seed noise, not a real reversal.
+<!-- TABLE:curve START -->
+| Arm (RMSE ↓) | n=50 | n=100 | n=250 | n=347 |
+|---|---|---|---|---|
+| B0 median | 0.875 | 0.852 | 0.855 | 0.852 |
+| B1 ECFP4 + HistGB | 0.704 | 0.649 | 0.584 | 0.603 |
+| B2 descriptors + RF | 0.670 | 0.635 | 0.618 | 0.586 |
+| T1 ChemBERTa probe | 0.730 | 0.695 | 0.643 | 0.637 |
+| T2 ChemBERTa fine-tune | 1.232 | 0.960 | 0.695 | 0.662 |
+<!-- TABLE:curve END -->
+
+T1 is worse than both baselines at every size, and T2 is worse than everything
+including the B0 floor at n = 50 and n = 100.
+
+Two honest qualifications. The baselines' curves are not monotonic — B1 reaches
+0.584 at n = 250 and worsens to 0.603 at n = 347 — which is an early-stopping
+artefact (the validation fraction is carved from an already-small training
+fold) and lies within seed noise; it is not a real reversal. And the
+CI-exclusion statement above is a comparison of a bootstrap interval against a
+point estimate, which is weaker evidence than the paired test in §5.4; the
+paired test is what the conclusion rests on.
 
 ### 5.3 Data efficiency
 
 [→ `table2_der__scaffold.csv`]
 
-Taking B1's full-data RMSE (0.603) as the target, B1 reaches it at an
-interpolated n = 206. **T1 never reaches it at any training size**, so its
-data-efficiency ratio is **0** — the quantity the study was built to measure
-returns the strongest possible negative. B2 reaches the target at n = 295
-(DER 0.70).
+Taking B1's own full-data RMSE (0.603) as the target:
 
-There is no sign of the crossover that motivates pretraining: T1's deficit
-does not shrink as n falls. At n = 50 — the regime where transfer is supposed
-to pay off most — T1 (0.730) is worse than both B1 (0.704) and B2 (0.671).
+<!-- TABLE:der START -->
+| Arm | n to reach B1's full-data RMSE | DER vs B1 |
+|---|---|---|
+| B0 median | never | 0.00 |
+| B1 ECFP4 + HistGB | 206 | 1.00 |
+| B2 descriptors + RF | 295 | 0.70 |
+| T1 ChemBERTa probe | never | 0.00 |
+| T2 ChemBERTa fine-tune | never | 0.00 |
+<!-- TABLE:der END -->
+
+**Neither transfer arm ever reaches the baseline's full-data score at any
+training size**, so both have a data-efficiency ratio of 0 — the quantity this
+study was built to measure returns its strongest negative. B2 reaches the
+target at an interpolated n = 295 (DER 0.70), i.e. it needs ~43% more data than
+B1 to match B1, which is a small effect and consistent with the two being
+statistically indistinguishable (§5.4).
+
+A caveat on the DER itself: it is read off a four-point curve by linear
+interpolation, so the interpolated sizes (206, 295) carry more precision than
+the data supports and should be read as approximate. The "never reaches"
+results are robust, since they do not depend on interpolation at all.
+
+There is no sign of the crossover that motivates pretraining: T1's deficit does
+not shrink as n falls. At n = 50 — the regime where transfer is supposed to pay
+off most — T1 (0.730) is worse than both B1 (0.704) and B2 (0.671), and T2
+(1.232) is worse than predicting the median.
 
 ### 5.4 Paired comparisons
 
 [→ `table3_paired_tests__scaffold.csv`]
 
-Paired Wilcoxon across seeds vs B1, Holm-corrected:
+Paired Wilcoxon across seeds vs B1, Holm-corrected over the four-arm family.
+A negative delta means the arm is worse than B1.
 
+<!-- TABLE:paired START -->
 | Arm | median ΔRMSE vs B1 | p (Holm) | Verdict |
 |---|---|---|---|
-| B0 median | −0.286 | 0.006 | significantly worse |
-| T1 ChemBERTa probe | −0.049 | **0.008** | **significantly worse** |
-| B2 descriptors + RF | −0.012 | 0.557 | inconclusive |
+| B0 median | -0.2864 | 0.0078 | significantly worse |
+| T1 ChemBERTa probe | -0.0487 | 0.0117 | significantly worse |
+| T2 ChemBERTa fine-tune | -0.0878 | 0.0742 | inconclusive |
+| B2 descriptors + RF | -0.0118 | 0.5566 | inconclusive |
+<!-- TABLE:paired END -->
+
+The frozen probe is significantly worse than the baseline. **The fine-tune is
+worse but does not clear the significance threshold (p = 0.074), and with 10
+seeds this is genuinely inconclusive — it is not evidence of a tie**, and we do
+not report it as one.
 
 **A methodological note that changes the conclusion.** B2 has the lower
 *marginal median* (0.586 vs 0.603), which reads as "B2 is best". The paired
 statistic disagrees in sign (−0.012, favouring B1) because B2 wins in only
-**4 of 10 seeds**; the marginal medians are computed over different per-seed
-distributions and are not a matched comparison. The paired test governs, and
-it says B1 and B2 are indistinguishable. Reporting marginal medians alone
-would have produced a different and wrong headline.
+**4 of 10 seeds**; marginal medians are computed over different per-seed
+distributions and are not a matched comparison. The paired test governs, and it
+says B1 and B2 are indistinguishable. Reporting marginal medians alone would
+have produced a different and wrong headline.
 
 ### 5.5 Split strictness, and why RMSE cannot be compared across splits
 
@@ -306,31 +362,47 @@ from 0.870 (random) to 0.839 (scaffold) to 0.658 (Butina)**. B0, which learns
 nothing, "improves" from 0.852 to 0.700 for the same reason. Cross-split
 comparison therefore requires a variance-normalised measure.
 
-R² at full training data:
+R² at full training data (variance-normalised, therefore comparable):
 
-| Arm | random | scaffold | Butina |
+<!-- TABLE:splits START -->
+| Arm (R² ↑) | random | scaffold | Butina |
 |---|---|---|---|
-| B1 ECFP4 + HistGB | 0.492 | 0.507 | **0.204** |
-| B2 descriptors + RF | 0.461 | 0.513 | **0.257** |
-| T1 ChemBERTa probe | 0.422 | 0.421 | **0.056** |
+| B1 ECFP4 + HistGB | 0.492 | 0.507 | 0.204 |
+| B2 descriptors + RF | 0.461 | 0.513 | 0.257 |
+| T1 ChemBERTa probe | 0.422 | 0.421 | 0.056 |
+| T2 ChemBERTa fine-tune | — | 0.405 | — |
+<!-- TABLE:splits END -->
+
+and the corresponding train/test similarity audit:
+
+<!-- TABLE:audit START -->
+| Split | scaffolds shared train/test | median NN Tanimoto | test cmpds with NN ≥ 0.7 |
+|---|---|---|---|
+| random | 24 | 0.695 | 49.0% |
+| scaffold | 0 | 0.648 | 29.1% |
+| butina | 13 | 0.574 | 17.3% |
+<!-- TABLE:audit END -->
 
 Two findings.
 
-**(i) Scaffold splitting bought almost nothing here.** Scaffold and random
-scores are near-identical (B1: 0.507 vs 0.492). Table 0 explains why: the
-scaffold split shares **zero** Bemis–Murcko scaffolds with training, yet
-**29% of its test compounds still have a training neighbour at ECFP4 Tanimoto
-≥ 0.7** (random: 49%; Butina: 17%). Zero scaffold overlap is not chemical
-dissimilarity. This is Guo et al. (2024)'s argument reproduced on an
-independent dataset, and it is why we decline to read scaffold-split numbers
-as prospective estimates.
+**(i) Scaffold splitting bought little over random splitting here.** Scaffold
+R² is not *lower* than random R² for any arm — it is higher for B1
+(0.507 vs 0.492) and B2 (0.513 vs 0.461) and level for T1 (0.421 vs 0.422) —
+so the scaffold split was, if anything, marginally the easier of the two. The
+audit shows why: the scaffold split shares **zero** Bemis–Murcko scaffolds with
+training, yet **29% of its test compounds still have a training neighbour at
+ECFP4 Tanimoto ≥ 0.7** (random: 49%; Butina: 17%). Zero scaffold overlap is not
+chemical dissimilarity. This is consistent with Guo et al. (2024)'s argument,
+observed here on one independent dataset — a single target is not a replication
+of their 60-dataset result, and we do not claim it as one.
 
-**(ii) Transfer degrades worst when the test set is genuinely novel.** Moving
-scaffold → Butina, B1 retains 40% of its R² and B2 50%, but **T1 retains 13%**
-(0.421 → 0.056), i.e. near-zero skill. Spearman tells the same story (T1
-0.612 → 0.251). Whatever the pretrained representation encodes, it transfers
-to *dissimilar* chemistry less well than a count fingerprint does — the
-opposite of the usual motivation for pretraining.
+**(ii) Transfer degrades more than the baselines when the test set is genuinely
+novel.** Moving scaffold → Butina, B1 retains 40% of its R² and B2 50%, while
+T1 retains 13% (0.421 → 0.056), i.e. close to no skill. Spearman moves the same
+way (T1 0.612 → 0.251). The direction is consistent across both baselines and
+is large, but it rests on **one transfer arm on one target**, and T2 was not run
+on Butina (§6), so this is a suggestive result rather than an established
+property of pretrained representations.
 
 ### 5.6 Fine-tuning: calibration fails before ranking does
 
@@ -365,21 +437,32 @@ an encouraging pattern — is common and self-confirming.
 
 ### 5.7 Summary of findings
 
-1. **Transfer learning does not help on this dataset.** Both pretrained arms
-   are worse than the ECFP4 baseline on the primary endpoint; both have
-   DER = 0; the frozen probe is significantly worse (Holm p = 0.012) and the
-   fine-tune is inconclusive-but-worse (p = 0.074). Neither shows the low-data
-   advantage that motivates pretraining — at n = 50 both trail both baselines.
-2. **The strongest arm is a random forest on RDKit descriptors**, statistically
-   indistinguishable from ECFP4 + gradient boosting (p = 0.56).
-3. **Transfer degrades fastest under a genuinely strict split** (§5.5): moving
-   scaffold → Butina, the frozen probe retains 13% of its R² against the
-   baselines' 40–50%.
-4. **Scaffold splitting is barely harder than random splitting here** (§5.5),
-   despite sharing zero scaffolds, because 29% of its test compounds still have
-   a near neighbour in training.
-5. **Fine-tuning learns ranking before calibration** (§5.6), which makes
-   single-metric evaluation of low-data transfer actively misleading.
+Scoped to this dataset, this encoder, and these arms:
+
+1. **Neither transfer arm improved on the baselines.** Both have DER = 0. The
+   frozen probe is significantly worse (Holm p = 0.012); the fine-tune is worse
+   but **inconclusive** (p = 0.074) — we do not claim a demonstrated difference
+   for it, only the absence of a demonstrated benefit. Neither shows the
+   low-data advantage that motivates pretraining: at n = 50 both trail both
+   baselines.
+2. **The two baselines are indistinguishable** (p = 0.56). RF on RDKit
+   descriptors has the lower marginal median but wins in only 4 of 10 seeds, so
+   we report no winner between them.
+3. **The frozen probe degraded more than the baselines under Butina splitting**
+   (§5.5): 13% R² retained vs 40–50%. Direction is consistent and the magnitude
+   large, but this is one transfer arm on one target, and the fine-tune was not
+   run on Butina, so it is suggestive rather than established.
+4. **Scaffold splitting was not harder than random splitting here** (§5.5).
+   Scaffold-split R² exceeds random-split R² for B1 (+0.014) and B2 (+0.052)
+   and is indistinguishable for T1 (−0.002) — i.e. never harder, despite zero
+   shared scaffolds, because 29% of scaffold-split test compounds still have a
+   near neighbour in training. The B2 gap is the largest and we have no
+   mechanism for it beyond split-to-split variance.
+5. **The fine-tune learned ranking before calibration** (§5.6). At n = 50 its R²
+   is −1.26 while its Spearman matches the baseline's, so in this regime RMSE
+   and rank correlation support opposite conclusions about the same model. This
+   is a caution about single-metric evaluation at small n, demonstrated for one
+   arm here rather than shown to be general.
 
 ## 6. Limitations
 
@@ -403,10 +486,53 @@ an encouraging pattern — is common and self-confirming.
    fixed defaults. Equal-budget fairness is preserved in the sense that no arm
    received tuning, but a tuned transformer might close some of the gap.
 
-## 7. Reproduction
+## 7. Reproduction and verification
 
-See [`provenance.md`](provenance.md) for the command sequence and the artefact
-map. `make test` runs the suite, including the split-leakage assertions.
+See [`provenance.md`](provenance.md) for the artefact map and command sequence.
+
+**Tables are generated, not transcribed.** Every results table in this document
+sits between `<!-- TABLE:name START/END -->` markers and is written by
+`scripts/render_manuscript_tables.py` directly from `results/tables/*.csv`. A
+hand-typed number cannot drift from its source, because no number is
+hand-typed. `render_manuscript_tables.py --check` fails if the manuscript is
+stale relative to the CSVs.
+
+**Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
+every numeric claim made in the body text — dataset counts, per-arm scores,
+p-values, seed-win counts, similarity fractions — from the artefacts and exits
+non-zero on any mismatch. It currently checks **85 claims** across sections 3.2
+through 5.6. It has already caught one error: a count of compounds with
+replicate measurements taken from the raw table (137) rather than the curated
+one (133).
+
+**The pipeline is bit-reproducible.** Verified by re-running from scratch and
+comparing checksums:
+
+| Stage | Result |
+|---|---|
+| `prepare_openbind.py` → `eva71_2a.csv` | byte-identical |
+| `build_splits.py` → 30 split files | byte-identical (all 30) |
+| `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
+| `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
+
+Determinism comes from seeding Python, NumPy and torch per run
+(`evapro.utils.seeding.set_seed`, with `torch.use_deterministic_algorithms`)
+and from splits being read from committed files rather than recomputed.
+
+One caveat, stated precisely: the random-forest arm is reproducible to ~1e-16
+rather than bit-identically, because `n_jobs=-1` makes the order of the
+floating-point reduction across threads vary between runs. This is far below
+any reported precision (we report 3–4 decimals) but it is not literal bit
+equality, and we do not claim it is.
+
+```bash
+make verify   # tests + table freshness + claim verification
+```
+
+**What is not reproducible from this repository alone:** the 495 MB raw release
+is referenced by DOI rather than vendored, and the ChemBERTa-2 checkpoint is
+fetched from HuggingFace at run time. Both are external dependencies whose
+future availability we do not control.
 
 ## References
 

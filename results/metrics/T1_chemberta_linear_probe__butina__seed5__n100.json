@@ -10,7 +10,7 @@
   },
   "n_test": 98,
   "n_train": 100,
-  "seconds": 0.01,
+  "seconds": 0.04,
   "seed": 5,
   "source_script": "scripts/run_arms.py",
   "split": "butina",

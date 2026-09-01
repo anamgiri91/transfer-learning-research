@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench report test lint check-private clean
+.PHONY: help setup data splits bench report test lint check-private clean verify
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -34,6 +34,11 @@ report:  ## Regenerate figures and tables from results/metrics/
 
 test:  ## Run the test suite
 	$(PY) -m pytest
+
+verify:  ## Run tests, check manuscript tables are fresh, verify every claim
+	$(PY) -m pytest -q
+	$(PY) scripts/render_manuscript_tables.py --check
+	$(PY) scripts/verify_manuscript.py
 
 lint:  ## Lint and format-check
 	ruff check src tests scripts

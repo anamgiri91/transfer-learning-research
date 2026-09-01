@@ -58,6 +58,12 @@ python scripts/run_arms.py --arms T2              # ChemBERTa fine-tune (slow)
 python scripts/make_report.py                     # tables + figures
 ```
 
+Then verify nothing drifted:
+
+```bash
+make verify   # tests + manuscript table freshness + 93 machine-checked claims
+```
+
 Full artefact map: [`paper/provenance.md`](paper/provenance.md).
 
 Every run writes `results/metrics/<arm>__<split>__seed<N>.json`. Those files are
@@ -80,7 +86,7 @@ See `plan.md` for the full protocol and `docs/decision-log.md` for changes to it
 | File | What it is |
 |---|---|
 | `plan.md` | Pre-registered protocol + Amendment 1 (data differed from assumptions) |
-| `paper/manuscript.md` | The paper; every number points at a file |
+| `paper/manuscript.md` | The paper; tables are generated, prose numbers machine-checked |
 | `paper/provenance.md` | Table/figure → script → output-file map |
 | `docs/literature.md` | Annotated review, with honest reading-depth labels |
 | `docs/decision-log.md` | Every deviation from the protocol, dated |

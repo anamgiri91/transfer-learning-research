@@ -10,7 +10,7 @@
   },
   "n_test": 98,
   "n_train": 347,
-  "seconds": 2.29,
+  "seconds": 2.24,
   "seed": 0,
   "source_script": "scripts/run_arms.py",
   "split": "scaffold",
