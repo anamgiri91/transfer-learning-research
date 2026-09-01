@@ -91,3 +91,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+
+# Run logs regenerate with the sweep.
+results/*.log
