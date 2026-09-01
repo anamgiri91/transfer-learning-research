@@ -1,0 +1,19 @@
+{
+  "n_complexes_in": 649,
+  "n_dropped_quality": 10,
+  "n_compound_groups_dropped_spread": 0,
+  "n_inchikey_collisions_merged": 0,
+  "n_compounds_out": 494,
+  "max_replicate_spread": 0.4875000000000007,
+  "pactivity": {
+    "count": 494.0,
+    "mean": 5.125135627530365,
+    "std": 0.8642579613627024,
+    "min": 3.4369,
+    "25%": 4.5802625,
+    "50%": 4.9529,
+    "75%": 5.6914750000000005,
+    "max": 7.938
+  },
+  "n_scaffolds": 272
+}
