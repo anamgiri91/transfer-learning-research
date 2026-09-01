@@ -1,0 +1,18 @@
+{
+  "arm": "T1_chemberta_linear_probe",
+  "metrics": {
+    "mae": 0.5106500938181975,
+    "pearson": 0.6195071873457575,
+    "precision_at_10pct": 0.4,
+    "r2": 0.3445028846030289,
+    "rmse": 0.6108400563271039,
+    "spearman": 0.5644162783298184
+  },
+  "n_test": 98,
+  "n_train": 100,
+  "seconds": 0.0,
+  "seed": 8,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}

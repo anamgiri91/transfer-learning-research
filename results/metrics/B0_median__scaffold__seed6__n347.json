@@ -1,0 +1,18 @@
+{
+  "arm": "B0_median",
+  "metrics": {
+    "mae": 0.6558846938775511,
+    "pearson": NaN,
+    "precision_at_10pct": 0.1,
+    "r2": -0.06312652746490333,
+    "rmse": 0.8586538222290585,
+    "spearman": NaN
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "seconds": 0.0,
+  "seed": 6,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}
