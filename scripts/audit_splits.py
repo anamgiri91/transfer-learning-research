@@ -14,14 +14,46 @@ from pathlib import Path
 
 import pandas as pd
 
+import numpy as np
+from rdkit import Chem, DataStructs, RDLogger
+from rdkit.Chem import rdFingerprintGenerator
+
 from evapro.data.io import load_dataset
 
+RDLogger.DisableLog("rdApp.*")
 OUT = Path("results/tables/table0_split_audit.csv")
+
+
+def nearest_train_similarity(test_keys, train_keys, fps):
+    """Max ECFP4 Tanimoto from each test compound to its nearest training compound.
+
+    This is the measure that actually separates split strategies. Scaffold
+    membership is a proxy; Guo et al. (2024) show distinct scaffolds are often
+    still similar, so a split can have zero scaffold overlap and still be easy.
+    """
+    tr = [fps[k] for k in train_keys]
+    sims = []
+    for k in test_keys:
+        s = DataStructs.BulkTanimotoSimilarity(fps[k], tr)
+        sims.append(max(s) if s else 0.0)
+    return np.asarray(sims)
+
+
+def _sim_stats(sims) -> dict:
+    return {
+        "nn_tanimoto_median": round(float(np.median(sims)), 4),
+        "nn_tanimoto_mean": round(float(np.mean(sims)), 4),
+        "frac_test_with_nn_ge_0.7": round(float((sims >= 0.7).mean()), 4),
+        "frac_test_with_nn_ge_0.4": round(float((sims >= 0.4).mean()), 4),
+    }
 
 
 def main() -> int:
     df = load_dataset("eva71_2a")
     scaf = dict(zip(df["inchikey"], df["scaffold"]))
+    gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=2048)
+    fps = {k: gen.GetFingerprint(Chem.MolFromSmiles(s))
+           for k, s in zip(df["inchikey"], df["canonical_smiles"])}
 
     rows = []
     for path in sorted(glob.glob("data/processed/splits/eva71_2a/*.json")):
@@ -37,6 +69,7 @@ def main() -> int:
             "compounds_in_train_and_test": len(tr & te),
             "scaffolds_in_train_and_test": len({scaf[k] for k in tr} & {scaf[k] for k in te}),
             "n_test_scaffolds": len({scaf[k] for k in te}),
+            **_sim_stats(nearest_train_similarity(te, tr, fps)),
         })
 
     out = pd.DataFrame(rows).sort_values(["split", "seed"])
@@ -47,8 +80,15 @@ def main() -> int:
         fh.write("# inputs: data/processed/splits/eva71_2a/*.json, data/processed/eva71_2a.csv\n")
         out.to_csv(fh, index=False)
 
-    print(out.groupby("split")[["n_train", "n_test", "compounds_in_train_and_test",
-                                "scaffolds_in_train_and_test"]].agg(["min", "max"]).to_string())
+    summary = out.groupby("split").agg(
+        n_test=("n_test", "median"),
+        compounds_shared=("compounds_in_train_and_test", "max"),
+        scaffolds_shared=("scaffolds_in_train_and_test", "median"),
+        nn_tanimoto_median=("nn_tanimoto_median", "median"),
+        frac_nn_ge_07=("frac_test_with_nn_ge_0.7", "median"),
+        frac_nn_ge_04=("frac_test_with_nn_ge_0.4", "median"),
+    ).round(4)
+    print(summary.to_string())
     print(f"\nwrote {OUT}")
     return 0
 

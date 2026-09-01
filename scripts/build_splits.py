@@ -31,7 +31,7 @@ def main() -> int:
     df = load_dataset(target)
 
     out_dir = Path(cfg["data"]["processed_dir"]) / "splits" / target
-    for strategy in ("scaffold", "random"):
+    for strategy in ("scaffold", "butina", "random"):
         # Deterministic strategies need only one file.
         strategy_seeds = [0] if strategy == "temporal" else seeds
         for seed in strategy_seeds:
