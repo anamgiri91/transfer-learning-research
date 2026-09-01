@@ -1,0 +1,9 @@
+# The arm to beat. Tuned first, same budget as every transfer arm.
+extends: base.yaml
+arm:
+  id: B1_ecfp_lgbm
+  family: baseline
+  representation: {type: ecfp, radius: 2, n_bits: 2048, counts: true}
+  pretraining: null
+  model: {type: lightgbm, task: regression}
+  adaptation: null

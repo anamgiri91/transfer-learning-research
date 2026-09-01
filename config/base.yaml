@@ -1,0 +1,31 @@
+# Shared settings. Arm configs inherit from this and override `arm:`.
+seed_list: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+data:
+  target: eva71_3c           # or eva71_2a
+  processed_dir: data/processed
+  label_col: pactivity
+  readout: enzymatic         # enzymatic | cellular — never pooled
+
+split:
+  strategy: scaffold         # scaffold | butina | temporal | random
+  test_frac: 0.2
+  val_frac: 0.1
+  # Primary endpoint is `scaffold`; `random` is reported as optimism reference.
+
+curve:
+  train_sizes: [50, 100, 250, 500, null]   # null = all available
+  fixed_test: true
+
+tuning:
+  n_trials: 32               # identical budget for EVERY arm, baselines included
+  early_stopping_patience: 20
+
+eval:
+  primary_metric: rmse
+  metrics: [rmse, mae, r2, spearman, pearson, precision_at_10pct]
+  bootstrap_resamples: 10000
+
+paths:
+  metrics_dir: results/metrics
+  figures_dir: results/figures

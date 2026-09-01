@@ -1,0 +1,13 @@
+# In-domain transfer from related picornaviral / coronaviral proteases (H3).
+extends: base.yaml
+arm:
+  id: T4_indomain_multitask
+  family: transfer
+  representation: {type: graph}
+  pretraining:
+    source: related_proteases
+    tasks: [hrv_3c, cvb3_3c, sars2_3clpro]
+    objective: multitask_regression
+  model: {type: dmpnn, hidden: 300, depth: 3}
+  adaptation: {strategy: full_finetune, lr: 1.0e-4}
+  decontaminate: true

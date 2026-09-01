@@ -1,0 +1,9 @@
+extends: base.yaml
+arm:
+  id: T1_chemlm_full_ft
+  family: transfer
+  representation: {type: smiles_tokens}
+  pretraining: {source: chembl_bulk, objective: mlm, checkpoint: <hf-id>}
+  model: {type: transformer_encoder_regressor}
+  adaptation: {strategy: full_finetune, lr: 3.0e-5}
+  decontaminate: true    # see plan.md §7.1

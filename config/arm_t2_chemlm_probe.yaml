@@ -1,0 +1,11 @@
+# Frozen encoder + linear head. If this matches T1, the story is about
+# representation quality rather than adaptation.
+extends: base.yaml
+arm:
+  id: T2_chemlm_linear_probe
+  family: transfer
+  representation: {type: smiles_tokens}
+  pretraining: {source: chembl_bulk, objective: mlm, checkpoint: <hf-id>}
+  model: {type: linear_head}
+  adaptation: {strategy: frozen_linear_probe}
+  decontaminate: true

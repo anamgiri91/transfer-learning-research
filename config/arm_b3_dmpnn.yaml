@@ -1,0 +1,8 @@
+extends: base.yaml
+arm:
+  id: B3_dmpnn_scratch
+  family: baseline
+  representation: {type: graph}
+  pretraining: null
+  model: {type: dmpnn, hidden: 300, depth: 3}
+  adaptation: null
