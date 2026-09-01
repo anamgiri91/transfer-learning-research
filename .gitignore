@@ -49,9 +49,10 @@ results/figures/**
 !results/tables/**
 !results/legacy_prior_run/**
 
-# Model checkpoints & caches
-models/
-checkpoints/
+# Model checkpoints & caches. Anchored to the repo root: an unanchored
+# `models/` also matches src/evapro/models/, which is source, not artefacts.
+/models/
+/checkpoints/
 *.ckpt
 *.pt
 *.pth
