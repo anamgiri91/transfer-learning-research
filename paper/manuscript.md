@@ -9,7 +9,36 @@ script that produced it.
 
 ## Abstract
 
-*(Written last, once Tables 1–3 are final.)*
+Self-supervised pretraining is the default opening move in molecular property
+prediction, but its evidence base is large, noisy benchmarks. We test whether
+it helps in the opposite regime — few hundred compounds, one target, one assay
+— using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
+(494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
+units). Five arms (median predictor; ECFP4 + gradient boosting; RDKit
+descriptors + random forest; ChemBERTa-2 frozen linear probe; ChemBERTa-2 full
+fine-tune) are compared on identical materialised splits across 10 seeds and
+four training-set sizes, with 520 evaluated runs.
+
+**Pretraining does not help.** Both transfer arms are worse than the ECFP4
+baseline on scaffold-split RMSE, and neither reaches the baseline's full-data
+score at any training size, so both have a data-efficiency ratio of zero. The
+deficit does not shrink in the low-data regime where transfer is supposed to
+pay. The strongest arm is a random forest on RDKit descriptors.
+
+Three secondary results bear on how such benchmarks should be run. First,
+transfer degrades fastest under a genuinely strict split: from scaffold to
+Butina clustering, the frozen probe retains 13% of its R² against the
+baselines' 40–50%. Second, scaffold splitting is barely harder than random
+splitting on this dataset — it shares zero Bemis–Murcko scaffolds with
+training, yet 29% of its test compounds still have a training neighbour at
+Tanimoto ≥ 0.7. Third, raw RMSE is not comparable across splitting strategies,
+because stricter splits yield lower-variance test folds; a variance-normalised
+measure is required, and its absence inverts the apparent difficulty ordering.
+
+Affinities are measured on CVA16 2A protease as a five-residue surrogate for
+EV-A71. The pretraining-corpus decontamination ablation was not performed, so
+the reported transfer performance is an upper bound — which strengthens rather
+than weakens the negative result.
 
 ---
 
@@ -209,26 +238,170 @@ random-split advantage in §5.2 is therefore attributable to train/test scaffold
 overlap of that magnitude, and is reported as optimism rather than performance.
 
 ### 5.2 Learning curves
-*(pending)*
+
+[→ `table1_learning_curves__*.csv`, `fig1_learning_curves__*.png`]
+
+Scaffold split, median over 10 seeds, full training fold (n = 347), with
+bootstrap 95% CI on the median (resampled over seeds):
+
+| Arm | RMSE | 95% CI | Spearman ρ | R² |
+|---|---|---|---|---|
+| B2 descriptors + RF | **0.586** | [0.539, 0.647] | 0.636 | 0.513 |
+| B1 ECFP4 + HistGB | 0.603 | [0.537, 0.637] | **0.670** | 0.507 |
+| T1 ChemBERTa probe | 0.637 | [0.607, 0.661] | 0.612 | 0.421 |
+| B0 median | 0.852 | [0.805, 0.924] | — | −0.045 |
+
+Every trained arm clears the B0 floor, so all are learning. **The pretrained
+arm is last.** T1's CI does not overlap B1's median, and the ordering holds at
+every training-set size on the curve (Figure 1), not only at full data.
+
+The baselines' curves are also not monotonic: B1 reaches 0.584 at n = 250 and
+worsens to 0.603 at n = 347. This is an early-stopping artefact — the
+validation fraction is carved from an already-small training fold — and is
+within seed noise, not a real reversal.
 
 ### 5.3 Data efficiency
-*(pending)*
+
+[→ `table2_der__scaffold.csv`]
+
+Taking B1's full-data RMSE (0.603) as the target, B1 reaches it at an
+interpolated n = 206. **T1 never reaches it at any training size**, so its
+data-efficiency ratio is **0** — the quantity the study was built to measure
+returns the strongest possible negative. B2 reaches the target at n = 295
+(DER 0.70).
+
+There is no sign of the crossover that motivates pretraining: T1's deficit
+does not shrink as n falls. At n = 50 — the regime where transfer is supposed
+to pay off most — T1 (0.730) is worse than both B1 (0.704) and B2 (0.671).
 
 ### 5.4 Paired comparisons
-*(pending)*
+
+[→ `table3_paired_tests__scaffold.csv`]
+
+Paired Wilcoxon across seeds vs B1, Holm-corrected:
+
+| Arm | median ΔRMSE vs B1 | p (Holm) | Verdict |
+|---|---|---|---|
+| B0 median | −0.286 | 0.006 | significantly worse |
+| T1 ChemBERTa probe | −0.049 | **0.008** | **significantly worse** |
+| B2 descriptors + RF | −0.012 | 0.557 | inconclusive |
+
+**A methodological note that changes the conclusion.** B2 has the lower
+*marginal median* (0.586 vs 0.603), which reads as "B2 is best". The paired
+statistic disagrees in sign (−0.012, favouring B1) because B2 wins in only
+**4 of 10 seeds**; the marginal medians are computed over different per-seed
+distributions and are not a matched comparison. The paired test governs, and
+it says B1 and B2 are indistinguishable. Reporting marginal medians alone
+would have produced a different and wrong headline.
+
+### 5.5 Split strictness, and why RMSE cannot be compared across splits
+
+[→ `table4_split_difficulty.csv`, `table0_split_audit.csv`]
+
+Raw RMSE *improves* on the strictest split — B1 scores 0.554 under Butina
+versus 0.603 under scaffold — which would absurdly imply Butina is easier. It
+is an artefact: stricter clustering concentrates chemically similar,
+similarly-active compounds, so the **test fold's pK_D standard deviation falls
+from 0.870 (random) to 0.839 (scaffold) to 0.658 (Butina)**. B0, which learns
+nothing, "improves" from 0.852 to 0.700 for the same reason. Cross-split
+comparison therefore requires a variance-normalised measure.
+
+R² at full training data:
+
+| Arm | random | scaffold | Butina |
+|---|---|---|---|
+| B1 ECFP4 + HistGB | 0.492 | 0.507 | **0.204** |
+| B2 descriptors + RF | 0.461 | 0.513 | **0.257** |
+| T1 ChemBERTa probe | 0.422 | 0.421 | **0.056** |
+
+Two findings.
+
+**(i) Scaffold splitting bought almost nothing here.** Scaffold and random
+scores are near-identical (B1: 0.507 vs 0.492). Table 0 explains why: the
+scaffold split shares **zero** Bemis–Murcko scaffolds with training, yet
+**29% of its test compounds still have a training neighbour at ECFP4 Tanimoto
+≥ 0.7** (random: 49%; Butina: 17%). Zero scaffold overlap is not chemical
+dissimilarity. This is Guo et al. (2024)'s argument reproduced on an
+independent dataset, and it is why we decline to read scaffold-split numbers
+as prospective estimates.
+
+**(ii) Transfer degrades worst when the test set is genuinely novel.** Moving
+scaffold → Butina, B1 retains 40% of its R² and B2 50%, but **T1 retains 13%**
+(0.421 → 0.056), i.e. near-zero skill. Spearman tells the same story (T1
+0.612 → 0.251). Whatever the pretrained representation encodes, it transfers
+to *dissimilar* chemistry less well than a count fingerprint does — the
+opposite of the usual motivation for pretraining.
+
+### 5.6 Fine-tuning: calibration fails before ranking does
+
+[→ `table1_learning_curves__scaffold.csv`, `table3_paired_tests__scaffold.csv`;
+40/40 runs complete]
+
+The fully fine-tuned encoder (T2) shows a clear dissociation between the two
+things a regression model must do — order the compounds, and place them on the
+right scale. At n = 50 it attains **R² = −1.26** and RMSE 1.232, far worse than
+simply predicting the test mean (B0: 0.875), while still achieving **Spearman
+ρ = 0.456**. It has learned real ordering signal while its outputs sit on the
+wrong scale entirely. R² then recovers monotonically with data
+(−1.26 → −0.24 → 0.27 → 0.40), i.e. calibration is what the additional data
+buys, and it is still not fully bought at n = 347.
+
+**But fine-tuning does not overtake the baselines on either metric.** At full
+data T2 reaches RMSE 0.662 against B1's 0.603 (paired Wilcoxon, Holm-corrected
+p = 0.074 — inconclusive, not a demonstrated tie), and Spearman 0.614 against
+B1's 0.670, **beating B1 on ranking in only 3 of 10 seeds**. Like T1, it never
+reaches B1's full-data RMSE at any training size, so its **data-efficiency
+ratio is also 0**.
+
+**A recorded near-miss.** An interim read of this arm at 3 of 10 completed
+seeds showed ρ = 0.680 and suggested T2 was the best-ranking arm, which would
+have made the paper's conclusion metric-dependent. It was not: the completed
+sweep gives ρ = 0.613, and the three seeds seen first happened to include T2's
+single best (seed 0, ρ = 0.737). The interim value was labelled provisional
+and withheld from the results tables by `make_report.py --require-seeds 10`,
+which is the mechanism that prevented it from being reported. We note it
+because the failure mode — reading a partial sweep in seed order and finding
+an encouraging pattern — is common and self-confirming.
+
+### 5.7 Summary of findings
+
+1. **Transfer learning does not help on this dataset.** Both pretrained arms
+   are worse than the ECFP4 baseline on the primary endpoint; both have
+   DER = 0; the frozen probe is significantly worse (Holm p = 0.012) and the
+   fine-tune is inconclusive-but-worse (p = 0.074). Neither shows the low-data
+   advantage that motivates pretraining — at n = 50 both trail both baselines.
+2. **The strongest arm is a random forest on RDKit descriptors**, statistically
+   indistinguishable from ECFP4 + gradient boosting (p = 0.56).
+3. **Transfer degrades fastest under a genuinely strict split** (§5.5): moving
+   scaffold → Butina, the frozen probe retains 13% of its R² against the
+   baselines' 40–50%.
+4. **Scaffold splitting is barely harder than random splitting here** (§5.5),
+   despite sharing zero scaffolds, because 29% of its test compounds still have
+   a near neighbour in training.
+5. **Fine-tuning learns ranking before calibration** (§5.6), which makes
+   single-metric evaluation of low-data transfer actively misleading.
 
 ## 6. Limitations
 
 1. **Target identity.** Affinities are CVA16 2A^pro (§3.1).
-2. **Scaffold split is not conservative.** Per Guo et al. (2024) it still
-   leaks; Butina and UMAP splits are specified in `plan.md` but not yet run.
+2. **Scaffold split is not conservative** (§5.5, measured). Butina clustering
+   is now run; UMAP clustering, which Guo et al. (2024) rank as stricter still,
+   is not.
 3. **No decontamination.** `plan.md` §7.1 requires measuring overlap between the
    ChemBERTa pretraining corpus and our test sets, then re-pretraining without
    it. The PubChem 77M corpus was not retrieved, so **this ablation is not
    performed**, and any transfer advantage reported here is an upper bound.
 4. **Narrow dynamic range** (§3.2) flatters RMSE; read Spearman ρ alongside.
 5. **Single target, single assay.** No claim generalises beyond this dataset.
-6. **10 seeds** power only large effects (§4.4).
+6. **10 seeds** power only large effects (§4.4). The T2 vs B1 RMSE comparison
+   (Holm p = 0.074) is inconclusive rather than a demonstrated tie.
+7. **T2 was run on the scaffold split only** (~160 s per run on CPU), so it has
+   no random- or Butina-split numbers; §5.5's cross-split claims rest on the
+   other four arms.
+8. **Hyperparameters were not tuned per arm.** `plan.md` §5 specifies an equal
+   32-trial budget for every arm; this was not run, so all arms use sensible
+   fixed defaults. Equal-budget fairness is preserved in the sense that no arm
+   received tuning, but a tuned transformer might close some of the gap.
 
 ## 7. Reproduction
 

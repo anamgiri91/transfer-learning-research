@@ -22,8 +22,10 @@ belong in the paper.
 | Table 1 — learning curves | `scripts/make_report.py` | `results/tables/table1_learning_curves__<split>.csv` |
 | Table 2 — data-efficiency ratio | `scripts/make_report.py` | `results/tables/table2_der__<split>.csv` |
 | Table 3 — paired tests vs baseline | `scripts/make_report.py` | `results/tables/table3_paired_tests__<split>.csv` |
-| Figure 1 — learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
-| Split leakage audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
+| Table 4 — split difficulty (R², skill vs B0) | `scripts/make_report.py` | `results/tables/table4_split_difficulty.csv` |
+| Figure 1 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
+| Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
+| Table 0 — split leakage + NN-similarity audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
 
 ## Reproduction order
 
@@ -31,9 +33,9 @@ belong in the paper.
 python scripts/prepare_openbind.py                     # -> eva71_2a.csv
 python scripts/build_splits.py --target eva71_2a       # -> splits/, asserts no leakage
 python scripts/audit_splits.py                         # -> table0
-python scripts/run_arms.py --arms B0 B1 B2 T1          # -> results/metrics/
-python scripts/run_arms.py --arms T2                   # ChemBERTa fine-tune (slow)
-python scripts/make_report.py                          # -> tables + figures
+python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold random butina
+python scripts/run_arms.py --arms T2 --splits scaffold   # fine-tune, ~2 h on CPU
+python scripts/make_report.py --require-seeds 10         # -> tables + figures
 ```
 
 ## Excluded from the paper

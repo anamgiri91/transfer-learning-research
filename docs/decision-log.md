@@ -19,4 +19,9 @@ change is dated and justified here rather than absorbed silently.
 | 2026-09-01 | Temporal split dropped for this dataset | The OpenBind release carries no publication/deposition year per compound | `plan.md` §3.3 |
 | 2026-09-01 | Decontamination ablation (§7.1) **not performed** | The ChemBERTa PubChem-77M pretraining corpus was not retrieved. Transfer results are therefore an upper bound, stated as limitation 3 | `paper/manuscript.md` §6 |
 | 2026-09-01 | Fidelity gate passed with nothing removed (max spread 0.49 log) | Reported as a passed audit rather than an active filter, to avoid implying it did work | `paper/manuscript.md` §3.2 |
+| 2026-09-01 | Butina cluster split added and run (plan.md §3.3) | Guo et al. 2024 show scaffold splits still leak; measured here as 29% of scaffold-split test compounds having a training neighbour at Tanimoto >= 0.7 | `table0`, `table4` |
+| 2026-09-01 | Cross-split comparison reports R² and skill-vs-B0, never raw RMSE | Stricter splits yield lower-variance test folds (SD 0.87 -> 0.66), so raw RMSE inverts the apparent difficulty ordering | `paper/manuscript.md` §5.5 |
+| 2026-09-01 | Bootstrap CIs resample **seeds**, not test rows | The seed is the unit of replication (independent split + fit); resampling rows would understate split variance | `scripts/make_report.py` |
+| 2026-09-01 | T2 interim result (rho = 0.680, 3 seeds) withdrawn; completed sweep gives 0.613 | The first three seeds included T2's best. Withheld from tables by `--require-seeds 10`; recorded in §5.6 as a near-miss | `paper/manuscript.md` §5.6 |
+| 2026-09-01 | T2 run on the scaffold split only | ~160 s per run on CPU; the primary endpoint was prioritised over the reference splits | `paper/manuscript.md` §6 |
 
