@@ -67,6 +67,22 @@ def write_csv(df: pd.DataFrame, path: Path, inputs: str, index=True) -> None:
     print(f"  wrote {path}")
 
 
+def _median_ci(values, n_resamples=10000, seed=0, alpha=0.05):
+    """Percentile bootstrap CI for the median, resampling over SEEDS.
+
+    The unit of replication is the seed (each seed is an independent split +
+    model fit), so the bootstrap resamples seeds -- not test-set rows, which
+    would understate split variance.
+    """
+    v = np.asarray(values, dtype=float)
+    if len(v) < 2:
+        return float("nan"), float("nan")
+    rng = np.random.default_rng(seed)
+    draws = np.median(rng.choice(v, size=(n_resamples, len(v)), replace=True), axis=1)
+    lo, hi = np.percentile(draws, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    return float(lo), float(hi)
+
+
 def table_learning_curves(df, split) -> pd.DataFrame:
     g = (df[df.split == split]
          .groupby(["arm", "n_train"])[PRIMARY_METRIC]
@@ -74,7 +90,13 @@ def table_learning_curves(df, split) -> pd.DataFrame:
               std="std", n_seeds="count"))
     sp = (df[df.split == split].groupby(["arm", "n_train"])["spearman"]
           .median().rename("spearman_median"))
-    return g.join(sp).round(4)
+    r2 = (df[df.split == split].groupby(["arm", "n_train"])["r2"]
+          .median().rename("r2_median"))
+
+    ci = (df[df.split == split].groupby(["arm", "n_train"])[PRIMARY_METRIC]
+          .apply(lambda s: pd.Series(_median_ci(s), index=["ci_lo", "ci_hi"]))
+          .unstack())
+    return g.join(sp).join(r2).join(ci).round(4)
 
 
 def table_der(df, split) -> pd.DataFrame:
@@ -119,6 +141,33 @@ def table_paired(df, split) -> pd.DataFrame:
     } for c in res])
 
 
+def table_split_difficulty(df) -> pd.DataFrame:
+    """Table 4: cross-split comparison at full training data.
+
+    Raw RMSE is NOT comparable across splits, because the splits produce test
+    folds with different pActivity variance (a stricter split concentrates
+    chemically similar, similarly-active compounds). Reported here are the
+    variance-normalised R2 and skill relative to the median predictor on the
+    same split, both of which are comparable.
+    """
+    full_n = df.n_train.max()
+    d = df[df.n_train == full_n]
+
+    b0 = (d[d.arm == "B0_median"].groupby(["split", "seed"])[PRIMARY_METRIC]
+          .median().rename("b0_rmse"))
+    m = d[d.arm != "B0_median"].merge(b0, on=["split", "seed"], how="left")
+    m["skill_vs_b0"] = 1.0 - m[PRIMARY_METRIC] / m["b0_rmse"]
+
+    out = (m.groupby(["arm", "split"])
+             .agg(rmse_median=(PRIMARY_METRIC, "median"),
+                  r2_median=("r2", "median"),
+                  spearman_median=("spearman", "median"),
+                  skill_vs_b0_median=("skill_vs_b0", "median"),
+                  n_seeds=("seed", "count"))
+             .round(4).reset_index())
+    return out.sort_values(["arm", "split"])
+
+
 def figure_learning_curves(df, split) -> None:
     import matplotlib
     matplotlib.use("Agg")
@@ -144,8 +193,8 @@ def figure_learning_curves(df, split) -> None:
     # Push apart direct labels that would overlap (the relief the contrast
     # WARN requires is useless if the labels are unreadable).
     ends.sort()
-    span = (max(e[0] for e in ends) - min(e[0] for e in ends)) or 1.0
-    min_gap = span * 0.055
+    lo_ax, hi_ax = ax.get_ylim()
+    min_gap = (hi_ax - lo_ax) * 0.045
     for i in range(1, len(ends)):
         if ends[i][0] - ends[i - 1][0] < min_gap:
             ends[i][0] = ends[i - 1][0] + min_gap
@@ -176,6 +225,67 @@ def figure_learning_curves(df, split) -> None:
 
     FIGURES.mkdir(parents=True, exist_ok=True)
     out = FIGURES / f"fig1_learning_curves__{split}.png"
+    fig.savefig(out, facecolor=fig.get_facecolor())
+    plt.close(fig)
+    print(f"  wrote {out}")
+
+
+def figure_ranking_curves(df, split) -> None:
+    """Figure 2: Spearman rho. Bounded [0,1], so it is not compressed by the
+    fine-tune arm's low-n RMSE excursion, and it is the view that separates
+    ranking ability from calibration (see manuscript 5.6)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    d = df[(df.split == split) & (df.arm != "B0_median")]
+    if d.empty:
+        return
+    fig, ax = plt.subplots(figsize=(7.2, 4.6), dpi=200)
+    fig.patch.set_facecolor("#fcfcfb"); ax.set_facecolor("#fcfcfb")
+
+    ends = []
+    for arm in ORDER:
+        if arm not in set(d.arm):
+            continue
+        color, marker, label = PALETTE[arm]
+        g = d[d.arm == arm].groupby("n_train")["spearman"]
+        med, lo, hi = g.median(), g.quantile(.25), g.quantile(.75)
+        ax.fill_between(med.index, lo, hi, color=color, alpha=0.13, linewidth=0)
+        ax.plot(med.index, med.values, color=color, marker=marker, markersize=6,
+                linewidth=2, label=label, markeredgecolor="#fcfcfb", markeredgewidth=1.2)
+        ends.append([med.values[-1], med.index[-1], label])
+
+    ends.sort()
+    lo_ax, hi_ax = ax.get_ylim()
+    min_gap = (hi_ax - lo_ax) * 0.045
+    for i in range(1, len(ends)):
+        if ends[i][0] - ends[i - 1][0] < min_gap:
+            ends[i][0] = ends[i - 1][0] + min_gap
+    for y_text, x, label in ends:
+        ax.annotate(label, (x, y_text), textcoords="offset points", xytext=(9, 0),
+                    va="center", fontsize=8, color="#52514e")
+
+    ax.set_xscale("log")
+    ax.set_xticks(sorted(d.n_train.unique()))
+    ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+    ax.get_xaxis().set_minor_formatter(matplotlib.ticker.NullFormatter())
+    ax.get_xaxis().set_minor_locator(matplotlib.ticker.NullLocator())
+    ax.set_xlabel("training set size (compounds, log scale)", fontsize=9, color="#52514e")
+    ax.set_ylabel(r"test Spearman $\rho$   ↑ better", fontsize=9, color="#52514e")
+    ax.set_title(f"Ranking ability, {split} split — EV-A71/CVA16 2A protease",
+                 fontsize=10.5, color="#0b0b0b", loc="left")
+    ax.grid(axis="y", color="#e5e5e2", linewidth=0.8)
+    ax.set_axisbelow(True)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+    for sp in ("left", "bottom"):
+        ax.spines[sp].set_color("#c9c9c4")
+    ax.tick_params(colors="#52514e", labelsize=8)
+    ax.legend(frameon=False, fontsize=8, loc="lower right", ncol=2)
+    ax.margins(x=0.22, y=0.12)
+    fig.tight_layout()
+    out = FIGURES / f"fig2_ranking__{split}.png"
     fig.savefig(out, facecolor=fig.get_facecolor())
     plt.close(fig)
     print(f"  wrote {out}")
@@ -212,6 +322,11 @@ def main() -> int:
         if not paired.empty:
             write_csv(paired, TABLES / f"table3_paired_tests__{split}.csv", inputs, index=False)
         figure_learning_curves(df, split)
+        figure_ranking_curves(df, split)
+
+    if df.split.nunique() > 1:
+        write_csv(table_split_difficulty(df),
+                  TABLES / "table4_split_difficulty.csv", inputs, index=False)
     return 0
 
 
