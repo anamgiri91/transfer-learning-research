@@ -436,7 +436,10 @@ artefact (the validation fraction is carved from an already-small training
 fold) and lies within seed noise; it is not a real reversal. And the
 CI-exclusion statement above is a comparison of a bootstrap interval against a
 point estimate, which is weaker evidence than the paired test in §5.4; the
-paired test is what the conclusion rests on.
+paired test is what the conclusion rests on. It is weaker still than that
+phrasing suggests: resampling 10 seeds, the bootstrap median can take only 44
+distinct values, so the interval's endpoints are essentially order statistics
+of ten numbers. We report it for completeness and rest nothing on it.
 
 ### 5.3 Data efficiency
 
@@ -667,6 +670,16 @@ between 0.40 and 0.50 is one compound. The medians are therefore coarse, and
 the paired test over seeds is doing more work than the marginal values suggest.
 And this is one endpoint of five.
 
+Two objections that would sink it do not. **Ties**: a discrete metric makes the
+paired test suspect, and in 2 of 10 seeds the tenth-best label is tied, so the
+"true top decile" is itself ambiguous. Recomputing under **adversarial
+tie-breaking** — `T2` given the worst reading and `B1` the best, in both the
+true and the predicted ranking — leaves the medians unmoved (0.50 vs 0.40) and
+`T2` ahead in 8 of 10 seeds, tied in 2, **behind in none** (p = 0.008).
+**Zero-difference handling**: `T2` ties `B1` on one seed, and the conclusion is
+identical under Wilcoxon's default, `zsplit` and `pratt` handling, and under a
+plain sign test (all p = 0.0039). The result is not an artefact of the test.
+
 **What it does mean.** A single conclusion of the form "pretraining did not
 help" is not supportable across the endpoint set as pre-registered. What is
 supportable: pretrained representations here are **worse at predicting the
@@ -843,11 +856,22 @@ equal search budgets. Both are therefore reported:
 |---|---|---|---|---|
 | n = 347, Spearman ρ | 0.695 | 0.679 | 2 of 5 seeds | — |
 
+**A second disclosure, about which seeds.** The full-data tuned comparison runs
+on **seeds 0–4** — the first five, chosen because each fine-tune costs ~185 s,
+not by any property of the seeds. That subset is not representative, and it is
+unfavourable to the baseline: `B1`'s median RMSE on seeds 0–4 is **0.634**
+against **0.556** on seeds 5–9, and 0.603 over all ten. So the marginal medians
+in the rows above are computed where the fingerprint baseline happens to do
+worst. The paired statistic is unaffected — it compares the two arms *on the
+same seeds*, which is precisely what pairing is for — but any reading of the
+marginal medians has to carry this caveat, and one below did.
+
 **All four comparisons are inconclusive**, so the conclusion does not turn on
 which baseline is used — but the *appearance* of the full-data result does.
 Against the untuned baseline the tuned fine-tune's marginal median looks
-*lower* than B1's (0.620 vs 0.634) while still losing the paired statistic in 3
-of 5 seeds; against the properly tuned baseline it is plainly behind on both
+*lower* than B1's (0.620 vs 0.634) — but that 0.634 is B1 on seeds 0–4 only,
+against 0.603 over all ten, so the apparent advantage is largely the seed
+subset — while it still loses the paired statistic in 3 of 5 seeds; against the properly tuned baseline it is plainly behind on both
 (0.620 vs 0.601, losing in 4 of 5, p = 0.125). The like-for-like comparison is
 therefore **less** favourable to transfer than the one originally reported, and
 the negative reading of §5 is if anything firmer than the audit-corrected table
@@ -1516,7 +1540,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **336 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **339 claims** across sections 3.1
 through 6.5. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number

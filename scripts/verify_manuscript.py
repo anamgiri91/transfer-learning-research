@@ -486,6 +486,19 @@ def build_claims() -> list[Claim]:
     C.append(Claim("cost", "the ratio is under two orders of magnitude",
                    "metrics seconds", True, bool(t2_full / b1_full < 100)))
 
+    # ---- §6.2 seed-subset disclosure; §5.7 tie-robustness ----
+    import glob as _gg
+    _m = {}
+    for _f in _gg.glob("results/metrics/B1_ecfp_histgb__scaffold__seed*__n347.json"):
+        _d = json.loads(Path(_f).read_text()); _m[_d["seed"]] = _d["metrics"]["rmse"]
+    C.append(Claim("6.2", "B1 median on seeds 0-4 is 0.634", "metrics", 0.634,
+                   round(float(np.median([_m[s] for s in range(5)])), 3)))
+    C.append(Claim("6.2", "B1 median on seeds 5-9 is 0.556", "metrics", 0.556,
+                   round(float(np.median([_m[s] for s in range(5, 10)])), 3)))
+    C.append(Claim("6.2", "the tuned subset is unfavourable to the baseline", "metrics",
+                   True, bool(np.median([_m[s] for s in range(5)])
+                              > np.median([_m[s] for s in range(5, 10)]))))
+
     # ---- Section 5.7: every pre-registered endpoint ----
     ep = read_table("table14_all_endpoints.csv")
     med = ep.pivot_table(index="arm", columns="metric", values="median")
