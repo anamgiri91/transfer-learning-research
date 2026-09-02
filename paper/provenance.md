@@ -23,6 +23,8 @@ belong in the paper.
 | Table 2 — data-efficiency ratio | `scripts/make_report.py` | `results/tables/table2_der__<split>.csv` |
 | Table 3 — paired tests vs baseline | `scripts/make_report.py` | `results/tables/table3_paired_tests__<split>.csv` |
 | Table 4 — split difficulty (R², skill vs B0) | `scripts/make_report.py` | `results/tables/table4_split_difficulty.csv` |
+| Table 5 — contamination upper bound | `scripts/measure_contamination.py` | `results/tables/table5_contamination.csv` |
+| Tuning ablation table (§6.2) | `scripts/tune_arms.py` + `render_manuscript_tables.py` | `results/tuned_metrics/*.json` |
 | Figure 1 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
 | Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
 | Table 0 — split leakage + NN-similarity audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
@@ -49,6 +51,9 @@ python scripts/audit_splits.py                         # -> table0
 python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold random butina
 python scripts/run_arms.py --arms T2 --splits scaffold   # fine-tune, ~2 h on CPU
 python scripts/make_report.py --require-seeds 10         # -> tables + figures
+python scripts/measure_contamination.py                  # -> table5 (PubChem lookup)
+python scripts/tune_arms.py --arms B1 B2 T1 --trials 32  # -> tuned_metrics/
+python scripts/tune_arms.py --arms T2 --sizes 50 --trials 6
 python scripts/render_manuscript_tables.py               # -> manuscript tables
 python scripts/verify_manuscript.py                      # -> checks every claim
 ```

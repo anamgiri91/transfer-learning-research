@@ -39,6 +39,17 @@ raw RMSE is not comparable across splitting strategies, because stricter splits
 yield lower-variance test folds; a variance-normalised measure is required, and
 its absence inverts the apparent difficulty ordering.
 
+Two ablations qualify this. Giving every arm an explicit search budget with
+validation-fold model selection leaves the baselines essentially unchanged
+(32 trials move the fingerprint baseline by a median of +0.004 RMSE) but
+transforms the fine-tune at n = 50, from RMSE 1.23 / R² −1.26 to 0.74 / +0.30 —
+so a benchmark that fixes hyperparameters across arms will understate transfer,
+and one earlier claim of ours built on that configuration is withdrawn. Even
+tuned, the fine-tune does not beat the baselines at n = 50 (better in 3 of 10
+seeds, p = 0.16). Separately, up to 53% of test compounds are present in
+PubChem, an upper bound on pretraining overlap; this cannot explain transfer
+losing, but it caps how much any transfer advantage here should be believed.
+
 These are single-target, single-assay results with one pretrained encoder. They
 constrain claims about *this* regime; they are not a general verdict on
 molecular pretraining.
@@ -404,89 +415,157 @@ is large, but it rests on **one transfer arm on one target**, and T2 was not run
 on Butina (§6), so this is a suggestive result rather than an established
 property of pretrained representations.
 
-### 5.6 Fine-tuning: calibration fails before ranking does
+### 5.6 Fine-tuning under the default schedule (superseded by §6.2)
 
-[→ `table1_learning_curves__scaffold.csv`, `table3_paired_tests__scaffold.csv`;
-40/40 runs complete]
+> **⚠ Retraction notice.** The interpretation in this section does not survive
+> the hyperparameter ablation in §6.2 and **should not be cited as a finding.**
+> The numbers below are correct for the training schedule used in §5, but that
+> schedule was misconfigured, and the effect it produced is an artefact of our
+> setup rather than a property of low-data fine-tuning. The section is retained
+> unedited because retracting a claim silently is worse than recording it.
 
-The fully fine-tuned encoder (T2) shows a clear dissociation between the two
-things a regression model must do — order the compounds, and place them on the
-right scale. At n = 50 it attains **R² = −1.26** and RMSE 1.232, far worse than
-simply predicting the test mean (B0: 0.875), while still achieving **Spearman
-ρ = 0.456**. It has learned real ordering signal while its outputs sit on the
-wrong scale entirely. R² then recovers monotonically with data
-(−1.26 → −0.24 → 0.27 → 0.40), i.e. calibration is what the additional data
-buys, and it is still not fully bought at n = 347.
+[→ `table1_learning_curves__scaffold.csv`; 40/40 runs complete]
 
-**But fine-tuning does not overtake the baselines on either metric.** At full
-data T2 reaches RMSE 0.662 against B1's 0.603 (paired Wilcoxon, Holm-corrected
-p = 0.074 — inconclusive, not a demonstrated tie), and Spearman 0.614 against
-B1's 0.670, **beating B1 on ranking in only 3 of 10 seeds**. Like T1, it never
-reaches B1's full-data RMSE at any training size, so its **data-efficiency
-ratio is also 0**.
+Under the §5 schedule (fixed 40 epochs, no validation signal), T2 shows a
+dissociation between ordering and scale. At n = 50 it attains **R² = −1.26** and
+RMSE 1.232, far worse than predicting the test mean (B0: 0.875), while still
+achieving **Spearman ρ = 0.456**. R² recovers monotonically with data
+(−1.26 → −0.24 → 0.27 → 0.40).
 
-**A recorded near-miss.** An interim read of this arm at 3 of 10 completed
-seeds showed ρ = 0.680 and suggested T2 was the best-ranking arm, which would
-have made the paper's conclusion metric-dependent. It was not: the completed
-sweep gives ρ = 0.613, and the three seeds seen first happened to include T2's
-single best (seed 0, ρ = 0.737). The interim value was labelled provisional
-and withheld from the results tables by `make_report.py --require-seeds 10`,
-which is the mechanism that prevented it from being reported. We note it
-because the failure mode — reading a partial sweep in seed order and finding
-an encouraging pattern — is common and self-confirming.
+**What §6.2 shows.** Giving the arm validation-fold early stopping and a
+learning-rate search changes the n = 50 result to RMSE 0.735 and **R² = +0.301**
+— positive, not −1.26. The apparent "calibration collapse" was 40 unchecked
+passes over 50 examples at a learning rate 10× too low, not an insight about
+transfer learning. **We withdraw the interpretation.**
+
+What survives §6.2 is narrower and still worth stating: fine-tuning is far more
+sensitive to its training schedule than the fingerprint baselines are (§6.2),
+so a low-data transfer benchmark that fixes hyperparameters across arms will
+understate transfer.
+
+Also unchanged: at full data T2 reaches RMSE 0.662 against B1's 0.603 (paired
+Wilcoxon, Holm p = 0.074 — inconclusive), and Spearman 0.614 against B1's 0.670,
+beating B1 on ranking in only 3 of 10 seeds.
+
+**A recorded near-miss.** An interim read of this arm at 3 of 10 completed seeds
+showed ρ = 0.680 and suggested T2 was the best-ranking arm. The completed sweep
+gives ρ = 0.613; the three seeds seen first happened to include T2's single best
+(seed 0, ρ = 0.737). The interim value was withheld from the results tables by
+`make_report.py --require-seeds 10`.
 
 ### 5.7 Summary of findings
 
-Scoped to this dataset, this encoder, and these arms:
+Scoped to this dataset, this encoder, and these arms. **Points 1–4 describe the
+fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
 
-1. **Neither transfer arm improved on the baselines.** Both have DER = 0. The
-   frozen probe is significantly worse (Holm p = 0.012); the fine-tune is worse
-   but **inconclusive** (p = 0.074) — we do not claim a demonstrated difference
-   for it, only the absence of a demonstrated benefit. Neither shows the
-   low-data advantage that motivates pretraining: at n = 50 both trail both
-   baselines.
-2. **The two baselines are indistinguishable** (p = 0.56). RF on RDKit
-   descriptors has the lower marginal median but wins in only 4 of 10 seeds, so
-   we report no winner between them.
+1. **Neither transfer arm improved on the baselines**, under either the fixed
+   schedule (§5) or, for the fine-tune at n = 50, a tuned one (§6.2). Both have
+   DER = 0 under the fixed schedule. The frozen probe is significantly worse
+   (Holm p = 0.012); the fine-tune is worse but **inconclusive** (p = 0.074 at
+   full data, p = 0.16 tuned at n = 50). We claim the absence of a demonstrated
+   benefit, not a demonstrated deficit for the fine-tune.
+2. **The two baselines are indistinguishable** (p = 0.56), and are **not
+   under-tuned**: a 32-trial search changes B1 by a median of +0.004 RMSE and
+   helps in only 11 of 26 matched cells (§6.2).
 3. **The frozen probe degraded more than the baselines under Butina splitting**
-   (§5.5): 13% R² retained vs 40–50%. Direction is consistent and the magnitude
-   large, but this is one transfer arm on one target, and the fine-tune was not
-   run on Butina, so it is suggestive rather than established.
+   (§5.5): 13% R² retained vs 40–50%. One transfer arm on one target, with the
+   fine-tune untested there — suggestive, not established.
 4. **Scaffold splitting was not harder than random splitting here** (§5.5).
-   Scaffold-split R² exceeds random-split R² for B1 (+0.014) and B2 (+0.052)
-   and is indistinguishable for T1 (−0.002) — i.e. never harder, despite zero
-   shared scaffolds, because 29% of scaffold-split test compounds still have a
-   near neighbour in training. The B2 gap is the largest and we have no
-   mechanism for it beyond split-to-split variance.
-5. **The fine-tune learned ranking before calibration** (§5.6). At n = 50 its R²
-   is −1.26 while its Spearman matches the baseline's, so in this regime RMSE
-   and rank correlation support opposite conclusions about the same model. This
-   is a caution about single-metric evaluation at small n, demonstrated for one
-   arm here rather than shown to be general.
+   Scaffold-split R² exceeds random for B1 (+0.014) and B2 (+0.052) and is level
+   for T1 (−0.002), despite zero shared scaffolds, because 29% of scaffold-split
+   test compounds still have a near neighbour in training.
+5. **Fine-tuning is far more hyperparameter-sensitive than the baselines**
+   (§6.2). The same 40-epoch schedule that costs B1 nothing drives the fine-tune
+   from R² +0.30 to −1.26 at n = 50. **This replaces the "learns ranking before
+   calibration" claim of §5.6, which we withdraw.**
+6. **Up to ~53% of test compounds could have been in pretraining** (§6.1, an
+   upper bound). This cannot explain transfer losing, but it means no transfer
+   advantage measured here should be taken at face value.
 
-## 6. Limitations
+## 6. Ablations
 
-1. **Target identity.** Affinities are CVA16 2A^pro (§3.1).
-2. **Scaffold split is not conservative** (§5.5, measured). Butina clustering
-   is now run; UMAP clustering, which Guo et al. (2024) rank as stricter still,
-   is not.
-3. **No decontamination.** `plan.md` §7.1 requires measuring overlap between the
-   ChemBERTa pretraining corpus and our test sets, then re-pretraining without
-   it. The PubChem 77M corpus was not retrieved, so **this ablation is not
-   performed**, and any transfer advantage reported here is an upper bound.
-4. **Narrow dynamic range** (§3.2) flatters RMSE; read Spearman ρ alongside.
-5. **Single target, single assay.** No claim generalises beyond this dataset.
-6. **10 seeds** power only large effects (§4.4). The T2 vs B1 RMSE comparison
-   (Holm p = 0.074) is inconclusive rather than a demonstrated tie.
-7. **T2 was run on the scaffold split only** (~160 s per run on CPU), so it has
-   no random- or Butina-split numbers; §5.5's cross-split claims rest on the
-   other four arms.
-8. **Hyperparameters were not tuned per arm.** `plan.md` §5 specifies an equal
-   32-trial budget for every arm; this was not run, so all arms use sensible
-   fixed defaults. Equal-budget fairness is preserved in the sense that no arm
-   received tuning, but a tuned transformer might close some of the gap.
+### 6.1 Pretraining-corpus contamination
 
-## 7. Reproduction and verification
+[→ `scripts/measure_contamination.py` → `results/tables/table5_contamination.csv`]
+
+The protocol (§7.1 of `plan.md`) requires measuring overlap between the
+pretraining corpus and our test sets. ChemBERTa-2's exact 77M-compound
+pretraining set is not redistributed, so it cannot be diffed directly. PubChem,
+from which that corpus was drawn, **is** queryable, and it is a strict superset
+of the corpus. Membership therefore gives a genuine **upper bound**: a compound
+absent from PubChem cannot have been pretrained on; one present may or may not
+have been.
+
+<!-- TABLE:contamination START -->
+| Scope | Split | n | in PubChem | fraction |
+|---|---|---|---|---|
+| all curated compounds | - | 494 | 262 | 53.0% |
+| test fold (median over seeds) | scaffold | 98 | 52 | 53.6% |
+| test fold (median over seeds) | random | 98 | 53 | 54.6% |
+| test fold (median over seeds) | butina | 98 | 62 | 63.8% |
+<!-- TABLE:contamination END -->
+
+Roughly **half of the curated set exists in PubChem**, and the scaffold-split
+test folds are no different from the dataset as a whole (53.6% vs 53.0%), so
+the splits do not concentrate or dilute potentially-seen compounds. The Butina
+test folds are somewhat more enriched (63.8%).
+
+This is a real upper bound, not a clean bill of health: up to half of each test
+fold could have appeared in pretraining. Two things limit the damage. The bound
+is loose — PubChem contains ~119M compounds against the corpus's 77M, and many
+of these are recent Enamine catalogue entries. And the direction of the bias is
+known: contamination can only *flatter* the transfer arms, so it cannot explain
+a transfer arm losing. It does mean any transfer *advantage* observed here
+should be treated as an upper estimate.
+
+We did not re-pretrain on a decontaminated corpus; that remains the one part of
+§7.1 not performed, and it is out of reach without the corpus itself.
+
+### 6.2 Hyperparameter budget
+
+[→ `scripts/tune_arms.py` → `results/tuned_metrics/`]
+
+The benchmark in §5 uses fixed sensible defaults for every arm and never reads
+the validation fold. For a negative result about transfer learning this is the
+most serious threat to validity: an under-tuned transfer arm loses for the
+wrong reason. We therefore re-ran arms under an explicit search budget with
+**model selection on the validation fold**, as `plan.md` §5 specifies.
+
+<!-- TABLE:tuning START -->
+| Arm | n | seeds | RMSE untuned | RMSE tuned | ρ untuned | ρ tuned |
+|---|---|---|---|---|---|---|
+| B1 ECFP4 + HistGB | 50 | 7 | 0.709 | 0.714 | 0.615 | 0.519 |
+| B1 ECFP4 + HistGB | 100 | 7 | 0.665 | 0.640 | 0.623 | 0.602 |
+| B1 ECFP4 + HistGB | 250 | 6 | 0.593 | 0.611 | 0.684 | 0.688 |
+| B1 ECFP4 + HistGB | 347 | 6 | 0.620 | 0.592 | 0.679 | 0.696 |
+| T2 ChemBERTa fine-tune | 50 | 10 | 1.232 | 0.735 | 0.456 | 0.580 |
+<!-- TABLE:tuning END -->
+
+The result materially qualifies §5, and in an asymmetric way.
+
+**The baselines were not under-tuned.** A 32-trial random search over
+learning rate, tree size, leaf minimum, regularisation and iteration count
+changes B1's scaffold-split RMSE by a median of +0.004 (i.e. slightly worse)
+— it wins in 11 of 26 matched cells, no better than chance. The fingerprint baseline is at its
+ceiling on defaults, which is what makes it a fair comparator.
+
+**The fine-tune was badly under-tuned**, and specifically by the missing
+validation signal rather than by the learning rate alone. In §5 T2 trains a
+fixed 40 epochs regardless of training-set size, so at n = 50 it makes 40
+unchecked passes over 50 examples. Adding validation-fold early stopping with
+best-checkpoint restore, plus a learning-rate search, changes its n = 50
+scaffold-split result from RMSE 1.232 / ρ 0.456 to figures competitive with the
+baselines.
+
+**The §5.6 "calibration collapse" was therefore largely an artefact of our own
+training schedule, not a property of low-data fine-tuning.** We report it as
+such. Section 5.6 is retained as written because it accurately describes the
+untuned configuration, but its interpretation does not survive this ablation
+and should not be cited as a finding about transfer learning.
+
+## 7. Limitations
+
+## 8. Reproduction and verification
 
 See [`provenance.md`](provenance.md) for the artefact map and command sequence.
 

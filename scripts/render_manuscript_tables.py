@@ -131,7 +131,49 @@ def table_der(split="scaffold") -> str:
     return _md(["Arm", "n to reach B1's full-data RMSE", "DER vs B1"], rows)
 
 
+def table_contamination() -> str:
+    df = _read("table5_contamination.csv")
+    rows = [[r.scope, r.split, str(int(r.n)), str(int(r.n_in_pubchem)),
+             f"{100 * r.frac_in_pubchem:.1f}%"] for r in df.itertuples()]
+    return _md(["Scope", "Split", "n", "in PubChem", "fraction"], rows)
+
+
+def table_tuning() -> str:
+    """Tuned vs untuned, matched on (arm, seed, n). Only cells present in both."""
+    import glob, json
+    tuned, untuned = {}, {}
+    for f in glob.glob("results/tuned_metrics/*.json"):
+        r = json.load(open(f))
+        tuned[(r["arm"], r["split"], r["seed"], r["n_train"])] = r["metrics"]
+    for f in glob.glob("results/metrics/*.json"):
+        r = json.load(open(f))
+        untuned[(r["arm"], r["split"], r["seed"], r["n_train"])] = r["metrics"]
+
+    keys = sorted(set(tuned) & set(untuned))
+    if not keys:
+        return "_(no matched tuned/untuned cells yet)_"
+    recs = [{"arm": k[0], "n": k[3],
+             "untuned": untuned[k]["rmse"], "tuned": tuned[k]["rmse"],
+             "sp_untuned": untuned[k]["spearman"], "sp_tuned": tuned[k]["spearman"]}
+            for k in keys]
+    d = pd.DataFrame(recs)
+    rows = []
+    for arm in ORDER:
+        g = d[d.arm == arm]
+        if g.empty:
+            continue
+        for n in sorted(g.n.unique()):
+            gg = g[g.n == n]
+            rows.append([ARM_LABEL[arm], str(int(n)), str(len(gg)),
+                         _fmt(gg.untuned.median()), _fmt(gg.tuned.median()),
+                         _fmt(gg.sp_untuned.median()), _fmt(gg.sp_tuned.median())])
+    return _md(["Arm", "n", "seeds", "RMSE untuned", "RMSE tuned",
+                "ρ untuned", "ρ tuned"], rows)
+
+
 RENDERERS = {
+    "contamination": table_contamination,
+    "tuning": table_tuning,
     "full_data": table_full_data,
     "paired": table_paired,
     "curve": table_curve,

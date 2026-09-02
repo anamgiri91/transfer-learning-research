@@ -213,6 +213,54 @@ def build_claims() -> list[Claim]:
                    sum(t2s[s] > b1s[s] for s in b1s)))
     C.append(Claim("5.6", "T2 seed0 Spearman 0.737", "metrics/*.json", 0.737, round(t2s[0], 3)))
 
+    # ---- Section 6.1: contamination upper bound ----
+    if (TABLES / "table5_contamination.csv").exists():
+        cont = read_table("table5_contamination.csv")
+        allrow = cont[cont.scope.str.startswith("all")].iloc[0]
+        C.append(Claim("6.1", "53.0% of curated compounds in PubChem", "table5", 0.530,
+                       round(float(allrow.frac_in_pubchem), 3)))
+        for split, frac in (("scaffold", 0.536), ("random", 0.546), ("butina", 0.638)):
+            row = cont[cont.split == split]
+            if len(row):
+                C.append(Claim("6.1", f"{split} test fold PubChem fraction", "table5", frac,
+                               round(float(row.frac_in_pubchem.iloc[0]), 3)))
+
+    # ---- Section 6.2: tuning ablation ----
+    TUNED = Path("results/tuned_metrics")
+    if TUNED.exists():
+        def load(d, pat):
+            out = {}
+            for f in d.glob(pat):
+                r = json.loads(f.read_text())
+                out[(r["arm"], r["seed"], r["n_train"])] = r["metrics"]
+            return out
+
+        tb1, ub1 = load(TUNED, "B1*.json"), load(METRICS, "B1*scaffold*.json")
+        shared = sorted(set(tb1) & set(ub1))
+        if shared:
+            deltas = [tb1[k]["rmse"] - ub1[k]["rmse"] for k in shared]
+            wins = sum(d < 0 for d in deltas)
+            C.append(Claim("6.2", "32-trial search moves B1 by median +0.004 RMSE",
+                           "tuned_metrics", 0.004,
+                           round(float(pd.Series(deltas).median()), 3)))
+            C.append(Claim("6.2", "tuning helps B1 in 11 of 26 matched cells",
+                           "tuned_metrics", "11/26", f"{wins}/{len(shared)}"))
+
+        t2t = load(TUNED, "T2*n50.json")
+        t2u = {k: v for k, v in load(METRICS, "T2*scaffold*n50.json").items()}
+        if len(t2t) == 10:
+            for metric, val in (("rmse", 0.735), ("r2", 0.301), ("spearman", 0.580)):
+                C.append(Claim("6.2", f"T2 tuned n=50 {metric}", "tuned_metrics", val,
+                               round(float(pd.Series([m[metric] for m in t2t.values()]).median()), 3)))
+            for metric, val in (("rmse", 1.232), ("r2", -1.256), ("spearman", 0.456)):
+                C.append(Claim("6.2", f"T2 untuned n=50 {metric}", "metrics", val,
+                               round(float(pd.Series([m[metric] for m in t2u.values()]).median()), 3)))
+            b1n50 = load(METRICS, "B1*scaffold*n50.json")
+            better = sum(t2t[("T2_chemberta_full_finetune", s, 50)]["rmse"]
+                         < b1n50[("B1_ecfp_histgb", s, 50)]["rmse"] for s in range(10))
+            C.append(Claim("6.2", "tuned T2 beats B1 at n=50 in 3 of 10 seeds",
+                           "tuned_metrics", 3, better))
+
     # ---- Run inventory ----
     n_runs = len(list(METRICS.glob("*.json")))
     C.append(Claim("Abstract", "520 evaluated runs", "metrics/*.json", 520, n_runs))
