@@ -146,6 +146,22 @@ def build_claims() -> list[Claim]:
     C.append(Claim("3.1", "the count of five does not reproduce", "table9", True,
                    bool(all(int(sur.loc[l, "n_differences"]) != 5 for l in sur.index))))
 
+    # ---- Section 5.1: the split audit. The paper's foundational claim, and
+    # until 2026-09-02 the only results section with no claims at all. ----
+    aud = read_table("table0_split_audit.csv")
+    C.append(Claim("5.1", "no compound in both train and test, any split/seed",
+                   "table0", 0, int(aud["compounds_in_train_and_test"].max())))
+    C.append(Claim("5.1", "scaffold split shares zero scaffolds train/test", "table0", 0,
+                   int(aud[aud["split"] == "scaffold"]["scaffolds_in_train_and_test"].max())))
+    C.append(Claim("5.1", "random splits share 23-31 scaffolds", "table0", True,
+                   bool(aud[aud["split"] == "random"]["scaffolds_in_train_and_test"]
+                        .between(23, 31).all())))
+    C.append(Claim("5.1", "30 split files audited", "table0", 30, len(aud)))
+    C.append(Claim("5.1", "every split file has 347 train compounds", "table0", 347,
+                   int(aud["n_train"].unique()[0]) if aud["n_train"].nunique() == 1 else -1))
+    C.append(Claim("5.1", "every split file has 98 test compounds", "table0", 98,
+                   int(aud["n_test"].unique()[0]) if aud["n_test"].nunique() == 1 else -1))
+
     # ---- Section 5.2: learning curves, scaffold, n=347 ----
     for arm, rmse, sp, r2, lo, hi in [
         ("B2_descriptors_rf", 0.5858, 0.6359, 0.5128, 0.5394, 0.6473),
@@ -476,7 +492,9 @@ def build_claims() -> list[Claim]:
     for (a, b, delta, wins, pv) in [("T4c", "T4", -0.0158, 1, 0.0098),
                                     ("T4r", "T4", -0.0308, 0, 0.0020),
                                     ("T4c", "T4r", 0.0141, 7, 0.0273),
-                                    ("T5c", "T5", 0.0060, 7, 0.0840)]:
+                                    ("T5c", "T5", 0.0060, 7, 0.0840),
+                                    ("T5r", "T5", -0.0026, 3, 0.2324),
+                                    ("T5c", "T5r", 0.0068, 8, 0.0488)]:
         C.append(Claim("6.5", f"{a} vs {b} delta", "table10", delta,
                        float(dec.loc[(a, b), "median_delta"])))
         C.append(Claim("6.5", f"{a} vs {b} seed wins", "table10", wins,
@@ -495,6 +513,11 @@ def build_claims() -> list[Claim]:
                               < float(dec.loc[("T4c", "T4"), "median_delta"]))))
     C.append(Claim("6.5", "decontaminated beats the size-matched control", "table10",
                    "arm better", str(dec.loc[("T4c", "T4r"), "verdict"])))
+    C.append(Claim("6.5", "T5 shows the same decisive contrast", "table10",
+                   "arm better", str(dec.loc[("T5c", "T5r"), "verdict"])))
+    C.append(Claim("6.5", "both arms: decontaminated beats the control", "table10", True,
+                   bool(float(dec.loc[("T4c", "T4r"), "median_delta"]) > 0
+                        and float(dec.loc[("T5c", "T5r"), "median_delta"]) > 0)))
 
     # ---- Section 6.3: activity-cliff strata ----
     T1P, T2P = "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"

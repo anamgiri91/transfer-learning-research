@@ -48,6 +48,33 @@ def _sim_stats(sims) -> dict:
     }
 
 
+def check_invariants(rows: list[dict], n_compounds: int) -> list[str]:
+    """Invariants the committed split files must satisfy.
+
+    audit_splits reported these into table 0 and never failed on them, so a
+    corrupted split file on disk would have been described rather than
+    rejected -- found by fault injection on 2026-09-02, the one checker of
+    eight that missed its planted defect. The split files are read by every
+    arm; nothing downstream would notice.
+    """
+    bad = []
+    for r in rows:
+        tag = f"{r['split']}__seed{r['seed']}"
+        if r["compounds_in_train_and_test"]:
+            bad.append(f"{tag}: {r['compounds_in_train_and_test']} compounds in "
+                       f"both train and test")
+        if r["split"] == "scaffold" and r["scaffolds_in_train_and_test"]:
+            bad.append(f"{tag}: {r['scaffolds_in_train_and_test']} scaffolds in "
+                       f"both train and test (scaffold split must have none)")
+        total = r["n_train"] + r["n_val"] + r["n_test"]
+        if total != n_compounds:
+            bad.append(f"{tag}: folds cover {total} compounds, dataset has {n_compounds}")
+    sizes = {(r["n_train"], r["n_val"], r["n_test"]) for r in rows}
+    if len(sizes) != 1:
+        bad.append(f"fold sizes are not identical across split files: {sorted(sizes)}")
+    return bad
+
+
 def main() -> int:
     df = load_dataset("eva71_2a")
     scaf = dict(zip(df["inchikey"], df["scaffold"]))
@@ -71,6 +98,15 @@ def main() -> int:
             "n_test_scaffolds": len({scaf[k] for k in te}),
             **_sim_stats(nearest_train_similarity(te, tr, fps)),
         })
+
+    problems = check_invariants(rows, len(df))
+    if problems:
+        print(f"{len(problems)} SPLIT INTEGRITY FAILURE(S):")
+        for b in problems:
+            print(f"  - {b}")
+        return 1
+    print(f"  [ok  ] split integrity {len(rows):3d} files, {len(df)} compounds, "
+          f"0 compound and 0 scaffold leaks")
 
     out = pd.DataFrame(rows).sort_values(["split", "seed"])
     OUT.parent.mkdir(parents=True, exist_ok=True)

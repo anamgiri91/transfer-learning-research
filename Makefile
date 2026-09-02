@@ -55,6 +55,7 @@ test:  ## Run the test suite
 verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) -m pytest -q
 	$(PY) scripts/render_manuscript_tables.py --check
+	$(PY) scripts/audit_splits.py
 	$(PY) scripts/verify_manuscript.py
 	$(PY) scripts/verify_citations.py
 	$(PY) scripts/verify_consistency.py

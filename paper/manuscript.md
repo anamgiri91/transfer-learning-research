@@ -14,11 +14,11 @@ prediction, but its evidence base is large, noisy benchmarks. We test whether
 it helps in the opposite regime — few hundred compounds, one target, one assay
 — using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
 (494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
-units). Eleven arms are compared on identical materialised splits across
-10 seeds and four training-set sizes, with 760 evaluated runs: five
+units). Twelve arms are compared on identical materialised splits across
+10 seeds and four training-set sizes, with 800 evaluated runs: five
 pre-registered (median predictor; ECFP4 + gradient boosting; RDKit descriptors
 + random forest; ChemBERTa-2 frozen probe; ChemBERTa-2 full fine-tune) and
-six added as controls, in-domain arms and decontamination
+seven added as controls, in-domain arms and decontamination
 ablations (§6.4–6.5).
 
 **On this dataset, pretraining did not help.** The frozen probe is
@@ -973,7 +973,9 @@ and the contrasts H3 actually needs — pairwise, pre-specified, uncorrected:
 | T4c vs T4 | -0.0158 | 1/10 | 0.0098 | reference better |
 | T5c vs T5 | +0.0060 | 7/10 | 0.0840 | inconclusive |
 | T4r vs T4 | -0.0308 | 0/10 | 0.0020 | reference better |
+| T5r vs T5 | -0.0026 | 3/10 | 0.2324 | inconclusive |
 | T4c vs T4r | +0.0141 | 7/10 | 0.0273 | arm better |
+| T5c vs T5r | +0.0068 | 8/10 | 0.0488 | arm better |
 <!-- TABLE:indomain_contrasts END -->
 
 **H3 is supported for the chained arm and inconclusive for the pure one.**
@@ -1076,8 +1078,8 @@ dropped **61 randomly chosen** records instead.
 | T4r vs T4 | remove 61 **random** records (size-matched control) | -0.0308 | 0/10 | 0.0020 | reference better |
 | T4c vs T4r | **decontaminated vs the control** — decides H4 | +0.0141 | 7/10 | 0.0273 | arm better |
 | T5c vs T5 | remove the 61 overlapping records | +0.0060 | 7/10 | 0.0840 | inconclusive |
-| T5r vs T5 | remove 61 **random** records (size-matched control) | — | — | — | not yet run |
-| T5c vs T5r | **decontaminated vs the control** — decides H4 | — | — | — | not yet run |
+| T5r vs T5 | remove 61 **random** records (size-matched control) | -0.0026 | 3/10 | 0.2324 | inconclusive |
+| T5c vs T5r | **decontaminated vs the control** — decides H4 | +0.0068 | 8/10 | 0.0488 | arm better |
 <!-- TABLE:decontamination END -->
 
 **The control reverses the reading.** Dropping 61 random records costs *more*
@@ -1096,10 +1098,13 @@ in-domain arms.** Had we run the ablation without the control — which is the
 ablation as `plan.md` specifies it — we would have reported a significant
 result (p = 0.010) with the causal arrow pointing the wrong way.
 
-For `T5` the question barely arises: decontamination does not significantly
-change it either way (+0.006, 7 of 10 seeds, p = 0.084), so there is no effect
-needing an explanation. Its size-matched control is reported in the table for
-symmetry.
+**`T5` gives the same answer by a quieter route.** Neither ablation moves it on
+its own — decontamination +0.006 (7 of 10, p = 0.084), random ablation −0.003
+(3 of 10, p = 0.232), both inconclusive — so there is no apparent effect needing
+an explanation in the first place. But the decisive contrast lands in the same
+place as `T4`'s and independently reaches significance: the decontaminated
+encoder beats the size-matched control (+0.007, 8 of 10 seeds, p = 0.049). Two
+arms, two different-sized apparent effects, one conclusion.
 
 **What this does and does not settle.** H4 is answered **for the in-domain arms
 only**, and answered in the negative: no detectable leakage advantage. It stays
@@ -1383,8 +1388,8 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **284 claims** across sections 3.1
-through 6.4. That count is itself one of the claims: the script parses this
+non-zero on any mismatch. It currently checks **298 claims** across sections 3.1
+through 6.5. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
 is hand-typed cannot go stale either. It has already caught two errors: a count

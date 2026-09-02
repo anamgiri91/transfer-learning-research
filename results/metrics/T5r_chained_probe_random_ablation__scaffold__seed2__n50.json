@@ -1,0 +1,18 @@
+{
+  "arm": "T5r_chained_probe_random_ablation",
+  "metrics": {
+    "mae": 0.5317682047318439,
+    "pearson": 0.6065313586684083,
+    "precision_at_10pct": 0.1,
+    "r2": 0.3570658317390628,
+    "rmse": 0.6913593003717854,
+    "spearman": 0.6261807076721939
+  },
+  "n_test": 98,
+  "n_train": 50,
+  "seconds": 0.0,
+  "seed": 2,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}
