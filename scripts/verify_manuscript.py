@@ -371,6 +371,85 @@ def build_claims() -> list[Claim]:
     C.append(Claim("6.4", "T4 reaches the target only at the full fold", "table2", 346,
                    round(float(der_s.loc["T4_indomain_probe", "n_to_reach_target"]))))
 
+    # ---- Quantities the coverage audit found asserted but never re-derived ----
+    import glob as _g
+    # §5.5: the test fold's label SD per split, computed from the split files
+    _ds = pd.read_csv("data/processed/eva71_2a.csv")
+    _lab = dict(zip(_ds.inchikey, _ds.pactivity))
+    _sd: dict[str, list[float]] = {}
+    for _f in _g.glob("data/processed/splits/eva71_2a/*.json"):
+        _folds = json.loads(Path(_f).read_text())
+        _folds = _folds.get("folds", _folds)
+        _te = [_lab[k] for k, v in _folds.items() if v == "test"]
+        # population SD, which is what §5.5 reports
+        _sd.setdefault(Path(_f).name.split("__")[0], []).append(float(np.std(_te)))
+    for _split, _want in [("random", 0.870), ("scaffold", 0.839), ("butina", 0.658)]:
+        C.append(Claim("5.5", f"{_split} test-fold pK_D SD", "split files + curated labels",
+                       _want, round(float(np.median(_sd[_split])), 3)))
+    # 0.6705 is exactly on the 3-dp boundary, so compare at 4 dp
+    C.append(Claim("5.2", "B2 at n=50 is 0.6705", "table1", 0.6705,
+                   round(t1("scaffold", "B2_descriptors_rf", 50, "median"), 4)))
+    C.append(Claim("5.5", "B0 Butina full-data RMSE 0.700", "table1(butina)", 0.700,
+                   round(t1("butina", "B0_median", 347, "median"), 3)))
+    C.append(Claim("5.6", "T2 full-data Spearman 0.614", "table1", 0.614,
+                   round(t1("scaffold", "T2_chemberta_full_finetune", 347,
+                            "spearman_median"), 3)))
+    C.append(Claim("6.3", "T2 distant Holm p at T>=0.8 is 0.039", "table8", 0.039,
+                   round(t8("T2_chemberta_full_finetune", "distant", "p_holm", 0.8), 3)))
+    _chem = read_table("table12_corpus_chemistry.csv").set_index("set")
+    C.append(Claim("6.4", "eval MW median rounds to 329", "table12", 329,
+                   round(float(_chem.loc["evaluation set (EV-A71/CVA16 2A)", "mw_median"]))))
+    C.append(Claim("6.4", "corpus MW median rounds to 470", "table12", 470,
+                   round(float(_chem.loc["in-domain corpus (3C/3CL)", "mw_median"]))))
+    _ind = read_table("table10_indomain_contrasts.csv")
+    _sp = _ind[(_ind.metric == "spearman") & (_ind.n_train == 347)].set_index(["arm", "reference"])
+    C.append(Claim("6.4", "T5 vs T1 Spearman delta 0.028", "table10", 0.028,
+                   round(float(_sp.loc[("T5", "T1"), "median_delta"]), 3)))
+    C.append(Claim("6.4", "T5 vs T1 Spearman p 0.0195", "table10", 0.0195,
+                   round(float(_sp.loc[("T5", "T1"), "p_raw"]), 4)))
+    _r50 = _ind[(_ind.metric == "rmse") & (_ind.n_train == 50)].set_index(["arm", "reference"])
+    C.append(Claim("6.4", "T2 vs T0r at n=50 delta -0.534", "table10", -0.534,
+                   round(float(_r50.loc[("T2", "T0r"), "median_delta"]), 3)))
+    _dr = read_table("table11_random_encoder_draws.csv")
+    C.append(Claim("6.4", "random-draw SD 0.0039", "table11", 0.0039,
+                   round(float(np.std(_dr.rmse_median, ddof=0)), 4)))
+    _der = read_table("table2_der__scaffold.csv").set_index("arm")
+    C.append(Claim("6.4", "T4 needed ~1.7x the baseline's data", "table2", 1.7,
+                   round(1.0 / float(_der.loc["T4_indomain_probe",
+                                              "DER_vs_B1_ecfp_histgb"]), 1)))
+    C.append(Claim("10", "120 re-run cells for T0r/T4/T5", "metrics", 120,
+                   len([f for f in _g.glob("results/metrics/*__scaffold__*.json")
+                        if any(a in f for a in ("T0r_", "T4_indomain", "T5_chained"))]))) 
+
+    # ---- Section 6.2: the tuned comparison, on BOTH baseline bases ----
+    tc = read_table("table13_tuned_comparison.csv")
+    tc["basis"] = tc.baseline_basis.str.startswith("tuned").map({True: "tuned", False: "untuned"})
+    tc = tc.set_index(["n_train", "basis"])
+    for n, basis, t2m, b1m, wins, seeds, pv in [
+            (50, "untuned", 0.7354, 0.7042, 3, 10, 0.1602),
+            (50, "tuned", 0.7493, 0.7143, 3, 7, 0.6875),
+            (347, "untuned", 0.6195, 0.6338, 2, 5, 0.6250),
+            (347, "tuned", 0.6195, 0.6009, 1, 5, 0.1250)]:
+        r = tc.loc[(n, basis)]
+        C.append(Claim("6.2", f"n={n} {basis}: tuned T2 median", "table13", t2m,
+                       float(r["tuned_T2_median"])))
+        C.append(Claim("6.2", f"n={n} {basis}: baseline median", "table13", b1m,
+                       float(r["baseline_median"])))
+        C.append(Claim("6.2", f"n={n} {basis}: T2 wins", "table13", wins,
+                       int(r["T2_better_in_seeds"])))
+        C.append(Claim("6.2", f"n={n} {basis}: seeds", "table13", seeds,
+                       int(r["n_seeds"])))
+        C.append(Claim("6.2", f"n={n} {basis}: p", "table13", pv, float(r["p_raw"])))
+    # the disclosure's load-bearing point: the bias flips direction with size
+    C.append(Claim("6.2", "at n=50 the untuned baseline is the stronger one", "table13",
+                   True, bool(float(tc.loc[(50, "untuned"), "baseline_median"])
+                              < float(tc.loc[(50, "tuned"), "baseline_median"]))))
+    C.append(Claim("6.2", "at full data the tuned baseline is the stronger one", "table13",
+                   True, bool(float(tc.loc[(347, "tuned"), "baseline_median"])
+                              < float(tc.loc[(347, "untuned"), "baseline_median"]))))
+    C.append(Claim("6.2", "all four tuned comparisons are inconclusive", "table13",
+                   True, bool((tc["p_raw"] > 0.05).all())))
+
     # ---- Compute cost, claimed in the abstract, §6.2, §8 and §9 ----
     # These were asserted in prose and never checked; the stated 160 s / 80x
     # were 185 s / 69x when measured.

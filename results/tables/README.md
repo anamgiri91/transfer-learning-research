@@ -15,9 +15,10 @@ python scripts/analyse_cliffs.py                   # tables 6-8
 python scripts/verify_surrogate.py                 # table 9   (UniProt, cached)
 python scripts/analyse_indomain.py                 # tables 10-11
 python scripts/prepare_indomain.py                 # table 12
+python scripts/analyse_tuning.py                   # table 13
 ```
 
-Verified 2026-09-02: a full regeneration reproduces the **data rows of all 19
+Verified 2026-09-02: a full regeneration reproduces the **data rows of all 20
 tables byte-identically**. Only the `#`-prefixed provenance header changes,
 because it carries a generation timestamp.
 
@@ -36,6 +37,7 @@ because it carries a generation timestamp.
 | 10 | in-domain contrasts and controls | §6.4 |
 | 11 | untrained-encoder sensitivity to the random draw | §6.4 |
 | 12 | corpus vs evaluation-set chemistry | §6.4 |
+| 13 | tuned fine-tune vs **both** baseline bases | §6.2 |
 
 **Two tables pin their arm family on purpose.** Tables 3 and 8 are
 Holm-corrected across arms, so admitting an arm added later silently re-corrects

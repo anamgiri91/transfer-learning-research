@@ -232,6 +232,16 @@ DECONTAM_ROWS = [("T4c", "T4", "remove the 61 overlapping records"),
                  ("T5c", "T5r", "**decontaminated vs the control** — decides H4")]
 
 
+def table_tuned_comparison() -> str:
+    df = _read("table13_tuned_comparison.csv")
+    rows = [[f"n = {int(r.n_train)}", r.baseline_basis, _fmt(r.tuned_T2_median),
+             _fmt(r.baseline_median),
+             f"{int(r.T2_better_in_seeds)}/{int(r.n_seeds)}",
+             f"{r.p_raw:.3f}", r.verdict] for r in df.itertuples()]
+    return _md(["Size", "Baseline used", "tuned T2", "B1", "T2 better in",
+                "p", "verdict"], rows)
+
+
 def table_decontamination() -> str:
     df = _read("table10_indomain_contrasts.csv")
     df = df[(df.metric == "rmse") & (df.n_train == df.n_train.max())]
@@ -325,6 +335,7 @@ RENDERERS = {
     "der": table_der,
     "surrogate": table_surrogate,
     "decontamination": table_decontamination,
+    "tuned_comparison": table_tuned_comparison,
     "indomain_curve": table_indomain_curve,
     "indomain_contrasts": table_indomain_contrasts,
     "random_draws": table_random_draws,

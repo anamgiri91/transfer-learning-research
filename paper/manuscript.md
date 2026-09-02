@@ -588,7 +588,7 @@ beating B1 on ranking in only 3 of 10 seeds.
 
 **A recorded near-miss.** An interim read of this arm at 3 of 10 completed seeds
 showed ρ = 0.680 and suggested T2 was the best-ranking arm. The completed sweep
-gives ρ = 0.613; the three seeds seen first happened to include T2's single best
+gives ρ = 0.614; the three seeds seen first happened to include T2's single best
 (seed 0, ρ = 0.737). The interim value was withheld from the results tables by
 `make_report.py --require-seeds 10`.
 
@@ -730,21 +730,40 @@ as a finding about transfer learning.
 
 #### What the tuned comparison shows
 
-At n = 50 (10 seeds, 6 trials) and at full data (5 seeds, 4 trials):
+At n = 50 (10 seeds, 6 trials) and at full data (5 seeds, 4 trials).
+
+**A disclosure about the baseline, added after an audit.** The comparison as
+first written pitted the *tuned* fine-tune against the *untuned* fingerprint
+baseline, and did not say so. That basis is not neutral, and it does not even
+point the same way at both sizes: at n = 50 the untuned baseline is the
+*stronger* one (0.704 against the tuned 0.714), making T2's task harder, while
+at full data the tuned baseline is stronger (0.601 against 0.634), so the
+original basis made T2's task *easier* — in a section whose entire subject is
+equal search budgets. Both are therefore reported:
+
+<!-- TABLE:tuned_comparison START -->
+| Size | Baseline used | tuned T2 | B1 | T2 better in | p | verdict |
+|---|---|---|---|---|---|---|
+| n = 50 | untuned B1 (the basis §6.2 originally used) | 0.735 | 0.704 | 3/10 | 0.160 | inconclusive |
+| n = 50 | tuned B1 (like for like) | 0.749 | 0.714 | 3/7 | 0.688 | inconclusive |
+| n = 347 | untuned B1 (the basis §6.2 originally used) | 0.620 | 0.634 | 2/5 | 0.625 | inconclusive |
+| n = 347 | tuned B1 (like for like) | 0.620 | 0.601 | 1/5 | 0.125 | inconclusive |
+<!-- TABLE:tuned_comparison END -->
 
 | Comparison | tuned T2 | B1 | T2 better in | Wilcoxon p |
 |---|---|---|---|---|
-| n = 50, RMSE | 0.735 | 0.704 | 3 of 10 seeds | 0.16 |
-| n = 347, RMSE | 0.620 | 0.634 | 2 of 5 seeds | 0.63 |
 | n = 347, Spearman ρ | 0.695 | 0.679 | 2 of 5 seeds | — |
 
-**Both comparisons are inconclusive.** This is a real weakening of §5. Under the
-fixed schedule the fine-tune was worse than the baseline at full data
-(p = 0.074, itself inconclusive); tuned, its marginal median is *lower* than
-B1's (0.620 vs 0.634) while still losing on the paired statistic in 3 of 5
-seeds. As in §5.4, the marginal median and the paired comparison disagree, and
-the paired one governs — but at 5 seeds neither supports a claim in either
-direction.
+**All four comparisons are inconclusive**, so the conclusion does not turn on
+which baseline is used — but the *appearance* of the full-data result does.
+Against the untuned baseline the tuned fine-tune's marginal median looks
+*lower* than B1's (0.620 vs 0.634) while still losing the paired statistic in 3
+of 5 seeds; against the properly tuned baseline it is plainly behind on both
+(0.620 vs 0.601, losing in 4 of 5, p = 0.125). The like-for-like comparison is
+therefore **less** favourable to transfer than the one originally reported, and
+the negative reading of §5 is if anything firmer than the audit-corrected table
+first suggested. At 5 seeds neither supports a claim in either direction, and
+as in §5.4 the paired statistic governs over the marginal median.
 
 **The defensible conclusion is therefore weaker than §5 states.** Tuned, we do
 not show that fine-tuning is *worse* than the baselines; we show only that it is
@@ -959,7 +978,7 @@ and the contrasts H3 actually needs — pairwise, pre-specified, uncorrected:
 
 **H3 is supported for the chained arm and inconclusive for the pure one.**
 `T5` beats `T1` at full data by 0.025 RMSE, winning in **9 of 10 seeds**
-(p = 0.006), and on Spearman ρ as well (+0.028, 8 of 10, p = 0.020). `T4` beats
+(p = 0.006), and on Spearman ρ as well (+0.028, 8 of 10, p = 0.0195). `T4` beats
 `T1` by a similar margin (+0.035) but in only 7 of 10 seeds (p = 0.375), which
 is inconclusive. The pre-registered form of H3 is the `T4` vs `T1` contrast, and
 on that exact test the answer is **not established**; on the chained variant it
@@ -1364,7 +1383,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **246 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **284 claims** across sections 3.1
 through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
@@ -1472,7 +1491,7 @@ comparing checksums:
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
-| all 19 tables in `results/tables/` | data rows byte-identical |
+| all 20 tables in `results/tables/` | data rows byte-identical |
 | all 7 figures in `results/figures/` | byte-identical |
 
 Determinism comes from seeding Python, NumPy and torch per run
