@@ -1,0 +1,60 @@
+{
+  "arm": "T2_chemberta_full_finetune",
+  "metrics": {
+    "mae": 0.46552858036586214,
+    "pearson": 0.7635862321783653,
+    "precision_at_10pct": 0.5,
+    "r2": 0.47167727227564527,
+    "rmse": 0.5738120892775235,
+    "spearman": 0.6436393199646159
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "n_trials": 4,
+  "n_val": 49,
+  "seconds": 571.3,
+  "seed": 4,
+  "selected_config": {
+    "batch_size": "16",
+    "epochs": "40",
+    "lr": "0.0003"
+  },
+  "selected_val_rmse": 0.65877,
+  "source_script": "scripts/tune_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a",
+  "trials": [
+    {
+      "config": {
+        "batch_size": "8",
+        "epochs": "20",
+        "lr": "0.0001"
+      },
+      "val_rmse": 0.6687
+    },
+    {
+      "config": {
+        "batch_size": "8",
+        "epochs": "20",
+        "lr": "1e-05"
+      },
+      "val_rmse": 0.99914
+    },
+    {
+      "config": {
+        "batch_size": "16",
+        "epochs": "40",
+        "lr": "0.0003"
+      },
+      "val_rmse": 0.65877
+    },
+    {
+      "config": {
+        "batch_size": "32",
+        "epochs": "80",
+        "lr": "0.0001"
+      },
+      "val_rmse": 0.66075
+    }
+  ]
+}

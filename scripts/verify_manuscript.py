@@ -261,6 +261,22 @@ def build_claims() -> list[Claim]:
             C.append(Claim("6.2", "tuned T2 beats B1 at n=50 in 3 of 10 seeds",
                            "tuned_metrics", 3, better))
 
+        t2f = load(TUNED, "T2*n347.json")
+        b1f = load(METRICS, "B1*scaffold*n347.json")
+        if t2f:
+            seeds = sorted(s_ for (_a, s_, _n) in t2f)
+            C.append(Claim("6.2", "tuned T2 n=347 RMSE", "tuned_metrics", 0.620,
+                           round(float(pd.Series([m["rmse"] for m in t2f.values()]).median()), 3)))
+            C.append(Claim("6.2", "tuned T2 n=347 Spearman", "tuned_metrics", 0.695,
+                           round(float(pd.Series([m["spearman"] for m in t2f.values()]).median()), 3)))
+            C.append(Claim("6.2", "B1 n=347 RMSE on those seeds", "metrics", 0.634,
+                           round(float(pd.Series([b1f[("B1_ecfp_histgb", s_, 347)]["rmse"]
+                                                  for s_ in seeds]).median()), 3)))
+            wins = sum(t2f[("T2_chemberta_full_finetune", s_, 347)]["rmse"]
+                       < b1f[("B1_ecfp_histgb", s_, 347)]["rmse"] for s_ in seeds)
+            C.append(Claim("6.2", "tuned T2 beats B1 at n=347 in 2 of 5 seeds",
+                           "tuned_metrics", "2/5", f"{wins}/{len(seeds)}"))
+
     # ---- Run inventory ----
     n_runs = len(list(METRICS.glob("*.json")))
     C.append(Claim("Abstract", "520 evaluated runs", "metrics/*.json", 520, n_runs))

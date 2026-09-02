@@ -45,8 +45,9 @@ validation-fold model selection leaves the baselines essentially unchanged
 transforms the fine-tune at n = 50, from RMSE 1.23 / R² −1.26 to 0.74 / +0.30 —
 so a benchmark that fixes hyperparameters across arms will understate transfer,
 and one earlier claim of ours built on that configuration is withdrawn. Even
-tuned, the fine-tune does not beat the baselines at n = 50 (better in 3 of 10
-seeds, p = 0.16). Separately, up to 53% of test compounds are present in
+tuned, the fine-tune is not shown to beat the baselines (n = 50: better in 3 of
+10 seeds, p = 0.16; full data: 2 of 5, p = 0.63) — indistinguishable rather than
+worse, at ~80× the compute per fit. Separately, up to 53% of test compounds are present in
 PubChem, an upper bound on pretraining overlap; this cannot explain transfer
 losing, but it caps how much any transfer advantage here should be believed.
 
@@ -458,12 +459,14 @@ gives ρ = 0.613; the three seeds seen first happened to include T2's single bes
 Scoped to this dataset, this encoder, and these arms. **Points 1–4 describe the
 fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
 
-1. **Neither transfer arm improved on the baselines**, under either the fixed
-   schedule (§5) or, for the fine-tune at n = 50, a tuned one (§6.2). Both have
-   DER = 0 under the fixed schedule. The frozen probe is significantly worse
-   (Holm p = 0.012); the fine-tune is worse but **inconclusive** (p = 0.074 at
-   full data, p = 0.16 tuned at n = 50). We claim the absence of a demonstrated
-   benefit, not a demonstrated deficit for the fine-tune.
+1. **Neither transfer arm was shown to improve on the baselines.** The frozen
+   probe is significantly worse under the fixed schedule (Holm p = 0.012) and
+   was not re-tuned. The fine-tune, once tuned, is **statistically
+   indistinguishable** from the baseline at both sizes tested (n = 50: better in
+   3 of 10 seeds, p = 0.16; n = 347: better in 2 of 5, p = 0.63) while costing
+   ~80× more compute per fit. We claim the absence of a demonstrated benefit,
+   **not** a demonstrated deficit — and note the search budget still favours the
+   baselines (§6.2).
 2. **The two baselines are indistinguishable** (p = 0.56), and are **not
    under-tuned**: a 32-trial search changes B1 by a median of +0.004 RMSE and
    helps in only 11 of 26 matched cells (§6.2).
@@ -539,6 +542,7 @@ wrong reason. We therefore re-ran arms under an explicit search budget with
 | B1 ECFP4 + HistGB | 250 | 6 | 0.593 | 0.611 | 0.684 | 0.688 |
 | B1 ECFP4 + HistGB | 347 | 6 | 0.620 | 0.592 | 0.679 | 0.696 |
 | T2 ChemBERTa fine-tune | 50 | 10 | 1.232 | 0.735 | 0.456 | 0.580 |
+| T2 ChemBERTa fine-tune | 347 | 5 | 0.678 | 0.620 | 0.680 | 0.695 |
 <!-- TABLE:tuning END -->
 
 The result materially qualifies §5, and in an asymmetric way.
@@ -558,10 +562,45 @@ scaffold-split result from RMSE 1.232 / ρ 0.456 to figures competitive with the
 baselines.
 
 **The §5.6 "calibration collapse" was therefore largely an artefact of our own
-training schedule, not a property of low-data fine-tuning.** We report it as
-such. Section 5.6 is retained as written because it accurately describes the
-untuned configuration, but its interpretation does not survive this ablation
-and should not be cited as a finding about transfer learning.
+training schedule, not a property of low-data fine-tuning.** Section 5.6 is
+retained as written because it accurately describes the untuned configuration,
+but its interpretation does not survive this ablation and should not be cited
+as a finding about transfer learning.
+
+#### What the tuned comparison shows
+
+At n = 50 (10 seeds, 6 trials) and at full data (5 seeds, 4 trials):
+
+| Comparison | tuned T2 | B1 | T2 better in | Wilcoxon p |
+|---|---|---|---|---|
+| n = 50, RMSE | 0.735 | 0.704 | 3 of 10 seeds | 0.16 |
+| n = 347, RMSE | 0.620 | 0.634 | 2 of 5 seeds | 0.63 |
+| n = 347, Spearman ρ | 0.695 | 0.679 | 2 of 5 seeds | — |
+
+**Both comparisons are inconclusive.** This is a real weakening of §5. Under the
+fixed schedule the fine-tune was worse than the baseline at full data
+(p = 0.074, itself inconclusive); tuned, its marginal median is *lower* than
+B1's (0.620 vs 0.634) while still losing on the paired statistic in 3 of 5
+seeds. As in §5.4, the marginal median and the paired comparison disagree, and
+the paired one governs — but at 5 seeds neither supports a claim in either
+direction.
+
+**The defensible conclusion is therefore weaker than §5 states.** Tuned, we do
+not show that fine-tuning is *worse* than the baselines; we show only that it is
+**not demonstrably better**, at either training-set size, while costing roughly
+two orders of magnitude more compute (≈160 s vs ≈2 s per fit). The strongly
+negative reading — that transfer loses — survives only for the frozen linear
+probe (§5.4, Holm p = 0.012), which was **not** re-tuned here; its ridge penalty
+is already selected by internal cross-validation, but that is a weaker defence
+than the search the fine-tune received.
+
+**The remaining budget asymmetry disfavours transfer, and we state it plainly.**
+B1 received 32 trials; the fine-tune received 6 at n = 50 and 4 at full data,
+because each of its fits costs ~160 s. This is not the equal budget `plan.md` §5
+specifies. The direction matters: the arm with the *smaller* search is the
+transfer arm, so a fuller search could only improve it further. Our conclusion
+is consequently stated as "no demonstrated benefit", not "demonstrated deficit".
+B2 and T1 were not re-tuned at all.
 
 ## 7. Limitations
 
