@@ -14,6 +14,7 @@ belong in the paper.
 | Curation funnel counts | `scripts/prepare_openbind.py` | `data/processed/eva71_2a.curation.json` | as above |
 | Split assignments | `scripts/build_splits.py` | `data/processed/splits/eva71_2a/{scaffold,random}__seed{0..9}.json` | `eva71_2a.csv` |
 | Per-run metrics | `scripts/run_arms.py` | `results/metrics/<arm>__<split>__seed<N>__n<size>.json` | curated set + split files |
+| Per-compound predictions | `scripts/run_arms.py --save-preds` | `results/predictions/<arm>__<split>__seed<N>__n<size>.npz` | as above |
 
 ## Tables and figures
 
@@ -28,13 +29,18 @@ belong in the paper.
 | Figure 1 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
 | Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
 | Table 0 — split leakage + NN-similarity audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
+| Table 6 — per-stratum performance (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table6_activity_cliffs.csv` |
+| Table 7 — dataset cliff-pair census (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table7_cliff_pairs.csv` |
+| Table 8 — per-stratum paired tests (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table8_cliff_paired.csv` |
 
 ## Verification
 
 | Check | Script | What it guarantees |
 |---|---|---|
 | Tables are generated, not typed | `scripts/render_manuscript_tables.py` | Every results table in the manuscript is written from `results/tables/*.csv`; `--check` fails if stale |
-| Prose numbers are re-derived | `scripts/verify_manuscript.py` | 93 numeric claims re-computed from artefacts; non-zero exit on mismatch |
+| Prose numbers are re-derived | `scripts/verify_manuscript.py` | Every numeric claim re-computed from artefacts; non-zero exit on mismatch. The *number* of claims is not restated here — it is asserted against manuscript §10 by the script itself, so there is one place for it to drift and it is checked |
+| Re-running reproduces committed metrics | `scripts/run_arms.py --save-preds` | Re-runs each completed cell and fails if any stored metric moves by more than 1e-9 |
+| Cliff stratification edge cases | `tests/test_cliffs.py` | `distant` is never merged into `smooth`; only training compounds can create a cliff |
 | Split integrity | `tests/test_splits.py` | No compound or scaffold straddles train/test |
 | All of the above | `make verify` | Runs tests + freshness check + claim verification |
 
@@ -54,6 +60,9 @@ python scripts/make_report.py --require-seeds 10         # -> tables + figures
 python scripts/measure_contamination.py                  # -> table5 (PubChem lookup)
 python scripts/tune_arms.py --arms B1 B2 T1 --trials 32  # -> tuned_metrics/
 python scripts/tune_arms.py --arms T2 --sizes 50 --trials 6
+python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold --save-preds
+python scripts/run_arms.py --arms T2 --splits scaffold --sizes 347 --save-preds
+python scripts/analyse_cliffs.py                         # -> tables 6, 7, 8
 python scripts/render_manuscript_tables.py               # -> manuscript tables
 python scripts/verify_manuscript.py                      # -> checks every claim
 ```

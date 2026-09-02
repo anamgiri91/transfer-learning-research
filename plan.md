@@ -3,7 +3,9 @@
 **Benchmarking Transfer Learning Efficacy on High-Fidelity Viral Protease
 Datasets: A Case Study on EV-A71**
 
-Status: **amended and in execution.** Written 2026-09-01; see Amendment 1.
+Status: **amended; execution complete for the arms that were run.**
+Written 2026-09-01; see Amendment 1 and the checklist in §10.
+
 
 > ## ⚠ Amendment 1 — 2026-09-01, after data inspection
 >
@@ -25,8 +27,9 @@ Status: **amended and in execution.** Written 2026-09-01; see Amendment 1.
 >
 > Sections §1 (question), §4 (arms), §6 (statistics) and §8 (threats) survive
 > the change and still govern the study. §2, §3 and §7.1 are superseded as
-> tabulated above; §7.1 (decontamination) is **not performed** — see
-> `paper/manuscript.md` §6, limitation 3.
+> tabulated above; §7.1 (decontamination) is **bounded but not performed** —
+> the corpus is not redistributable, so only a PubChem-membership upper bound
+> was obtainable. See `paper/manuscript.md` §6.1 and §7, limitation 3.
 
 
 This document is pre-registration-shaped on purpose: the analysis plan below is
@@ -228,13 +231,32 @@ conclusion.
 
 ## 10. Execution checklist
 
-- [ ] Fetch and curate sources → `make data`
-- [ ] Report curated N per target; **apply the §3.2 N < 300 decision rule**
-- [ ] Build and verify splits → `make splits` (leakage tests must pass)
-- [ ] Baselines `B0`–`B3` across seeds and sizes
-- [ ] Transfer arms `T1`–`T6`
-- [ ] Contamination measurement, then decontaminated re-run
-- [ ] Ablations §7.2
-- [ ] Figures, tables, manuscript
+Updated 2026-09-02. `[x]` done, `[~]` partial, `[ ]` not done. Partial and
+undone items are each accounted for in `paper/manuscript.md` §7 — an unchecked
+box here must correspond to a stated limitation there, or one of the two
+documents is lying.
 
-Nothing below the first unchecked box has been done.
+- [x] Fetch and curate sources — via `scripts/prepare_openbind.py`, not
+      `make data`; the source changed (Amendment 1)
+- [x] Report curated N per target; **apply the §3.2 N < 300 decision rule** —
+      N = 494, so the rule did not fire and the deep arms stayed in scope
+- [x] Build and verify splits → `make splits` (leakage tests pass; `tests/test_splits.py`)
+- [~] Baselines `B0`–`B3` across seeds and sizes — `B0`–`B2` complete over
+      10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.6)
+- [~] Transfer arms `T1`–`T6` — `T1` complete, `T2` complete on the scaffold
+      split; **`T3`–`T6` not run**, so **H3 is untested** (§7.6)
+- [~] Contamination measurement, then decontaminated re-run — measurement done
+      as a PubChem-membership upper bound (53%); **the decontaminated re-run is
+      impossible**, the corpus is not redistributed, so **H4 is untested** (§7.3)
+- [~] Ablations §7.2 — activity cliffs done (§6.3); adaptation strategy partial
+      (full FT vs linear probe only, no LoRA / layer-wise); fidelity ablation
+      **vacuous**, the gate removed nothing; corpus size and 2A-vs-3C
+      **impossible here** (§7.9)
+- [x] Figures, tables, manuscript — draft complete including §7; tables are
+      generated from source and every prose number is machine-checked
+      (`make verify`; the claim count lives in one place, manuscript §10)
+
+Two hypotheses were decided and two were not. **H1** (transfer beats the best
+from-scratch baseline) and **H2** (the advantage grows as data shrinks) are
+answered, negatively, on the arms that were run. **H3** and **H4** have no
+evidence either way, for the reasons boxed above.

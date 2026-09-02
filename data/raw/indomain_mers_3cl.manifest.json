@@ -1,0 +1,21 @@
+{
+  "activity_types": [
+    "IC50",
+    "Ki",
+    "Kd",
+    "EC50"
+  ],
+  "dropped_not_3c": 1,
+  "dropped_wrong_enzyme": 17,
+  "excluded_targets_and_why": {
+    "CHEMBL3232683": "HCoV-NL63 entry is PLP2, a papain-like protease -- different fold",
+    "CHEMBL5127": "poliovirus entry is RNA-polymerase data, not a protease"
+  },
+  "kept": 96,
+  "label": "mers_3cl",
+  "n_raw": 114,
+  "retrieved_utc": "2026-09-02T16:05:28+00:00",
+  "source_script": "scripts/fetch_indomain.py",
+  "target_chembl_id": "CHEMBL4295557",
+  "virus_family": "coronaviral"
+}

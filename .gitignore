@@ -39,13 +39,17 @@ data/interim/**
 # paper/manuscript.md reproducible without the 495 MB download.
 
 # ---------------------------------------------------------------------------
-# Results — figures/tables are regenerable; metrics JSON is small and public
-# so reviewers can diff numbers across commits.
+# Results — figures are regenerable; metrics JSON is small and public so
+# reviewers can diff numbers across commits. Per-compound predictions (1.3 MB)
+# are tracked for the same reason and one more: the activity-cliff tables of
+# §6.3 are derived from them, and re-deriving them otherwise means a ~2 h
+# ChemBERTa fine-tune sweep.
 # ---------------------------------------------------------------------------
 results/figures/**
 !results/figures/README.md
 !results/**/README.md
 !results/metrics/**
+!results/predictions/**
 !results/tables/**
 !results/legacy_prior_run/**
 

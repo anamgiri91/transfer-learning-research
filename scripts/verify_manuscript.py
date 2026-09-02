@@ -75,6 +75,28 @@ def t0(split: str, col: str) -> float:
     return float(df[df.split == split][col].median())
 
 
+
+def t6(arm: str, stratum: str, col: str, threshold: float = 0.7):
+    """Per-stratum cliff table (§6.3)."""
+    df = read_table("table6_activity_cliffs.csv")
+    row = df[(df.arm == arm) & (df.stratum == stratum)
+             & (df.tanimoto_threshold == threshold)]
+    return float(row[col].iloc[0]) if len(row) else None
+
+
+def t7(threshold: float, col: str):
+    df = read_table("table7_cliff_pairs.csv")
+    row = df[df.tanimoto_threshold == threshold]
+    return float(row[col].iloc[0]) if len(row) else None
+
+
+def t8(arm: str, stratum: str, col: str, threshold: float = 0.7):
+    df = read_table("table8_cliff_paired.csv")
+    row = df[(df.arm == arm) & (df.stratum == stratum)
+             & (df.tanimoto_threshold == threshold)]
+    return float(row[col].iloc[0]) if len(row) else None
+
+
 def build_claims() -> list[Claim]:
     cur = json.loads(Path("data/processed/eva71_2a.curation.json").read_text())
     ds = pd.read_csv("data/processed/eva71_2a.csv")
@@ -225,6 +247,83 @@ def build_claims() -> list[Claim]:
                 C.append(Claim("6.1", f"{split} test fold PubChem fraction", "table5", frac,
                                round(float(row.frac_in_pubchem.iloc[0]), 3)))
 
+    # ---- Section 6.3: activity-cliff strata ----
+    T1P, T2P = "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"
+    B1A, B2A, B0A = "B1_ecfp_histgb", "B2_descriptors_rf", "B0_median"
+
+    # census
+    for thr, sim_pairs, cliff_pairs, involved in [
+            (0.6, 3433, 827, 228), (0.7, 941, 242, 102), (0.8, 133, 42, 46)]:
+        C.append(Claim("6.3", f"similar pairs at T>={thr}", "table7", sim_pairs,
+                       t7(thr, "similar_pairs")))
+        C.append(Claim("6.3", f"cliff pairs at T>={thr}", "table7", cliff_pairs,
+                       t7(thr, "cliff_pairs")))
+        C.append(Claim("6.3", f"compounds in >=1 cliff at T>={thr}", "table7", involved,
+                       t7(thr, "compounds_in_a_cliff")))
+
+    # "roughly a quarter of near-neighbour pairs are cliffs at every threshold"
+    for thr in (0.6, 0.7, 0.8):
+        frac = t7(thr, "cliff_pairs") / t7(thr, "similar_pairs")
+        C.append(Claim("6.3", f"cliff share in [0.2, 0.35] at T>={thr}", "table7",
+                       True, 0.20 <= frac <= 0.35))
+
+    # B0 spans 1.317 (cliff) to 0.722 (distant) -- the variance confound
+    C.append(Claim("6.3", "B0 cliff RMSE 1.317", "table6", 1.3167,
+                   t6(B0A, "cliff", "rmse_median")))
+    C.append(Claim("6.3", "B0 distant RMSE 0.722", "table6", 0.7219,
+                   t6(B0A, "distant", "rmse_median")))
+
+    # stratum sizes quoted in the prose and table headers
+    for stratum, n in [("cliff", 9.0), ("smooth", 20.0), ("distant", 69.5)]:
+        C.append(Claim("6.3", f"median {stratum} compounds per fold", "table6", n,
+                       t6(B0A, stratum, "median_compounds")))
+
+    # the finding: both transfer arms significant on distant, neither behind on cliff
+    C.append(Claim("6.3", "T1 distant Holm p = 0.018", "table8", 0.0176,
+                   t8(T1P, "distant", "p_holm")))
+    C.append(Claim("6.3", "T2 distant Holm p = 0.019", "table8", 0.0195,
+                   t8(T2P, "distant", "p_holm")))
+    C.append(Claim("6.3", "T1 cliff delta +0.0526", "table8", 0.0526,
+                   t8(T1P, "cliff", "median_delta_rmse")))
+    C.append(Claim("6.3", "T2 cliff delta +0.0368", "table8", 0.0368,
+                   t8(T2P, "cliff", "median_delta_rmse")))
+    C.append(Claim("6.3", "both cliff deltas favour transfer (positive)", "table8", True,
+                   bool(t8(T1P, "cliff", "median_delta_rmse") > 0
+                        and t8(T2P, "cliff", "median_delta_rmse") > 0)))
+    C.append(Claim("6.3", "T2 is the best skill-vs-B0 arm on cliffs", "table6", True,
+                   bool(t6(T2P, "cliff", "skill_vs_b0_median")
+                        > max(t6(a, "cliff", "skill_vs_b0_median")
+                              for a in (B1A, B2A, T1P)))))
+    C.append(Claim("6.3", "T2 cliff skill +0.49", "table6", 0.4928,
+                   t6(T2P, "cliff", "skill_vs_b0_median")))
+    C.append(Claim("6.3", "B1 cliff skill +0.43", "table6", 0.4333,
+                   t6(B1A, "cliff", "skill_vs_b0_median")))
+
+    # distant significance holds at every threshold; cliff never favours the baseline
+    for thr in (0.6, 0.7, 0.8):
+        for arm in (T1P, T2P):
+            C.append(Claim("6.3", f"{arm} distant significant at T>={thr}", "table8",
+                           True, bool((t8(arm, "distant", "p_holm", thr) or 1.0) <= 0.05)))
+    for thr in (0.6, 0.7):
+        for arm in (T1P, T2P):
+            C.append(Claim("6.3", f"{arm} cliff does not favour B1 at T>={thr}", "table8",
+                           True, bool((t8(arm, "cliff", "median_delta_rmse", thr) or 0) >= 0)))
+
+    # the internal consistency check: the `all` column reproduces section 5.4
+    for arm in (T1P, T2P, B2A):
+        C.append(Claim("6.3", f"{arm} `all` delta reproduces table3", "table8 vs table3",
+                       float(t3("scaffold", arm, "median_rmse_delta_vs_baseline")),
+                       t8(arm, "all", "median_delta_rmse")))
+        C.append(Claim("6.3", f"{arm} `all` Holm p reproduces table3", "table8 vs table3",
+                       float(t3("scaffold", arm, "p_holm")),
+                       t8(arm, "all", "p_holm")))
+
+    # T=0.8 cliff stratum is withheld from testing: only 3 seeds clear the floor
+    C.append(Claim("6.3", "T>=0.8 cliff has 3 usable seeds", "table6", 3,
+                   t6(B0A, "cliff", "n_seeds", 0.8)))
+    C.append(Claim("6.3", "T>=0.8 cliff paired test withheld", "table8", True,
+                   t8(T1P, "cliff", "p_holm", 0.8) is None))
+
     # ---- Section 6.2: tuning ablation ----
     TUNED = Path("results/tuned_metrics")
     if TUNED.exists():
@@ -285,10 +384,21 @@ def build_claims() -> list[Claim]:
     return C
 
 
+def self_count_claim(n_claims: int) -> Claim:
+    """§10 states how many claims this script checks. That sentence is itself a
+    hand-typed number in a section arguing that no number is hand-typed, so it
+    is checked against the actual count -- and against the sections covered."""
+    text = MANUSCRIPT.read_text()
+    m = re.search(r"checks \*\*(\d+) claims\*\*", text)
+    return Claim("10", "stated claim count in §10", "verify_manuscript.py itself",
+                 int(m.group(1)) if m else None, n_claims)
+
+
 def main() -> int:
     if not MANUSCRIPT.exists():
         print("manuscript not found"); return 1
     claims = build_claims()
+    claims.append(self_count_claim(len(claims) + 1))
     fails = [c for c in claims if not c.ok()]
 
     by_sec: dict[str, list[Claim]] = {}

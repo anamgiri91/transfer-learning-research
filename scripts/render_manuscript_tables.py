@@ -171,6 +171,65 @@ def table_tuning() -> str:
                 "ρ untuned", "ρ tuned"], rows)
 
 
+CLIFF_T = 0.7          # primary threshold, matching the Table 0 near-neighbour cut
+STRATA = ("cliff", "smooth", "distant", "all")
+
+
+def table_cliff_pairs() -> str:
+    df = _read("table7_cliff_pairs.csv")
+    rows = [[_fmt(r.tanimoto_threshold, 1), f"{int(r.similar_pairs):,}",
+             f"{int(r.cliff_pairs):,}",
+             f"{100 * r.cliff_fraction_of_similar:.1f}%",
+             f"{int(r.compounds_in_a_cliff)} / {int(r.n_compounds)}"]
+            for r in df.itertuples()]
+    return _md(["Tanimoto ≥", "similar pairs", "cliff pairs (Δp > 1)",
+                "cliff share of similar", "compounds in ≥1 cliff"], rows)
+
+
+def table_cliff_strata() -> str:
+    """Per-stratum RMSE and skill vs B0 at the primary threshold."""
+    df = _read("table6_activity_cliffs.csv")
+    df = df[df.tanimoto_threshold == CLIFF_T]
+    rows = []
+    for arm in ORDER:
+        d = df[df.arm == arm].set_index("stratum")
+        if d.empty:
+            continue
+        cells = []
+        for s in STRATA:
+            if s not in d.index:
+                cells.append("—")
+                continue
+            r = d.loc[s]
+            skill = r["skill_vs_b0_median"]
+            cells.append(_fmt(r["rmse_median"]) +
+                         ("" if pd.isna(skill) else f" ({skill:+.2f})"))
+        rows.append([ARM_LABEL[arm]] + cells)
+    counts = df[df.arm == "B0_median"].set_index("stratum")["median_compounds"]
+    head = [f"{s} (n≈{counts.get(s, float('nan')):.0f})" for s in STRATA]
+    return _md(["Arm — RMSE ↓ (skill vs B0 ↑)"] + head, rows)
+
+
+def table_cliff_paired() -> str:
+    df = _read("table8_cliff_paired.csv")
+    df = df[(df.tanimoto_threshold == CLIFF_T) & (df.arm != "B0_median")]
+    rows = []
+    for arm in ORDER:
+        d = df[df.arm == arm].set_index("stratum")
+        if d.empty:
+            continue
+        cells = []
+        for s in STRATA:
+            if s not in d.index:
+                cells.append("—")
+                continue
+            r = d.loc[s]
+            cells.append(f"{r['median_delta_rmse']:+.4f} (p={r['p_holm']:.3f})")
+        rows.append([ARM_LABEL[arm]] + cells)
+    return _md(["Arm — median ΔRMSE vs B1 (Holm p)"] + list(STRATA), rows)
+
+
+
 RENDERERS = {
     "contamination": table_contamination,
     "tuning": table_tuning,
@@ -180,6 +239,9 @@ RENDERERS = {
     "splits": table_splits,
     "audit": table_audit,
     "der": table_der,
+    "cliff_pairs": table_cliff_pairs,
+    "cliff_strata": table_cliff_strata,
+    "cliff_paired": table_cliff_paired,
 }
 
 

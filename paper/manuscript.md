@@ -39,7 +39,7 @@ raw RMSE is not comparable across splitting strategies, because stricter splits
 yield lower-variance test folds; a variance-normalised measure is required, and
 its absence inverts the apparent difficulty ordering.
 
-Two ablations qualify this. Giving every arm an explicit search budget with
+Three ablations qualify this. Giving every arm an explicit search budget with
 validation-fold model selection leaves the baselines essentially unchanged
 (32 trials move the fingerprint baseline by a median of +0.004 RMSE) but
 transforms the fine-tune at n = 50, from RMSE 1.23 / R² −1.26 to 0.74 / +0.30 —
@@ -50,6 +50,13 @@ tuned, the fine-tune is not shown to beat the baselines (n = 50: better in 3 of
 worse, at ~80× the compute per fit. Separately, up to 53% of test compounds are present in
 PubChem, an upper bound on pretraining overlap; this cannot explain transfer
 losing, but it caps how much any transfer advantage here should be believed.
+Third, stratifying the test fold by its relationship to training localises the
+deficit: both transfer arms are significantly worse than the baseline only on
+compounds with **no near training neighbour** (p = 0.018 and 0.019), and
+neither is behind on activity cliffs — on cliffs both are nominally ahead. The
+weakness is extrapolation to novel chemistry, not local label roughness, which
+is the same conclusion the scaffold-to-Butina comparison reaches by an
+independent route.
 
 These are single-target, single-assay results with one pretrained encoder. They
 constrain claims about *this* regime; they are not a general verdict on
@@ -292,6 +299,34 @@ ordering is not an artefact of the endpoint: across the learning curve,
 T1 is worse than both baselines at every size, and T2 is worse than everything
 including the B0 floor at n = 50 and n = 100.
 
+![Learning curves on the scaffold split: test RMSE against training-set size for
+all five arms, median over 10 seeds with the interquartile band.](../results/figures/fig1_learning_curves__scaffold.png)
+
+**Figure 1 — Learning curves, scaffold split.** Test RMSE (pK_D, lower better)
+against training-set size, median over 10 seeds; bands are the interquartile
+range. Both baselines sit below both pretrained arms at every size. **The T2
+curve here is the fixed-schedule configuration**, whose n = 50 point (RMSE 1.23)
+is an artefact of training 40 unchecked epochs at a learning rate an order of
+magnitude too low; tuned, the same arm reaches 0.735 at n = 50. Read this panel
+together with §6.2, which retracts the interpretation of that point.
+[→ `scripts/make_report.py` → `fig1_learning_curves__scaffold.png`]
+
+![Ranking ability on the scaffold split: test Spearman rho against training-set
+size for the four trained arms.](../results/figures/fig2_ranking__scaffold.png)
+
+**Figure 2 — Ranking ability, scaffold split.** Test Spearman ρ (higher better)
+against training-set size, median over 10 seeds with interquartile bands. Shown
+separately from Figure 1 because a narrow, mean-dominated label distribution
+(§3.2) lets RMSE flatter an arm that ranks poorly. The ordering broadly matches
+Figure 1, with one difference worth noting: B2 leads at n = 50 and B1 overtakes
+it by n = 250. The bands overlap heavily throughout, which is the visual form of
+the §5.4 finding that the two baselines are statistically indistinguishable.
+[→ `fig2_ranking__scaffold.png`]
+
+Figures are regenerated rather than tracked (`make report`); they are derived
+entirely from the committed tables and metrics, and are verified byte-identical
+across regeneration.
+
 Two honest qualifications. The baselines' curves are not monotonic — B1 reaches
 0.584 at n = 250 and worsens to 0.603 at n = 347 — which is an early-stopping
 artefact (the validation fraction is carved from an already-small training
@@ -408,6 +443,25 @@ chemical dissimilarity. This is consistent with Guo et al. (2024)'s argument,
 observed here on one independent dataset — a single target is not a replication
 of their 60-dataset result, and we do not claim it as one.
 
+The same curves under the two reference splits make the effect visible:
+
+![Learning curves on the random split.](../results/figures/fig1_learning_curves__random.png)
+
+**Figure 3 — Learning curves, random split (optimism reference).** Same axes as
+Figure 1. Reported only to quantify how much apparent performance a random split
+buys; it is never the headline endpoint, because it shares 23–31 Bemis–Murcko
+scaffolds between train and test (§5.1).
+
+![Learning curves on the Butina cluster split.](../results/figures/fig1_learning_curves__butina.png)
+
+**Figure 4 — Learning curves, Butina cluster split (stricter check).** Same axes
+as Figure 1. Note the trap this panel sets: every curve sits *lower* than in
+Figure 1, which would read as Butina being the easier split. It is not — the
+test fold's label SD falls from 0.839 to 0.658, so RMSE is measuring a
+different-variance target. The R² table above is the comparable view, and
+`fig2_ranking__butina.png` shows the same ordering on a scale-free metric.
+T2 was not run on this split (§7.8).
+
 **(ii) Transfer degrades more than the baselines when the test set is genuinely
 novel.** Moving scaffold → Butina, B1 retains 40% of its R² and B2 50%, while
 T1 retains 13% (0.421 → 0.056), i.e. close to no skill. Spearman moves the same
@@ -484,6 +538,12 @@ fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
 6. **Up to ~53% of test compounds could have been in pretraining** (§6.1, an
    upper bound). This cannot explain transfer losing, but it means no transfer
    advantage measured here should be taken at face value.
+7. **The transfer deficit is concentrated in extrapolation, not activity
+   cliffs** (§6.3). Both transfer arms are significantly worse than B1 on test
+   compounds with no training neighbour at Tanimoto ≥ 0.7 (T1 p = 0.018,
+   T2 p = 0.019), at every threshold tested; on cliff compounds neither is
+   behind, and both are nominally ahead. This corroborates point 3 by a second,
+   within-split route, and now covers both transfer arms rather than one.
 
 ## 6. Ablations
 
@@ -602,9 +662,333 @@ transfer arm, so a fuller search could only improve it further. Our conclusion
 is consequently stated as "no demonstrated benefit", not "demonstrated deficit".
 B2 and T1 were not re-tuned at all.
 
+### 6.3 Activity cliffs, and where the transfer deficit actually lives
+
+[→ `scripts/analyse_cliffs.py` → `results/tables/table6_activity_cliffs.csv`,
+`table7_cliff_pairs.csv`, `table8_cliff_paired.csv`]
+
+`plan.md` §7.2 asks for performance restricted to matched molecular pairs
+differing by more than 1 log unit. A plain cliff / non-cliff split of the test
+fold would not answer it cleanly, because "non-cliff" then pools two unrelated
+kinds of compound: those the model can interpolate from close training
+neighbours, and those whose neighbourhood it has never seen. Each test compound
+is therefore labelled by its relationship to the **training** fold:
+
+| Stratum | Definition |
+|---|---|
+| **cliff** | ≥ 1 training neighbour at Tanimoto ≥ T whose \|Δ pK_D\| > 1 |
+| **smooth** | ≥ 1 training neighbour at Tanimoto ≥ T, none of them a cliff |
+| **distant** | no training neighbour at Tanimoto ≥ T at all |
+
+T = 0.7 is the primary threshold, **reused rather than newly chosen** — it is
+the cut already fixed for the near-neighbour split audit (Table 0, §5.1), so
+the ablation introduces no new researcher degree of freedom. 0.6 and 0.8 are
+reported as sensitivity. The dataset-level census:
+
+<!-- TABLE:cliff_pairs START -->
+| Tanimoto ≥ | similar pairs | cliff pairs (Δp > 1) | cliff share of similar | compounds in ≥1 cliff |
+|---|---|---|---|---|
+| 0.6 | 3,433 | 827 | 24.1% | 228 / 494 |
+| 0.7 | 941 | 242 | 25.7% | 102 / 494 |
+| 0.8 | 133 | 42 | 31.6% | 46 / 494 |
+<!-- TABLE:cliff_pairs END -->
+
+Roughly a quarter of all near-neighbour pairs are cliffs at every threshold, so
+this is a genuine feature of the dataset and not a handful of outliers.
+
+**Raw RMSE is not comparable across strata either.** The median predictor B0,
+which learns nothing, scores 1.317 on cliff compounds and 0.722 on distant ones
+— cliff compounds simply carry more label variance. This is the §5.5 problem
+again, one level down, so skill against B0 on the *same* compounds is reported
+beside RMSE:
+
+<!-- TABLE:cliff_strata START -->
+| Arm — RMSE ↓ (skill vs B0 ↑) | cliff (n≈9) | smooth (n≈20) | distant (n≈70) | all (n≈98) |
+|---|---|---|---|---|
+| B0 median | 1.317 (+0.00) | 0.943 (+0.00) | 0.722 (+0.00) | 0.852 (+0.00) |
+| B1 ECFP4 + HistGB | 0.833 (+0.43) | 0.417 (+0.57) | 0.584 (+0.21) | 0.603 (+0.32) |
+| B2 descriptors + RF | 0.725 (+0.43) | 0.471 (+0.52) | 0.582 (+0.20) | 0.586 (+0.32) |
+| T1 ChemBERTa probe | 0.745 (+0.46) | 0.519 (+0.49) | 0.642 (+0.09) | 0.637 (+0.27) |
+| T2 ChemBERTa fine-tune | 0.676 (+0.49) | 0.488 (+0.40) | 0.666 (+0.07) | 0.662 (+0.25) |
+<!-- TABLE:cliff_strata END -->
+
+and the paired tests, Holm-corrected over the arm family within each stratum:
+
+<!-- TABLE:cliff_paired START -->
+| Arm — median ΔRMSE vs B1 (Holm p) | cliff | smooth | distant | all |
+|---|---|---|---|---|
+| B2 descriptors + RF | -0.0385 (p=0.922) | -0.0443 (p=0.129) | -0.0094 (p=0.557) | -0.0118 (p=0.557) |
+| T1 ChemBERTa probe | +0.0526 (p=0.387) | -0.0517 (p=0.111) | -0.0545 (p=0.018) | -0.0487 (p=0.012) |
+| T2 ChemBERTa fine-tune | +0.0368 (p=0.252) | -0.1121 (p=0.129) | -0.0954 (p=0.019) | -0.0878 (p=0.074) |
+<!-- TABLE:cliff_paired END -->
+
+**An internal consistency check first.** The `all` column reproduces §5.4
+exactly — T1 −0.0487 at Holm p = 0.012, T2 −0.0878 at p = 0.074 — despite being
+recomputed from saved per-compound predictions by a different script. The
+stratification is a partition of the same numbers the headline rests on.
+
+**The finding.** Both transfer arms are significantly worse than the
+fingerprint baseline on **distant** compounds — T1 p = 0.018, T2 p = 0.019 —
+and **neither is behind on cliffs**. On cliffs both are nominally *ahead* of
+B1 (T1 +0.053, T2 +0.037), and in skill terms the fine-tune is the best arm in
+the table (+0.49 against B1's +0.43). Neither cliff comparison is significant,
+so the claim is the absence of a deficit, not the presence of an advantage.
+
+This is stable where it matters. Across all three thresholds, the deficit on
+**distant** is significant every time (T1 p = 0.018 / 0.018 / 0.012 at
+T = 0.6 / 0.7 / 0.8; T2 p = 0.027 / 0.019 / 0.039) and the cliff comparison
+never favours the baseline. The **smooth** stratum is the unstable one — both
+transfer arms are significantly worse there at T = 0.6 but inconclusive at
+T = 0.7 — so we claim only that the deficit is *concentrated* in extrapolation,
+not that it is exclusive to it.
+
+**Why this matters beyond the ablation.** §5.5(ii) reported that the frozen
+probe degrades more than the baselines under a stricter split, but had to
+qualify it: one transfer arm, and T2 was never run on Butina. §6.3 measures the
+same phenomenon a second and independent way — inside a single split, by
+partitioning the test fold rather than changing it — and both transfer arms
+show it. Two different cuts of the data, one varying the split and one holding
+it fixed, agree that the pretrained representation's weakness is novel
+chemistry rather than local label roughness.
+
+The activity-cliff literature's usual worry is the opposite: that learned
+representations are needed *because* fingerprints cannot separate cliff pairs,
+whose ECFP4 vectors are near-identical. This dataset is consistent with the
+premise — cliffs are the hardest stratum in raw RMSE for every arm — but not
+with the conclusion that pretraining is what fixes it. The pretrained arms are
+no worse on cliffs and much worse elsewhere.
+
+Two caveats, both real. A median of **9 cliff compounds per test fold** at
+T = 0.7 is a thin basis for a null, and at T = 0.8 only 3 of 10 seeds clear the
+five-compound floor, so the paired test is withheld there rather than run on
+three seeds. And the cliff definition is similarity-based, not a fragmentation
+MMP: it asks whether a close ECFP4 neighbour exists, not whether the pair
+differs by a single well-defined transformation.
+
 ## 7. Limitations
 
-## 8. Reproduction and verification
+Ordered by how much each one constrains the conclusions. Every item here is
+either recorded in [`../docs/decision-log.md`](../docs/decision-log.md) or
+follows from a number reported above.
+
+**1. One target, one assay, one pretrained encoder.** Every result is a single
+point in a three-dimensional space of (target, assay, encoder). ChemBERTa-2
+77M-MTR is one chemical language model; MolFormer, Uni-Mol, graph-pretrained
+encoders and domain-adapted variants are untested here, and §2 notes that
+domain adaptation is precisely where the literature reports transfer gains
+concentrate. **Nothing in this paper licenses a general claim about molecular
+pretraining.** It constrains what to expect on a small, single-target,
+single-assay regression problem of this shape.
+
+**2. The measured protein is CVA16 2A^pro, not EV-A71 2A^pro.** Stated in §3.1
+rather than deferred here because it conditions the whole study: every
+"EV-A71" result, including the title, is a CVA16 result with a five-residue
+extrapolation.
+
+**3. Pretraining decontamination was bounded, not performed.** `plan.md` §7.1
+makes re-pretraining on a decontaminated corpus the load-bearing ablation, and
+H4 — that part of any apparent transfer gain is leakage — is the hypothesis it
+was to decide. The ChemBERTa-2 77M corpus is not redistributed, so it could not
+be diffed or rebuilt. What §6.1 supplies instead is a PubChem-membership
+**upper bound**: up to 53% of test compounds could have been seen. **H4 is
+therefore untested, not answered.** The bound's direction is the saving grace —
+contamination can only flatter a transfer arm, so it cannot explain transfer
+losing, and the negative result survives. The same asymmetry means the reverse
+does not hold: had transfer won, this study could not have told you whether the
+win was real.
+
+**4. The search budget is unequal, and unequal in the direction that
+disfavours transfer.** `plan.md` §5 specifies an identical fixed budget for
+every arm. §6.2 delivers 32 trials to B1 but only 6 to the fine-tune at n = 50
+and 4 at full data, because each fine-tune fit costs ~160 s against the
+baseline's ~2 s. B2 and the frozen probe T1 were not re-tuned at all — and T1
+is the arm carrying the one significant negative result (§5.4). Its ridge
+penalty is chosen by internal cross-validation, so it is not untuned, but that
+is weaker than the search its comparator received. This is why §5.7 claims **no
+demonstrated benefit** rather than a demonstrated deficit.
+
+**5. The study is powered only for large effects.** Ten seeds for the main
+sweep, and five for the tuned full-data comparison. Several of the comparisons
+that matter most — the fine-tune against B1 untuned (p = 0.074) and tuned
+(p = 0.16 at n = 50, p = 0.63 at full data) — are inconclusive rather than null,
+and are reported that way throughout (§4.4). A larger seed budget could move any
+of them in either direction.
+
+**6. Most of the pre-registered arm list was not run.** `plan.md` §4 freezes
+four baselines and six transfer arms; this paper reports three baselines
+(B0–B2) and two transfer arms (T1, T2). B3 (D-MPNN from scratch), T3
+(alternative encoder), T4 (in-domain multitask pretraining on related
+3C/3CL proteases), T5 (chained pretraining) and T6 (ligand + ESM-2 target
+embedding) were not run. The consequence for the hypotheses is specific:
+**H3 — that in-domain transfer beats generic self-supervised pretraining — is
+entirely untested**, because no in-domain arm exists. Since H3 names the
+mechanism the literature credits for most real transfer gains, the negative
+result should be read as a result about *generic* pretraining only.
+
+**7. The dataset is a fragment screen, and its regime is narrow.** pK_D spans
+3.44–7.94 with SD 0.86, mostly compressed between 4 and 6, and the compounds
+are small fragments rather than an optimised lead series. Two consequences.
+Predicting near the mean scores deceptively well on RMSE, which is why
+Spearman ρ is carried alongside throughout (§3.2). And the chemistry is not
+where transfer is usually deployed: whether these findings hold on a
+lead-optimisation series with a wide potency range is an open question this
+dataset cannot answer.
+
+**8. Split coverage is incomplete.** The temporal split of `plan.md` §3.3 was
+dropped — the OpenBind release carries no per-compound year — so the
+deployment-realism endpoint is absent. The fine-tune T2 was run on the scaffold
+split only, at ~160 s per fit, so the Butina degradation result of §5.5(ii)
+rests on the frozen probe alone; whether full fine-tuning degrades the same way
+under a stricter split is untested.
+
+**9. Four of the five §7.2 ablations are missing, for three different
+reasons.** The adaptation-strategy sweep is partial: full fine-tune and linear
+probe are compared (T1 vs T2), but LoRA and layer-wise unfreezing were not run
+— affordable in principle, simply not done. Pretraining-corpus size and the 2A
+vs 3C transfer check are **impossible here**: the first needs the corpus, the
+second needs a 3C dataset, and neither exists in this environment. The fidelity
+ablation is **vacuous rather than skipped**: relaxing the 1-log replicate gate
+cannot change the dataset, because the gate removed nothing at all (maximum
+observed spread 0.49 log units, §3.2), so there is no relaxed variant to
+compare against. Of the five, only the activity-cliff ablation (§6.3) was
+carried out in full.
+
+**10. The cliff strata are small.** §6.3 rests on a median of 9 cliff compounds
+per test fold at the primary threshold, against 20 smooth and 70 distant. Ten
+seeds of 9 compounds is a thin basis for the claim that transfer is *not*
+behind on cliffs, and at Tanimoto ≥ 0.8 only 3 of 10 seeds clear the
+five-compound floor. The finding is reported as consistent across two
+thresholds and mechanistically plausible, not as established.
+
+## 8. Discussion
+
+### 8.1 What the negative result is, stated precisely
+
+The claim this paper supports is narrow and worth stating without slippage:
+**on a 494-compound, single-target, single-assay regression problem, a
+generically pretrained chemical language model did not outperform count
+fingerprints with gradient boosting, and gave no data-efficiency advantage at
+any training-set size tested.** The frozen probe was significantly worse
+(Holm p = 0.012); the fine-tune, once given a search budget, was
+indistinguishable rather than worse. Neither ever reached the baseline's
+full-data RMSE, so both have a data-efficiency ratio of zero — the quantity H2
+was framed to falsify.
+
+What the paper does **not** support is the sentence it would be easiest to
+extract from it. It is not evidence that molecular pretraining does not work.
+One encoder, one target, one assay, and — most importantly — **no in-domain
+pretraining arm was ever run** (§7.6). The mechanism the literature actually
+credits for transfer gains is the one this study failed to test.
+
+### 8.2 Where the deficit lives, and what that suggests
+
+The more informative result is not that transfer lost but *where* it lost.
+Two independent measurements agree:
+
+- **Across splits** (§5.5): moving from scaffold to Butina clustering, the
+  baselines retain 40–50% of their R² and the frozen probe retains 13%.
+- **Within a single split** (§6.3): stratifying the scaffold test fold by its
+  relationship to training, the probe's significant deficit is confined to
+  compounds with **no near training neighbour**. On activity cliffs it is not
+  behind at all — nominally ahead of the fingerprint baseline, at both
+  thresholds where the comparison is powered enough to run.
+
+These are different cuts of the data — one varies the split, one holds the
+split fixed and partitions the test fold — and they point the same way. The
+pretrained representation is not failing at the thing fingerprints are
+structurally bad at. ECFP4 vectors for a cliff pair are nearly identical, so a
+fingerprint model is close to forced into predicting the same value for both; a
+learned representation is under no such constraint, and §6.3 is consistent with
+it exploiting that. What it fails at is **generalising to chemistry unlike its
+training fold** — precisely the regime a small project cares about.
+
+We offer that as a direction, not a mechanism. Establishing it would need the
+fine-tune stratified the same way, more than 9 cliff compounds per fold, and
+more than one encoder. It does, however, suggest that "does pretraining help?"
+is the wrong granularity of question, and that per-stratum reporting would
+separate two effects that a single RMSE silently averages.
+
+### 8.3 What a practitioner should do with this
+
+Concretely, for a project with a few hundred measurements on one target:
+
+1. **Start with ECFP4 counts + gradient boosting, or RDKit descriptors + a
+   random forest.** They were statistically indistinguishable from each other
+   here (p = 0.56), both beat both transfer arms, and they fit in ~2 s against
+   the fine-tune's ~160 s. On this evidence a pretrained encoder is not the
+   first thing to reach for.
+2. **If you do evaluate a transfer arm, tune it, and tune it separately at each
+   training-set size.** This is the single most consequential finding for how
+   such comparisons are run: a fixed 40-epoch schedule cost the baselines
+   nothing and drove the fine-tune from R² +0.30 to −1.26 at n = 50 (§6.2). A
+   benchmark that fixes hyperparameters across arms will not merely understate
+   transfer, it will manufacture a catastrophic-looking failure that is an
+   artefact of the harness. We published such a claim internally and retracted
+   it (§5.6); the retraction is the finding.
+3. **Do not treat a scaffold split as the conservative one — measure it.**
+   Ours shared **zero** Bemis–Murcko scaffolds with training and was still no
+   harder than a random split, because 29% of its test compounds had a training
+   neighbour at Tanimoto ≥ 0.7 (§5.5). Nearest-neighbour similarity is cheap to
+   compute and tells you what scaffold counting does not.
+4. **Never compare RMSE across splitting strategies.** Stricter splits produced
+   lower-variance test folds here (label SD 0.87 → 0.66), which inverts the
+   apparent difficulty ordering and would let you report a stricter split as
+   easier. Use R², or skill against a median predictor fitted on the same fold.
+5. **Report a data-efficiency curve, not a full-data delta.** The interesting
+   claim about transfer is almost always about the low-data end, and a single
+   full-data comparison cannot address it.
+
+### 8.4 What we would need to change our minds
+
+Two experiments, both specified in the pre-registration and neither run:
+
+- **H3, in-domain pretraining (arm T4).** Multitask pretraining on related
+  3C / 3C-like proteases, then fine-tuning on this target. This is the highest-
+  value remaining experiment, because it tests the mechanism §2 identifies as
+  the actual source of transfer gains. A positive T4 against T1 would convert
+  this paper's headline from "pretraining did not help" to "generic pretraining
+  did not help, in-domain pretraining did" — a materially stronger and more
+  useful claim.
+- **H4, decontamination.** Not answerable with an encoder whose corpus is not
+  distributed; §6.1 could only bound test-set overlap at 53%. It becomes
+  answerable by *changing the design*: pretrain a smaller encoder on a corpus
+  under our own control, and decontamination is available by construction
+  rather than by inference.
+
+Both would also address the asymmetry that currently limits this study's
+positive claims: because contamination can only flatter a transfer arm, this
+design can refute transfer but could never have credited it.
+
+## 9. Conclusion
+
+On a small, high-fidelity, single-target protease dataset, a generically
+pretrained chemical language model did not beat count fingerprints with
+gradient boosting — not at full data, not at 50 compounds, and not on any
+data-efficiency measure. The frozen probe was significantly worse; the
+fine-tune, properly tuned, was merely indistinguishable, at roughly two orders
+of magnitude more compute per fit. For projects in this regime the classical
+baseline remains the right default, and the burden of proof sits with the
+pretrained model.
+
+Three methodological points generalise further than the headline. Transfer arms
+are far more sensitive to their training schedule than the baselines are, so
+equalising hyperparameters across arms — the intuitive fairness move —
+systematically disadvantages transfer, and cost us a claim we had to retract.
+Raw RMSE is not comparable across splitting strategies, because stricter splits
+change the variance of the target. And zero scaffold overlap is not chemical
+novelty: our scaffold split was no harder than a random one. Where transfer's
+deficit actually concentrated was not on activity cliffs but on compounds
+unlike anything in the training fold — a distinction a single aggregate score
+hides, and one worth reporting separately.
+
+Finally, the scope. This is one encoder on one assay against one protein that
+is itself a five-residue surrogate for the protein in the title, with two of
+the four pre-registered hypotheses untested. The result constrains what to
+expect in this regime; it is not a verdict on molecular pretraining, and the
+experiment that would test the mechanism most likely to overturn it (§8.4) has
+not been run.
+
+## 10. Reproduction and verification
 
 See [`provenance.md`](provenance.md) for the artefact map and command sequence.
 
@@ -618,10 +1002,21 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **85 claims** across sections 3.2
-through 5.6. It has already caught one error: a count of compounds with
-replicate measurements taken from the raw table (137) rather than the curated
-one (133).
+non-zero on any mismatch. It currently checks **154 claims** across sections 3.2
+through 6.3. That count is itself one of the claims: the script parses this
+sentence and fails if the stated total disagrees with the number of checks it
+actually ran, so the one hand-typed number in a section arguing that no number
+is hand-typed cannot go stale either. It has already caught two errors: a count
+of compounds with replicate measurements taken from the raw table (137) rather
+than the curated one (133), and this sentence itself, left reading 85 after the
+ablations of §6 added checks.
+
+Forty-three of those checks belong to §6.3, and six of them are **cross-checks
+between artefacts rather than against the prose**: the per-stratum paired tests
+are recomputed from saved per-compound predictions by a different script than
+the headline tests, and the `all` stratum must reproduce Table 3's deltas and
+Holm p-values exactly. If the stratification ever stopped being a partition of
+the numbers §5.4 rests on, the check would fail.
 
 **The pipeline is bit-reproducible.** Verified by re-running from scratch and
 comparing checksums:
@@ -654,4 +1049,108 @@ future availability we do not control.
 
 ## References
 
-Listed with reading-depth labels in [`../docs/literature.md`](../docs/literature.md).
+**Reading depth is labelled on every entry and the label is honest**, carried
+over from the annotated review in
+[`../docs/literature.md`](../docs/literature.md):
+
+- **[full text]** the paper was retrieved and read;
+- **[abstract]** only the abstract or landing page was retrieved;
+- **[secondary]** known through a search summary or another paper's
+  description — **never cited for a specific number**.
+
+No claim in this manuscript is cited at a precision its reading depth does not
+support. Two entries below carry no author list because retrieval was blocked;
+they are listed by title rather than given an invented authorship.
+
+### Dataset and target
+
+1. Lithgo, R. M., Tomlinson, C. W. E., Fairhead, M., Winokan, M., Thompson, W.,
+   Wild, C., Aschenbrenner, J. C., Balcomb, B. H., Marples, P. G., Chandran,
+   A. V., Golding, M., Koekemoer, L., Williams, E. P., Wang, S., Ni, X.,
+   MacLean, E. M., Giroud, C., Godoy, A. S., Xavier, M. A., Walsh, M. A.,
+   Fearon, D., von Delft, F. (2024). *Crystallographic fragment screen of
+   Coxsackievirus A16 2A protease identifies new opportunities for the
+   development of broad-spectrum anti-enterovirals.* bioRxiv 2024.04.29.591684.
+   <https://doi.org/10.1101/2024.04.29.591684> — **[full text]**. Source of the
+   five-residue CVA16/EV-A71 surrogate statement in §3.1.
+
+2. OpenBind Consortium (2026). *OpenBind structure–affinity data release:
+   Enterovirus A71 (EV-A71) / Coxsackievirus A16 (CVA16) 2A protease.* Zenodo,
+   CC0 1.0. <https://doi.org/10.5281/zenodo.20026661> — **[full text of
+   record]**. The dataset analysed here. Its own reference benchmarks are
+   structure-based (docking, cofolding), so the ligand-only question asked in
+   this paper is complementary rather than a re-run of theirs.
+
+### Molecular pretraining
+
+3. Chithrananda, S., Grand, G., Ramsundar, B. (2020). *ChemBERTa: large-scale
+   self-supervised pretraining for molecular property prediction.*
+   arXiv:2010.09885. <https://arxiv.org/abs/2010.09885> — **[abstract]**.
+   Cited for the existence and provenance of the 77M PubChem corpus, **not**
+   for the encoder used here (see 4).
+
+4. Ahmad, W., Simon, E., Chithrananda, S., Grand, G., Ramsundar, B. (2022).
+   *ChemBERTa-2: towards chemical foundation models.* arXiv:2209.01712.
+   <https://arxiv.org/abs/2209.01712> — **[abstract]**. **The correct citation
+   for the encoder in this study**: `DeepChem/ChemBERTa-77M-MTR` is
+   ChemBERTa-2's multi-task-regression variant, not the original MLM model.
+   The MTR-vs-MLM comparison is not quoted numerically because the full text
+   was not retrieved.
+
+5. *Transformers for molecular property prediction: domain adaptation
+   efficiently improves performance.* Journal of Cheminformatics (2026).
+   <https://doi.org/10.1186/s13321-026-01252-z> — **[secondary]**; retrieval
+   blocked by an authentication redirect, and the author list was therefore not
+   obtained. Cited **only** as motivation for the in-domain arm T4 and for the
+   qualitative claim that descriptor-based random forests remain strong
+   baselines. No number in this manuscript rests on it.
+
+### The low-data regime
+
+6. Altae-Tran, H., Ramsundar, B., Pappu, A. S., Pande, V. (2017). *Low data
+   drug discovery with one-shot learning.* ACS Central Science 3(4), 283–293;
+   arXiv:1611.03199. <https://arxiv.org/pdf/1611.03199> — **[secondary]**.
+
+7. Schimunek, J., et al. (2025). *MHNfs: prompting in-context bioactivity
+   predictions for low-data drug discovery.* Journal of Chemical Information
+   and Modeling. <https://pubs.acs.org/doi/10.1021/acs.jcim.4c02373> —
+   **[secondary]**. Source of the reported ~50-molecule crossover above which
+   classical ML overtakes few-shot methods; our learning curves begin at
+   exactly n = 50 for that reason. Reported as their finding, not re-derived
+   here.
+
+8. *Deep learning for low-data drug discovery: hurdles and opportunities.*
+   Current Opinion in Structural Biology (2024).
+   <https://www.sciencedirect.com/science/article/pii/S0959440X24000459> —
+   **[secondary]**; author list not obtained. Cited only as framing.
+
+### Evaluation and splitting
+
+9. Guo, X., Hernandez-Hernandez, S., Ballester, P. J. (2024). *Scaffold splits
+   overestimate virtual screening performance.* arXiv:2406.00873; ICANN 2024,
+   LNCS. <https://arxiv.org/abs/2406.00873> — **[full text of abstract and
+   landing page]**. Source of the random < scaffold < Butina < UMAP difficulty
+   ordering across 2,100 models on 60 NCI-60 datasets, and the reason Butina
+   clustering is reported here as the stricter check. Our §5.5 result is
+   consistent with their argument on one further dataset; a single target is
+   not a replication of their 60-dataset study and is not claimed as one.
+
+### Software, models and data resources
+
+10. RDKit: open-source cheminformatics. <https://www.rdkit.org> — fingerprints,
+    descriptors, Bemis–Murcko scaffolds, standardisation.
+11. Pedregosa, F., et al. (2011). *Scikit-learn: machine learning in Python.*
+    JMLR 12, 2825–2830. <https://scikit-learn.org> — `HistGradientBoosting`
+    (B1), `RandomForest` (B2), `RidgeCV` (T1).
+12. Paszke, A., et al. (2019). *PyTorch: an imperative style, high-performance
+    deep learning library.* NeurIPS 32. <https://pytorch.org> — arm T2.
+13. Wolf, T., et al. (2020). *Transformers: state-of-the-art natural language
+    processing.* EMNLP System Demonstrations, 38–45.
+    <https://huggingface.co/docs/transformers> — encoder loading for T1 and T2.
+14. `DeepChem/ChemBERTa-77M-MTR` model checkpoint.
+    <https://huggingface.co/DeepChem/ChemBERTa-77M-MTR> — the pretrained
+    encoder evaluated in this study.
+15. PubChem PUG REST. Kim, S., et al. (2023). *PubChem 2023 update.* Nucleic
+    Acids Research 51(D1), D1373–D1380.
+    <https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest> — membership queries for
+    the contamination upper bound of §6.1.

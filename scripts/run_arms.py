@@ -30,6 +30,7 @@ from evapro.utils.seeding import set_seed
 TARGET = "eva71_2a"
 SPLIT_DIR = Path("data/processed/splits") / TARGET
 OUT = Path("results/metrics")
+PREDS = Path("results/predictions")
 TRAIN_SIZES = [50, 100, 250, None]          # None = all available
 SEEDS = list(range(10))
 CHEMBERTA = "DeepChem/ChemBERTa-77M-MTR"
@@ -159,6 +160,14 @@ def main() -> int:
     ap.add_argument("--arms", nargs="+", default=["B0", "B1", "B2", "T1"])
     ap.add_argument("--splits", nargs="+", default=["scaffold", "random"])
     ap.add_argument("--seeds", type=int, nargs="+", default=SEEDS)
+    ap.add_argument("--sizes", type=int, nargs="+", default=None,
+                    help="Restrict to these training-set sizes. The subsample RNG is "
+                         "still drawn for every size in order, so the folds are "
+                         "identical to an unrestricted run.")
+    ap.add_argument("--save-preds", action="store_true",
+                    help="Also write per-compound predictions to results/predictions/. "
+                         "A cell whose metrics already exist is re-run and the recomputed "
+                         "metrics asserted equal to the stored ones.")
     args = ap.parse_args()
 
     df = load_dataset(TARGET)
@@ -181,9 +190,13 @@ def main() -> int:
                 for size in TRAIN_SIZES:
                     tr = tr_all if size is None or size >= len(tr_all) else \
                         rng.choice(tr_all, size=size, replace=False)
+                    if args.sizes is not None and len(tr) not in args.sizes:
+                        continue        # rng already advanced above -- folds unchanged
                     tag = f"{ARM_LABELS[arm]}__{split}__seed{seed}__n{len(tr)}"
                     path = OUT / f"{tag}.json"
-                    if path.exists():
+                    pred_path = PREDS / f"{tag}.npz"
+                    done = path.exists()
+                    if done and not (args.save_preds and not pred_path.exists()):
                         continue
 
                     t0 = time.time()
@@ -193,6 +206,22 @@ def main() -> int:
                     else:
                         preds = fit_predict_sklearn(arm, X_all[tr], y_all[tr], X_all[te], seed)
                     scores = compute_all(y_all[te], preds, METRIC_NAMES)
+
+                    if args.save_preds:
+                        # Re-running a completed cell must reproduce its stored metrics.
+                        # This is the determinism claim of the manuscript §8, asserted
+                        # rather than asserted-about.
+                        if done:
+                            stored = json.loads(path.read_text())["metrics"]
+                            for k, v in stored.items():
+                                if abs(v - scores[k]) > 1e-9:
+                                    raise SystemExit(
+                                        f"{tag}: {k} changed on re-run: {v} -> {scores[k]}")
+                        PREDS.mkdir(parents=True, exist_ok=True)
+                        np.savez(pred_path, inchikey=df["inchikey"].to_numpy()[te],
+                                 y_true=y_all[te], y_pred=np.asarray(preds, dtype=float))
+                    if done:
+                        continue
 
                     path.write_text(json.dumps({
                         "arm": ARM_LABELS[arm], "target": TARGET, "split": split,
