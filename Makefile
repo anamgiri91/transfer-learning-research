@@ -36,6 +36,15 @@ indomain:  ## Fetch, curate and pretrain the in-domain 3C/3CL corpus (arms T4/T5
 	  $(PY) scripts/pretrain_indomain.py --arm $$a || exit 1; \
 	  $(PY) scripts/pretrain_indomain.py --arm $$a --decontaminate || exit 1; \
 	done
+	@# Post-condition. A run of this loop once produced nothing at all and still
+	@# reported success, because the failing argument was swallowed by a log
+	@# filter. Exit status is not evidence that the artefacts exist; check them.
+	@missing=""; for m in indomain_T4 indomain_T5 indomain_T4_clean indomain_T5_clean; do \
+	  test -f models/$$m.pt -a -f models/$$m.json || missing="$$missing $$m"; \
+	done; \
+	if [ -n "$$missing" ]; then \
+	  echo "FAILED: expected encoders were not written:$$missing"; exit 1; fi; \
+	echo "all four in-domain encoders present."
 
 report:  ## Regenerate figures and tables from results/metrics/
 	$(PY) scripts/make_report.py
