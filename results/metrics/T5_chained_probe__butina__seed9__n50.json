@@ -1,0 +1,18 @@
+{
+  "arm": "T5_chained_probe",
+  "metrics": {
+    "mae": 0.4875611260161108,
+    "pearson": 0.298739262045796,
+    "precision_at_10pct": 0.5,
+    "r2": -0.14106646233994513,
+    "rmse": 0.6140264197367011,
+    "spearman": 0.21017715337782136
+  },
+  "n_test": 98,
+  "n_train": 50,
+  "seconds": 0.0,
+  "seed": 9,
+  "source_script": "scripts/run_arms.py",
+  "split": "butina",
+  "target": "eva71_2a"
+}

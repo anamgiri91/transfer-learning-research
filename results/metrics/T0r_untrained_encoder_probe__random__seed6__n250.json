@@ -1,0 +1,18 @@
+{
+  "arm": "T0r_untrained_encoder_probe",
+  "metrics": {
+    "mae": 0.5489119581962117,
+    "pearson": 0.6917258962356894,
+    "precision_at_10pct": 0.5,
+    "r2": 0.4712445547896382,
+    "rmse": 0.6454732854583027,
+    "spearman": 0.6451252985444499
+  },
+  "n_test": 98,
+  "n_train": 250,
+  "seconds": 0.01,
+  "seed": 6,
+  "source_script": "scripts/run_arms.py",
+  "split": "random",
+  "target": "eva71_2a"
+}

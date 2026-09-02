@@ -1,0 +1,18 @@
+{
+  "arm": "T4_indomain_probe",
+  "metrics": {
+    "mae": 0.5307859955456791,
+    "pearson": 0.6883624064379699,
+    "precision_at_10pct": 0.3,
+    "r2": 0.4677182066983028,
+    "rmse": 0.6476220870389611,
+    "spearman": 0.649167492933709
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "seconds": 0.02,
+  "seed": 6,
+  "source_script": "scripts/run_arms.py",
+  "split": "random",
+  "target": "eva71_2a"
+}

@@ -7,7 +7,7 @@ derived from `results/tables/` and `results/metrics/`, which are tracked.
 python scripts/make_report.py --require-seeds 10
 ```
 
-Verified 2026-09-02: all seven figures are **byte-identical** across
+Verified 2026-09-02: all nine figures are **byte-identical** across
 regeneration.
 
 ## Current figures
@@ -23,6 +23,8 @@ that every embedded image exists and that the visible Figure numbers run 1..N.
 | `fig1_learning_curves__random.png` | Figure 3 | as Figure 1, random split (optimism reference) |
 | `fig1_learning_curves__butina.png` | Figure 4 | as Figure 1, Butina split (stricter check) |
 | `fig_indomain__scaffold.png` | Figure 5 | §6.4 in-domain vs generic, focused comparison |
+| `fig_indomain__random.png` | — | generated, not embedded |
+| `fig_indomain__butina.png` | — | generated, not embedded |
 | `fig2_ranking__random.png` | — | generated, not embedded |
 | `fig2_ranking__butina.png` | — | generated, not embedded |
 

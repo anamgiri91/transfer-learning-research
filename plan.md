@@ -245,8 +245,9 @@ documents is lying.
       10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.7)
 - [~] Transfer arms `T1`–`T6` — `T1`, `T2`, `T4`, `T5` complete on the scaffold
       split (plus the `T0r` untrained-encoder control added in §6.4);
-      **`T3` and `T6` not run**. **H3 is now tested** (§6.4): supported for the
-      chained arm, inconclusive in its pre-registered `T4`-vs-`T1` form
+      **`T3` and `T6` not run**. **H3 is now tested** (§6.4): *suggestive* for
+      the chained arm (BH-significant, not Holm) and inconclusive in its
+      pre-registered `T4`-vs-`T1` form
 - [~] Contamination measurement, then decontaminated re-run — **done for the
       in-domain arms** (§6.5), with a size-matched random ablation the protocol
       did not ask for and the result turns on: without it the ablation reports
@@ -265,8 +266,10 @@ documents is lying.
 Three hypotheses were decided and one was not. **H1** (transfer beats the best
 from-scratch baseline) and **H2** (the advantage grows as data shrinks) are
 answered negatively on every arm run. **H3** (in-domain beats generic
-pretraining) is answered in §6.4 — supported for the chained arm `T5`,
-inconclusive in the exact `T4`-vs-`T1` form this document specifies. **H4** has no evidence for the ChemBERTa arms, whose corpus is not
-distributed. For the in-domain arms it is answered negatively in §6.5: no
-detectable leakage advantage, once a size-matched control separates removing
-overlap from removing data.
+pretraining) is addressed in §6.4 but **not settled**: the chained arm `T5`
+beats the generic probe at raw p = 0.006, which clears Benjamini-Hochberg and
+not Holm across the 15 full-data contrasts, and the exact `T4`-vs-`T1` form
+this document specifies is inconclusive. **H4** has no evidence for the ChemBERTa arms, whose corpus is not
+distributed. For the in-domain arms §6.5 finds **no detectable leakage
+advantage** — a null we can state — but the contrast that would demonstrate the
+mechanism does not survive Holm, so H4 is bounded rather than answered.

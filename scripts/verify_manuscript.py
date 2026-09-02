@@ -486,6 +486,60 @@ def build_claims() -> list[Claim]:
     C.append(Claim("cost", "the ratio is under two orders of magnitude",
                    "metrics seconds", True, bool(t2_full / b1_full < 100)))
 
+    # ---- §5.5 extended: Butina retention for every arm on all three splits ----
+    t4x = read_table("table4_split_difficulty.csv")
+    def _ret(arm):
+        d = t4x[t4x.arm == arm].set_index("split")
+        return round(float(d.loc["butina", "r2_median"]) / float(d.loc["scaffold", "r2_median"]), 2)
+    for arm, want in [("B1_ecfp_histgb", 0.40), ("B2_descriptors_rf", 0.50),
+                      ("T0r_untrained_encoder_probe", 0.31),
+                      ("T1_chemberta_linear_probe", 0.13),
+                      ("T4_indomain_probe", 0.46), ("T5_chained_probe", 0.22)]:
+        C.append(Claim("5.5", f"{arm} Butina R2 retention", "table4", want, _ret(arm)))
+    C.append(Claim("5.5", "the untrained control retains more than the pretrained probe",
+                   "table4", True,
+                   bool(_ret("T0r_untrained_encoder_probe") > _ret("T1_chemberta_linear_probe"))))
+    C.append(Claim("5.5", "T1 is the least robust of the six arms", "table4", True,
+                   bool(_ret("T1_chemberta_linear_probe") == min(
+                       _ret(a) for a in ["B1_ecfp_histgb", "B2_descriptors_rf",
+                                         "T0r_untrained_encoder_probe",
+                                         "T1_chemberta_linear_probe",
+                                         "T4_indomain_probe", "T5_chained_probe"]))))
+
+    # ---- §5.7: the enrichment advantage does not replicate across splits ----
+    import glob as _g3
+    _P = {}
+    for _f in _g3.glob("results/metrics/*n347.json"):
+        _d = json.loads(Path(_f).read_text())
+        _P.setdefault((_d["arm"], _d["split"]), {})[_d["seed"]] = _d["metrics"]
+    def _win(arm, split):
+        A = _P.get((arm, split), {}); B = _P.get(("B1_ecfp_histgb", split), {})
+        s = sorted(set(A) & set(B))
+        return sum(A[i]["precision_at_10pct"] > B[i]["precision_at_10pct"] for i in s)
+    C.append(Claim("5.7", "T1 beats B1 on prec@10% in 6/10 scaffold seeds", "metrics", 6,
+                   _win("T1_chemberta_linear_probe", "scaffold")))
+    C.append(Claim("5.7", "T4 wins only 2/10 on the random split", "metrics", 2,
+                   _win("T4_indomain_probe", "random")))
+    C.append(Claim("5.7", "T1 wins only 4/10 on Butina", "metrics", 4,
+                   _win("T1_chemberta_linear_probe", "butina")))
+    # The prose claims no transfer arm *significantly* beats B1 off the scaffold
+    # split -- not that none wins a seed majority (T5 wins 6/10 on random at
+    # p = 0.125). Test what is actually written.
+    from scipy import stats as _st
+    def _p(arm, split):
+        A = _P.get((arm, split), {}); B = _P.get(("B1_ecfp_histgb", split), {})
+        s = sorted(set(A) & set(B))
+        x = np.array([A[i]["precision_at_10pct"] for i in s])
+        y = np.array([B[i]["precision_at_10pct"] for i in s])
+        return float(_st.wilcoxon(x, y).pvalue) if np.any(x != y) else 1.0
+    C.append(Claim("5.7", "no transfer arm significantly beats B1 off the scaffold split",
+                   "metrics", True,
+                   bool(all(_p(a, sp) > 0.05 for sp in ("random", "butina")
+                            for a in ("T1_chemberta_linear_probe", "T4_indomain_probe",
+                                      "T5_chained_probe")))))
+    C.append(Claim("5.7", "T5 still wins 6 of 10 on the random split", "metrics", 6,
+                   _win("T5_chained_probe", "random")))
+
     # ---- §6.2 seed-subset disclosure; §5.7 tie-robustness ----
     import glob as _gg
     _m = {}

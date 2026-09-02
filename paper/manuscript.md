@@ -15,7 +15,7 @@ it helps in the opposite regime — few hundred compounds, one target, one assay
 — using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
 (494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
 units). Twelve arms are compared on identical materialised splits across
-10 seeds and four training-set sizes, with 800 evaluated runs: five
+10 seeds and four training-set sizes, with 1,040 evaluated runs: five
 pre-registered (median predictor; ECFP4 + gradient boosting; RDKit descriptors
 + random forest; ChemBERTa-2 frozen probe; ChemBERTa-2 full fine-tune) and
 seven added as controls, in-domain arms and decontamination
@@ -569,12 +569,35 @@ different-variance target. The R² table above is the comparable view, and
 T2 was not run on this split (§7.9).
 
 **(ii) Transfer degrades more than the baselines when the test set is genuinely
-novel.** Moving scaffold → Butina, B1 retains 40% of its R² and B2 50%, while
-T1 retains 13% (0.421 → 0.056), i.e. close to no skill. Spearman moves the same
-way (T1 0.612 → 0.251). The direction is consistent across both baselines and
-is large, but it rests on **one transfer arm on one target**, and T2 was not run
-on Butina (§6), so this is a suggestive result rather than an established
-property of pretrained representations.
+novel — but the untrained control degrades *less* than the pretrained arm.**
+The probe arms of §6.4 are cheap enough to run on all three splits, so this
+comparison no longer rests on one transfer arm:
+
+<!-- TABLE:splits_extended START -->
+| Arm (R² ↑) | random | scaffold | Butina | Butina retained |
+|---|---|---|---|---|
+| B1 ECFP4 + HistGB | 0.492 | 0.507 | 0.204 | 40% |
+| B2 descriptors + RF | 0.461 | 0.513 | 0.257 | 50% |
+| T0r untrained encoder probe | 0.427 | 0.417 | 0.128 | 31% |
+| T1 ChemBERTa probe | 0.422 | 0.421 | 0.056 | 13% |
+| T4 in-domain probe | 0.449 | 0.440 | 0.203 | 46% |
+| T5 chained probe | 0.481 | 0.466 | 0.103 | 22% |
+<!-- TABLE:splits_extended END -->
+
+Moving scaffold → Butina, `B1` retains 40% of its R² and `B2` 50%, while `T1`
+retains **13%** (0.421 → 0.056), close to no skill. Spearman moves the same way
+(T1 0.612 → 0.251). Two additions complicate the simple reading. The
+**untrained encoder `T0r` retains 31%** — more than twice what the pretrained
+probe does, on the same architecture and the same ridge head, so whatever makes
+`T1` brittle under strict splitting is a property of *what it was pretrained
+on*, not of the architecture or the probe. And the in-domain probe `T4` retains
+**46%**, in the baselines' range. `T5` sits between at 22%.
+
+That is a sharper statement than the earlier one and points the same way: the
+generic pretrained representation is the least robust of the six to genuinely
+novel chemistry, worse than no pretraining at all. It still rests on one
+target, `T2` was never run on Butina (§7.9), and with 10 seeds these retention
+ratios carry wide uncertainty we have not quantified.
 
 ### 5.6 Fine-tuning under the default schedule (superseded by §6.2)
 
@@ -679,6 +702,15 @@ true and the predicted ranking — leaves the medians unmoved (0.50 vs 0.40) and
 **Zero-difference handling**: `T2` ties `B1` on one seed, and the conclusion is
 identical under Wilcoxon's default, `zsplit` and `pratt` handling, and under a
 plain sign test (all p = 0.0039). The result is not an artefact of the test.
+
+**It does not replicate across splits.** The probe arms run on all three
+splits, and the enrichment advantage is **specific to the scaffold split**. On
+scaffold, `T1` (p = 0.031) and `T5` (p = 0.016) beat `B1`; on the random and
+Butina splits no transfer arm does, and several point the other way (`T4` 2 of
+10 on random, `T1` 4 of 10 on Butina). `T2` — the arm carrying the
+Holm-significant result — was never run on those splits, so its own replication
+is untested. A single-split finding on a coarse endpoint is exactly the shape
+of result that fails to reproduce, and we flag it as such.
 
 **What it does mean.** A single conclusion of the form "pretraining did not
 help" is not supportable across the endpoint set as pre-registered. What is
@@ -1540,7 +1572,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **339 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **352 claims** across sections 3.1
 through 6.5. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
@@ -1649,7 +1681,7 @@ comparing checksums:
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
 | all 21 tables in `results/tables/` | data rows byte-identical |
-| all 7 figures in `results/figures/` | byte-identical |
+| all 9 figures in `results/figures/` | byte-identical |
 
 Determinism comes from seeding Python, NumPy and torch per run
 (`evapro.utils.seeding.set_seed`, with `torch.use_deterministic_algorithms`)

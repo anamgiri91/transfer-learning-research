@@ -262,6 +262,21 @@ def table_decontamination() -> str:
                 "p raw", "p Holm", "verdict"], rows)
 
 
+def table_splits_extended() -> str:
+    """R² across splits for every arm run on all three, plus Butina retention."""
+    df = _read("table4_split_difficulty.csv")
+    rows = []
+    for arm in ["B1_ecfp_histgb", "B2_descriptors_rf", "T0r_untrained_encoder_probe",
+                "T1_chemberta_linear_probe", "T4_indomain_probe", "T5_chained_probe"]:
+        d = df[df.arm == arm].set_index("split")
+        if not {"random", "scaffold", "butina"} <= set(d.index):
+            continue
+        sc, bu = float(d.loc["scaffold", "r2_median"]), float(d.loc["butina", "r2_median"])
+        rows.append([ARM_LABEL[arm], _fmt(d.loc["random", "r2_median"]), _fmt(sc),
+                     _fmt(bu), f"{bu/sc:.0%}" if sc else "—"])
+    return _md(["Arm (R² ↑)", "random", "scaffold", "Butina", "Butina retained"], rows)
+
+
 def table_all_endpoints() -> str:
     df = _read("table14_all_endpoints.csv")
     piv = df.pivot_table(index="arm", columns="metric", values="median")
@@ -362,6 +377,7 @@ RENDERERS = {
     "audit": table_audit,
     "der": table_der,
     "surrogate": table_surrogate,
+    "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,
     "enrichment": table_enrichment,
     "decontamination": table_decontamination,
