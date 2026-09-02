@@ -141,6 +141,8 @@ def build_claims() -> list[Claim]:
                    int(sur.iloc[0]["chain_length"])))
     C.append(Claim("3.1", "N57D is adjacent to a Zn ligand (separation 1)", "table9", 1,
                    int(sur.loc["CVA16 G-10", "min_separation_from_zinc"])))
+    C.append(Claim("Abstract", "abstract states the 7-8 divergence range", "table9",
+                   "7,8", ",".join(str(int(v)) for v in sorted(sur["n_differences"]))))
     C.append(Claim("3.1", "the count of five does not reproduce", "table9", True,
                    bool(all(int(sur.loc[l, "n_differences"]) != 5 for l in sur.index))))
 

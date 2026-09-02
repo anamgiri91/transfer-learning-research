@@ -42,6 +42,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", choices=["T4", "T5"], required=True)
     ap.add_argument("--decontaminate", action="store_true")
+    ap.add_argument("--drop-random", type=int, default=0,
+                    help="Drop this many RANDOM measurements instead of the "
+                         "contaminated ones. The control for --decontaminate: "
+                         "removing overlap also removes training data, so a "
+                         "size-matched random ablation separates the two.")
     ap.add_argument("--epochs", type=int, default=60)
     ap.add_argument("--patience", type=int, default=10)
     ap.add_argument("--batch-size", type=int, default=32)
@@ -59,6 +64,10 @@ def main() -> int:
     n_all = len(df)
     if args.decontaminate:
         df = df[~df["contaminated"]].reset_index(drop=True)
+    elif args.drop_random:
+        rng0 = np.random.default_rng(1000 + args.seed)
+        keep = rng0.permutation(len(df))[args.drop_random:]
+        df = df.iloc[sorted(keep)].reset_index(drop=True)
     tasks = sorted(df["target_id"].unique())
     task_idx = {t: i for i, t in enumerate(tasks)}
 
@@ -108,15 +117,17 @@ def main() -> int:
 
     model.load_state_dict(best_state)
     MODELS.mkdir(exist_ok=True)
-    tag = f"indomain_{args.arm}" + ("_clean" if args.decontaminate else "")
+    tag = (f"indomain_{args.arm}" + ("_clean" if args.decontaminate else "")
+           + (f"_rand{args.drop_random}" if args.drop_random else ""))
     torch.save(model.state_dict(), MODELS / f"{tag}.pt")
     (MODELS / f"{tag}.json").write_text(json.dumps({
         "arm": args.arm, "decontaminated": args.decontaminate,
+        "n_dropped_random": int(args.drop_random),
         "initialisation": "ChemBERTa-77M-MTR" if pretrained else "random",
         "tasks": tasks, "lr": lr, "batch_size": args.batch_size,
         "epochs_run": epoch + 1, "best_val_rmse": round(best, 4),
         "n_corpus_all": int(n_all), "n_corpus_used": int(len(df)),
-        "n_dropped_contaminated": int(n_all - len(df)),
+        "n_dropped_contaminated": int(n_all - len(df)) if args.decontaminate else 0,
         "n_train": int(tr.sum()), "n_val": int(va.sum()),
         "seconds": round(time.time() - t0, 1),
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),

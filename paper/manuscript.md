@@ -14,10 +14,11 @@ prediction, but its evidence base is large, noisy benchmarks. We test whether
 it helps in the opposite regime — few hundred compounds, one target, one assay
 — using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
 (494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
-units). Five arms (median predictor; ECFP4 + gradient boosting; RDKit
-descriptors + random forest; ChemBERTa-2 frozen linear probe; ChemBERTa-2 full
-fine-tune) are compared on identical materialised splits across 10 seeds and
-four training-set sizes, with 640 evaluated runs.
+units). Ten arms are compared on identical materialised splits across
+10 seeds and four training-set sizes, with 720 evaluated runs: five
+pre-registered (median predictor; ECFP4 + gradient boosting; RDKit descriptors
++ random forest; ChemBERTa-2 frozen probe; ChemBERTa-2 full fine-tune) and
+five added as controls and in-domain arms (§6.4).
 
 **On this dataset, pretraining did not help.** The frozen probe is
 significantly worse than the ECFP4 baseline (paired Wilcoxon, Holm-corrected
@@ -39,7 +40,7 @@ raw RMSE is not comparable across splitting strategies, because stricter splits
 yield lower-variance test folds; a variance-normalised measure is required, and
 its absence inverts the apparent difficulty ordering.
 
-Three ablations qualify this. Giving every arm an explicit search budget with
+Four ablations qualify this. Giving every arm an explicit search budget with
 validation-fold model selection leaves the baselines essentially unchanged
 (32 trials move the fingerprint baseline by a median of +0.004 RMSE) but
 transforms the fine-tune at n = 50, from RMSE 1.23 / R² −1.26 to 0.74 / +0.30 —
@@ -68,14 +69,22 @@ beats the generic probe in 9 of 10 seeds (p = 0.006), supporting **H3** for the
 chained arm while the pre-registered T4-vs-T1 form stays inconclusive. In-domain
 pretraining is doing real work; it still does not overtake count fingerprints.
 
-These are single-target, single-assay results with one pretrained encoder. They
-constrain claims about *this* regime; they are not a general verdict on
-molecular pretraining.
+These are single-target, single-assay results. The generic encoder is a single
+model family, and the in-domain corpus is 95% coronaviral and chemically
+near-disjoint from the evaluation set, so it tests a weaker sense of
+"in-domain" than the phrase suggests. They constrain claims about *this*
+regime; they are not a general verdict on molecular pretraining.
 
-Affinities are measured on CVA16 2A protease as a five-residue surrogate for
-EV-A71. The pretraining-corpus decontamination ablation was not performed, so
-the reported transfer performance is an upper bound — which strengthens rather
-than weakens the negative result.
+Affinities are measured on CVA16 2A protease as a surrogate for EV-A71. We
+re-derive that substitution from UniProt rather than citing it: the two 2A
+chains differ at 7–8 residues depending on strain — not the five the source
+paper reports for its own constructs — but the catalytic triad is identical and
+no differing residue is catalytic (§3.1).
+
+Decontamination could not be performed for the ChemBERTa arms, whose 77M corpus
+is not distributed, so their reported performance is an upper bound — which
+strengthens rather than weakens the negative result. It **is** performed for the
+in-domain arms, whose corpus we built (§6.4).
 
 ---
 
@@ -936,8 +945,9 @@ is. We report both rather than the one that reads better.
 `T1` beats `T0r` by 0.004 RMSE at full data, winning in 5 of 10 seeds
 (p = 0.49); the fine-tune `T2` is *behind* the untrained encoder at full data
 and far behind it at n = 50 (−0.534, 0 of 10 seeds, p = 0.002). The in-domain
-arms, by contrast, clear the control decisively: `T4` +0.030 (7 of 10,
-p = 0.049) and `T5` +0.030 (8 of 10, p = 0.010).
+arms, by contrast, do clear the control — `T5` comfortably (+0.030, 8 of 10,
+p = 0.010) and `T4` only marginally (+0.030, 7 of 10, p = 0.049, which at one
+seed's difference would not have cleared it).
 
 This is not an artefact of one lucky random initialisation. Re-drawing the
 untrained encoder five times moves its median RMSE between 0.6438 and 0.6549
@@ -1248,7 +1258,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **221 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **222 claims** across sections 3.1
 through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number

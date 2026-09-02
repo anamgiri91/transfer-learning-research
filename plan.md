@@ -247,9 +247,13 @@ documents is lying.
       split (plus the `T0r` untrained-encoder control added in §6.4);
       **`T3` and `T6` not run**. **H3 is now tested** (§6.4): supported for the
       chained arm, inconclusive in its pre-registered `T4`-vs-`T1` form
-- [~] Contamination measurement, then decontaminated re-run — measurement done
-      as a PubChem-membership upper bound (53%); **the decontaminated re-run is
-      impossible**, the corpus is not redistributed, so **H4 is untested** (§7.3)
+- [~] Contamination measurement, then decontaminated re-run — **done for the
+      in-domain arms**, whose corpus we built: overlap measured exactly
+      (0 exact, 0 near-duplicate, 61 scaffold-level) and a decontaminated
+      variant pretrained and evaluated (§6.4). **Impossible for the ChemBERTa
+      arms**, whose 77M corpus is not redistributed; only a PubChem-membership
+      upper bound (53%) is available there, so **H4 stays untested for those
+      arms** (§7.3)
 - [~] Ablations §7.2 — activity cliffs done (§6.3); adaptation strategy partial
       (full FT vs linear probe only, no LoRA / layer-wise); fidelity ablation
       **vacuous**, the gate removed nothing; corpus size and 2A-vs-3C
@@ -263,6 +267,6 @@ from-scratch baseline) and **H2** (the advantage grows as data shrinks) are
 answered negatively on every arm run. **H3** (in-domain beats generic
 pretraining) is answered in §6.4 — supported for the chained arm `T5`,
 inconclusive in the exact `T4`-vs-`T1` form this document specifies. **H4**
-still has no evidence for the ChemBERTa arms, whose corpus is not distributed;
-it is answerable for the in-domain arms, whose corpus we built, and that
-ablation is in progress.
+has no evidence for the ChemBERTa arms, whose corpus is not distributed. It is
+answerable for the in-domain arms, whose corpus we built, and that ablation is
+reported in §6.4.

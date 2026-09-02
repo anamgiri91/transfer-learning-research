@@ -1,0 +1,18 @@
+{
+  "arm": "T4c_indomain_probe_decontaminated",
+  "metrics": {
+    "mae": 0.4809393055584965,
+    "pearson": 0.6564264519271268,
+    "precision_at_10pct": 0.4,
+    "r2": 0.38863740882009157,
+    "rmse": 0.5899178624641854,
+    "spearman": 0.5641357501717817
+  },
+  "n_test": 98,
+  "n_train": 347,
+  "seconds": 0.02,
+  "seed": 8,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}

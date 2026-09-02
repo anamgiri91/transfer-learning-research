@@ -29,7 +29,7 @@ src/evapro/  Importable package: data, features, models, evaluation
 scripts/     Thin CLI entrypoints that call src/ (no logic lives here)
 notebooks/   Exploration only; anything load-bearing gets promoted to src/
 tests/       pytest — split integrity and leakage checks are the important ones
-results/     metrics/*.json is versioned; figures/ and tables/ are regenerated
+results/     metrics/, predictions/ and tables/ are versioned; figures/ are regenerated
 reports/     Public write-ups, preprint-ready figures
 docs/        Methods notes, data licences, decision log
 private/     NOT version controlled — see private/README.md
@@ -55,13 +55,15 @@ python scripts/build_splits.py --target eva71_2a  # splits + leakage assertions
 python scripts/audit_splits.py                    # Table 0: leakage audit
 python scripts/run_arms.py --arms B0 B1 B2 T1     # baselines + frozen-encoder probe
 python scripts/run_arms.py --arms T2              # ChemBERTa fine-tune (slow)
+make indomain                                     # in-domain corpus + encoders (§6.4)
+python scripts/run_arms.py --arms T0r T4 T5 T4c T5c --splits scaffold
 python scripts/make_report.py                     # tables + figures
 ```
 
 Then verify nothing drifted:
 
 ```bash
-make verify   # tests + manuscript table freshness + 93 machine-checked claims
+make verify   # tests + table freshness + every machine-checked claim + citations
 ```
 
 Full artefact map: [`paper/provenance.md`](paper/provenance.md).

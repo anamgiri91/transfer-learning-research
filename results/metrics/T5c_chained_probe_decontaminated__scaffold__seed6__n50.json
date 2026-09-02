@@ -1,0 +1,18 @@
+{
+  "arm": "T5c_chained_probe_decontaminated",
+  "metrics": {
+    "mae": 0.5654350550982418,
+    "pearson": 0.5462223576589873,
+    "precision_at_10pct": 0.4,
+    "r2": 0.2855660051279757,
+    "rmse": 0.7038930638779696,
+    "spearman": 0.4709756604134243
+  },
+  "n_test": 98,
+  "n_train": 50,
+  "seconds": 0.0,
+  "seed": 6,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}

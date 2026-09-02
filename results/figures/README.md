@@ -1,29 +1,38 @@
 # results/figures — regenerated, not tracked
 
-All figures here are produced by `scripts/make_report.py` and are gitignored
-because they are fully derived from `results/tables/` and `results/metrics/`,
-which are tracked. Regenerate with:
+Produced by `scripts/make_report.py` and gitignored, because they are fully
+derived from `results/tables/` and `results/metrics/`, which are tracked.
 
 ```bash
 python scripts/make_report.py --require-seeds 10
 ```
 
-Verified byte-identical across regeneration.
+Verified 2026-09-02: all seven figures are **byte-identical** across
+regeneration.
 
 ## Current figures
 
-| File | Manuscript ref | Content |
+File names describe content; the manuscript numbers them by order of
+appearance, so the two do not line up one-to-one. `verify_citations.py` checks
+that every embedded image exists and that the visible Figure numbers run 1..N.
+
+| File | Manuscript | Content |
 |---|---|---|
-| `fig1_learning_curves__<split>.png` | Figure 1 | RMSE vs training-set size, median + IQR band |
-| `fig2_ranking__<split>.png` | Figure 2 | Spearman ρ vs training-set size |
+| `fig1_learning_curves__scaffold.png` | Figure 1 | RMSE vs training-set size, median + IQR, primary endpoint |
+| `fig2_ranking__scaffold.png` | Figure 2 | Spearman ρ vs training-set size |
+| `fig1_learning_curves__random.png` | Figure 3 | as Figure 1, random split (optimism reference) |
+| `fig1_learning_curves__butina.png` | Figure 4 | as Figure 1, Butina split (stricter check) |
+| `fig_indomain__scaffold.png` | Figure 5 | §6.4 in-domain vs generic, focused comparison |
+| `fig2_ranking__random.png` | — | generated, not embedded |
+| `fig2_ranking__butina.png` | — | generated, not embedded |
 
-`<split>` ∈ {scaffold, random, butina}. The manuscript uses the scaffold
-versions as the primary endpoint.
+**Two deliberate restrictions.** Figures 1–4 show only the five arms frozen in
+`plan.md` §4: adding the §6.4 arms put eight series into a 0.17 RMSE band with
+overlapping ribbons and detached labels. Figure 5 carries the in-domain
+comparison instead, and omits `T2`, whose n = 50 RMSE of 1.23 stretches the
+axis until the arms it exists to separate become indistinguishable.
 
-## Stale — not from this pipeline
-
-`data_efficiency_rmse.png` and `data_efficiency_pearsonr.png` were produced by
-`scripts/prototype/generate_reports.py` from the single-seed, complex-level
-run now archived in `results/legacy_prior_run/`. They are **not** referenced by
-the manuscript and are not comparable to the current figures. Delete them, or
-regenerate the prototype outputs, but do not read them as current results.
+The two `data_efficiency_*.png` files from the prototype pipeline were deleted
+on 2026-09-02: they came from a single-seed, complex-level run (archived in
+`results/legacy_prior_run/`), were never referenced by the manuscript, and were
+not comparable to anything current.
