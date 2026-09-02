@@ -16,9 +16,10 @@ python scripts/verify_surrogate.py                 # table 9   (UniProt, cached)
 python scripts/analyse_indomain.py                 # tables 10-11
 python scripts/prepare_indomain.py                 # table 12
 python scripts/analyse_tuning.py                   # table 13
+python scripts/analyse_endpoints.py                # table 14
 ```
 
-Verified 2026-09-02: a full regeneration reproduces the **data rows of all 20
+Verified 2026-09-02: a full regeneration reproduces the **data rows of all 21
 tables byte-identically**. Only the `#`-prefixed provenance header changes,
 because it carries a generation timestamp.
 
@@ -38,6 +39,7 @@ because it carries a generation timestamp.
 | 11 | untrained-encoder sensitivity to the random draw | §6.4 |
 | 12 | corpus vs evaluation-set chemistry | §6.4 |
 | 13 | tuned fine-tune vs **both** baseline bases | §6.2 |
+| 14 | every pre-registered endpoint, incl. the two omitted | §5.7 |
 
 **Two tables pin their arm family on purpose.** Tables 3 and 8 are
 Holm-corrected across arms, so admitting an arm added later silently re-corrects

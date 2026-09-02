@@ -242,7 +242,7 @@ documents is lying.
       N = 494, so the rule did not fire and the deep arms stayed in scope
 - [x] Build and verify splits → `make splits` (leakage tests pass; `tests/test_splits.py`)
 - [~] Baselines `B0`–`B3` across seeds and sizes — `B0`–`B2` complete over
-      10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.6)
+      10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.7)
 - [~] Transfer arms `T1`–`T6` — `T1`, `T2`, `T4`, `T5` complete on the scaffold
       split (plus the `T0r` untrained-encoder control added in §6.4);
       **`T3` and `T6` not run**. **H3 is now tested** (§6.4): supported for the
@@ -257,7 +257,7 @@ documents is lying.
 - [~] Ablations §7.2 — activity cliffs done (§6.3); adaptation strategy partial
       (full FT vs linear probe only, no LoRA / layer-wise); fidelity ablation
       **vacuous**, the gate removed nothing; corpus size and 2A-vs-3C
-      **impossible here** (§7.9)
+      **impossible here** (§7.10)
 - [x] Figures, tables, manuscript — draft complete including §7; tables are
       generated from source and every prose number is machine-checked
       (`make verify`; the claim count lives in one place, manuscript §10)

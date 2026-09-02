@@ -209,12 +209,14 @@ def table_indomain_curve(split="scaffold") -> str:
 
 def table_indomain_contrasts() -> str:
     df = _read("table10_indomain_contrasts.csv")
-    df = df[(df.metric == "rmse") & (df.n_train == df.n_train.max())]
+    df = df[(df.metric == "rmse") & (df.n_train == df.n_train.max())
+            & (~df.arm.isin(["T4c", "T5c", "T4r", "T5r"]))]
     rows = [[f"{r.arm} vs {r.reference}", f"{r.median_delta:+.4f}",
-             f"{r.arm_better_in_seeds}/{r.n_seeds}", f"{r.p_raw:.4f}", r.verdict]
+             f"{r.arm_better_in_seeds}/{r.n_seeds}", f"{r.p_raw:.4f}",
+             f"{r.p_holm:.3f}", f"{r.p_bh:.3f}", r.verdict_corrected]
             for r in df.itertuples()]
     return _md(["Contrast (full data)", "median ΔRMSE", "arm better in",
-                "p", "verdict"], rows)
+                "p raw", "p Holm", "p BH", "verdict"], rows)
 
 
 def table_random_draws() -> str:
@@ -249,14 +251,40 @@ def table_decontamination() -> str:
     rows = []
     for a, b, what in DECONTAM_ROWS:
         if (a, b) not in idx.index:
-            rows.append([f"{a} vs {b}", what, "—", "—", "—", "not yet run"])
+            rows.append([f"{a} vs {b}", what, "—", "—", "—", "—", "not yet run"])
             continue
         r = idx.loc[(a, b)]
         rows.append([f"{a} vs {b}", what, f"{r['median_delta']:+.4f}",
                      f"{int(r['arm_better_in_seeds'])}/{int(r['n_seeds'])}",
-                     f"{r['p_raw']:.4f}", str(r["verdict"])])
+                     f"{r['p_raw']:.4f}", f"{r['p_holm']:.3f}",
+                     str(r["verdict_corrected"])])
     return _md(["Contrast", "What it removes", "median ΔRMSE", "arm better in",
-                "p", "verdict"], rows)
+                "p raw", "p Holm", "verdict"], rows)
+
+
+def table_all_endpoints() -> str:
+    df = _read("table14_all_endpoints.csv")
+    piv = df.pivot_table(index="arm", columns="metric", values="median")
+    cols = [("rmse", "RMSE ↓"), ("mae", "MAE ↓"), ("r2", "R² ↑"),
+            ("spearman", "ρ ↑"), ("precision_at_10pct", "prec@10% ↑")]
+    rows = []
+    for arm in PREREGISTERED + ["T0r_untrained_encoder_probe", "T4_indomain_probe",
+                                "T5_chained_probe"]:
+        if arm not in piv.index:
+            continue
+        rows.append([ARM_LABEL[arm]] + [_fmt(piv.loc[arm, c], 3 if c != "precision_at_10pct" else 2)
+                                        for c, _ in cols])
+    return _md(["Arm"] + [h for _, h in cols], rows)
+
+
+def table_enrichment() -> str:
+    df = _read("table14_all_endpoints.csv")
+    df = df[(df.metric == "precision_at_10pct") & df.p_raw.notna()]
+    rows = [[ARM_LABEL[r.arm], _fmt(r.median, 2), f"{r.median_delta_vs_B1:+.2f}",
+             f"{int(r.arm_better_in_seeds)}/{int(r.n_seeds)}",
+             f"{r.p_raw:.4f}", f"{r.p_holm:.3f}", r.verdict] for r in df.itertuples()]
+    return _md(["Arm", "prec@10%", "Δ vs B1", "better in", "p raw", "p Holm",
+                "verdict"], rows)
 
 
 def table_surrogate() -> str:
@@ -334,6 +362,8 @@ RENDERERS = {
     "audit": table_audit,
     "der": table_der,
     "surrogate": table_surrogate,
+    "all_endpoints": table_all_endpoints,
+    "enrichment": table_enrichment,
     "decontamination": table_decontamination,
     "tuned_comparison": table_tuned_comparison,
     "indomain_curve": table_indomain_curve,

@@ -486,6 +486,67 @@ def build_claims() -> list[Claim]:
     C.append(Claim("cost", "the ratio is under two orders of magnitude",
                    "metrics seconds", True, bool(t2_full / b1_full < 100)))
 
+    # ---- Section 5.7: every pre-registered endpoint ----
+    ep = read_table("table14_all_endpoints.csv")
+    med = ep.pivot_table(index="arm", columns="metric", values="median")
+    for arm, mae, prec in [("B1_ecfp_histgb", 0.4497, 0.40),
+                           ("T1_chemberta_linear_probe", 0.4994, 0.50),
+                           ("T2_chemberta_full_finetune", 0.5053, 0.50),
+                           ("T5_chained_probe", 0.4903, 0.55),
+                           ("T4_indomain_probe", 0.4848, 0.45)]:
+        C.append(Claim("5.7", f"{arm} MAE", "table14", mae,
+                       round(float(med.loc[arm, "mae"]), 4)))
+        C.append(Claim("5.7", f"{arm} precision@10%", "table14", prec,
+                       round(float(med.loc[arm, "precision_at_10pct"]), 2)))
+    pr = ep[(ep.metric == "precision_at_10pct") & ep.p_raw.notna()].set_index("arm")
+    C.append(Claim("5.7", "T2 beats B1 on precision@10%, Holm 0.023", "table14", 0.0234,
+                   float(pr.loc["T2_chemberta_full_finetune", "p_holm"])))
+    C.append(Claim("5.7", "T2 wins 9 of 10 seeds on precision@10%", "table14", 9,
+                   int(pr.loc["T2_chemberta_full_finetune", "arm_better_in_seeds"])))
+    C.append(Claim("5.7", "T2 is the only arm beating B1 on precision@10% under Holm",
+                   "table14", 1, int((pr["p_holm"] <= 0.05).sum())))
+    C.append(Claim("5.7", "every transfer arm matches or beats B1 on precision@10%",
+                   "table14", True,
+                   bool((pr.loc[[a for a in pr.index if a.startswith("T")],
+                                "median_delta_vs_B1"] >= 0).all())))
+    C.append(Claim("5.7", "every transfer arm is worse than B1 on MAE", "table14", True,
+                   bool((ep[(ep.metric == "mae") & ep.arm.str.startswith("T")]
+                         ["median_delta_vs_B1"] < 0).all())))
+    C.append(Claim("5.7", "T2 is worst of the trained arms on RMSE", "table14", True,
+                   bool(float(med.loc["T2_chemberta_full_finetune", "rmse"])
+                        == float(med.drop("B0_median")["rmse"].max()))))
+    C.append(Claim("5.7", "the test fold's top decile is 10 compounds", "table0", 10,
+                   round(int(read_table("table0_split_audit.csv")["n_test"].iloc[0]) * 0.10)))
+
+    # ---- Multiplicity: what survives correction (§6.4, §6.5) ----
+    mc = read_table("table10_indomain_contrasts.csv")
+    mc = mc[(mc.metric == "rmse") & (mc.n_train == 347)].set_index(["arm", "reference"])
+    for a, b, holm, bh in [("T5", "T1", 0.0767, 0.0294), ("T5", "T0r", 0.1176, 0.0294),
+                           ("T4", "T0r", 0.4392, 0.0915), ("T5", "B1", 0.0300, 0.0150),
+                           ("T4c", "T4r", 0.2730, 0.0682), ("T5c", "T5r", 0.4392, 0.0915),
+                           ("T4r", "T4", 0.0300, 0.0150), ("T1", "T0r", 1.0, 0.5679)]:
+        C.append(Claim("6.4", f"{a} vs {b} Holm", "table10", holm,
+                       float(mc.loc[(a, b), "p_holm"])))
+        C.append(Claim("6.4", f"{a} vs {b} BH", "table10", bh,
+                       float(mc.loc[(a, b), "p_bh"])))
+    # the review's load-bearing findings about what survives
+    C.append(Claim("6.4", "H3 contrast is BH-significant but not Holm", "table10", True,
+                   bool(float(mc.loc[("T5", "T1"), "p_bh"]) <= 0.05
+                        and float(mc.loc[("T5", "T1"), "p_holm"]) > 0.05)))
+    C.append(Claim("6.4", "T4 vs T0r is inconclusive under both corrections", "table10",
+                   True, bool(float(mc.loc[("T4", "T0r"), "p_bh"]) > 0.05
+                              and float(mc.loc[("T4", "T0r"), "p_holm"]) > 0.05)))
+    C.append(Claim("6.5", "neither H4 decisive contrast survives Holm", "table10", True,
+                   bool(float(mc.loc[("T4c", "T4r"), "p_holm"]) > 0.05
+                        and float(mc.loc[("T5c", "T5r"), "p_holm"]) > 0.05)))
+    C.append(Claim("6.5", "the random ablation is the only Holm survivor in table 13",
+                   "table10", True,
+                   bool(float(mc.loc[("T4r", "T4"), "p_holm"]) <= 0.05)))
+    # only negative results survive Holm in the primary family
+    _surv = mc[mc.p_holm <= 0.05]
+    C.append(Claim("6.4", "every Holm survivor favours the reference arm", "table10",
+                   True, bool((_surv["median_delta"] < 0).all())))
+
     # ---- Section 6.5: decontamination and its size-matched control ----
     dec = read_table("table10_indomain_contrasts.csv")
     dec = dec[(dec.metric == "rmse") & (dec.n_train == 347)].set_index(["arm", "reference"])
