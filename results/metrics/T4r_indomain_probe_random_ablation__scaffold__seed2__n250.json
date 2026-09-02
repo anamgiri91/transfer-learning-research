@@ -1,0 +1,18 @@
+{
+  "arm": "T4r_indomain_probe_random_ablation",
+  "metrics": {
+    "mae": 0.545836398424421,
+    "pearson": 0.5839589131002472,
+    "precision_at_10pct": 0.4,
+    "r2": 0.318392391414808,
+    "rmse": 0.7118488225266272,
+    "spearman": 0.564648425695833
+  },
+  "n_test": 98,
+  "n_train": 250,
+  "seconds": 0.03,
+  "seed": 2,
+  "source_script": "scripts/run_arms.py",
+  "split": "scaffold",
+  "target": "eva71_2a"
+}

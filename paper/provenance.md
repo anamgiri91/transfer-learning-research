@@ -42,6 +42,7 @@ belong in the paper.
 | Check | Script | What it guarantees |
 |---|---|---|
 | Tables are generated, not typed | `scripts/render_manuscript_tables.py` | Every results table in the manuscript is written from `results/tables/*.csv`; `--check` fails if stale |
+| Summaries match the artefacts | `scripts/verify_consistency.py` | Counts stated in prose (runs, arms, claims, tables, figures) must equal the derived value in every document; sentinels fire when a summary still says work was not done that an artefact shows was done. Added because all eleven errors of the second audit were in prose that restates rather than computes |
 | Citations are checked | `scripts/verify_citations.py` | Reference numbering, reading-depth labels, orphan references, dangling body citations, depth drift against `literature.md`, and the `[secondary]`-with-a-number rule. `--online` also checks every cited URL resolves. Added after a manual audit found seven prose citation errors that no existing check could see |
 | Borrowed numbers carry their source sentence | `docs/citation-claims.yaml` + `scripts/verify_citations.py` | Each externally-sourced quantity records the verbatim quote, the URL it was read at and the date; the checker enforces that the quote contains the number, that the claim is still made, and that second-hand quotes are declared |
 | The surrogate claim is re-derived, not cited | `scripts/verify_surrogate.py` | §3.1's CVA16/EV-A71 comparison is recomputed from UniProt-annotated 2A chains into `table9_surrogate_divergence.csv`; 13 claims check against it |

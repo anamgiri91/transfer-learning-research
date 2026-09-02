@@ -57,6 +57,7 @@ verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) scripts/render_manuscript_tables.py --check
 	$(PY) scripts/verify_manuscript.py
 	$(PY) scripts/verify_citations.py
+	$(PY) scripts/verify_consistency.py
 
 verify-online:  ## verify, plus check that every cited URL still resolves
 	$(MAKE) verify

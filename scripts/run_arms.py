@@ -140,7 +140,7 @@ def fit_predict_sklearn(arm, Xtr, ytr, Xte, seed):
     elif arm == "B2":
         model = RandomForestRegressor(n_estimators=500, min_samples_leaf=1,
                                       n_jobs=-1, random_state=seed)
-    elif arm in ("T1", "T4", "T5", "T4c", "T5c", "T0r"):
+    elif arm in ("T1", "T4", "T5", "T4c", "T5c", "T4r", "T5r", "T0r"):
         # Frozen-encoder linear probe: standardise then ridge with internal CV.
         # Identical for every frozen arm, so the arms differ only in the encoder.
         scaler = StandardScaler().fit(Xtr)
@@ -195,12 +195,17 @@ ARM_FEATURES = {
     "T0r": "random_encoder",
     "T4": "indomain:indomain_T4", "T5": "indomain:indomain_T5",
     "T4c": "indomain:indomain_T4_clean", "T5c": "indomain:indomain_T5_clean",
+    # Size-matched random ablations: the control for T4c/T5c. Decontamination
+    # removes overlap AND 2% of the corpus; these remove only the 2%.
+    "T4r": "indomain:indomain_T4_rand61", "T5r": "indomain:indomain_T5_rand61",
 }
 ARM_LABELS = {
     "B0": "B0_median", "B1": "B1_ecfp_histgb", "B2": "B2_descriptors_rf",
     "T1": "T1_chemberta_linear_probe", "T2": "T2_chemberta_full_finetune",
     "T0r": "T0r_untrained_encoder_probe",
     "T4": "T4_indomain_probe", "T5": "T5_chained_probe",
+    "T4r": "T4r_indomain_probe_random_ablation",
+    "T5r": "T5r_chained_probe_random_ablation",
     "T4c": "T4c_indomain_probe_decontaminated",
     "T5c": "T5c_chained_probe_decontaminated",
 }

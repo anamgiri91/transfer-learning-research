@@ -661,8 +661,12 @@ known: contamination can only *flatter* the transfer arms, so it cannot explain
 a transfer arm losing. It does mean any transfer *advantage* observed here
 should be treated as an upper estimate.
 
-We did not re-pretrain on a decontaminated corpus; that remains the one part of
-§7.1 not performed, and it is out of reach without the corpus itself.
+We did not re-pretrain ChemBERTa on a decontaminated corpus, and cannot: that
+requires the corpus. **For the in-domain arms of §6.4 the corpus is ours, so
+that part of §7.1 *is* performed there** — overlap is known exactly rather than
+bounded, and a decontaminated variant is pretrained and evaluated. The ablation
+`plan.md` §7.1 asks for is therefore done for one pretraining source and
+impossible for the other.
 
 ### 6.2 Hyperparameter budget
 
@@ -1014,20 +1018,30 @@ single-assay regression problem of this shape.
 
 **2. The measured protein is CVA16 2A^pro, not EV-A71 2A^pro.** Stated in §3.1
 rather than deferred here because it conditions the whole study: every
-"EV-A71" result, including the title, is a CVA16 result with a five-residue
-extrapolation.
+"EV-A71" result, including the title, is a CVA16 result extrapolated across a
+handful of non-catalytic substitutions — 7 or 8 depending on strain, which our
+own re-derivation puts at odds with the count of five the source paper reports
+for its constructs (§3.1).
 
-**3. Pretraining decontamination was bounded, not performed.** `plan.md` §7.1
-makes re-pretraining on a decontaminated corpus the load-bearing ablation, and
-H4 — that part of any apparent transfer gain is leakage — is the hypothesis it
-was to decide. The ChemBERTa-2 77M corpus is not redistributed, so it could not
-be diffed or rebuilt. What §6.1 supplies instead is a PubChem-membership
-**upper bound**: up to 53% of test compounds could have been seen. **H4 is
-therefore untested, not answered.** The bound's direction is the saving grace —
-contamination can only flatter a transfer arm, so it cannot explain transfer
-losing, and the negative result survives. The same asymmetry means the reverse
-does not hold: had transfer won, this study could not have told you whether the
+**3. Pretraining decontamination is answered for one pretraining source and
+unanswerable for the other.** `plan.md` §7.1 makes re-pretraining on a
+decontaminated corpus the load-bearing ablation, and H4 — that part of any
+apparent transfer gain is leakage — is what it was to decide.
+
+For **ChemBERTa** it cannot be done: the 77M corpus is not redistributed, so it
+can be neither diffed nor rebuilt. §6.1 supplies a PubChem-membership **upper
+bound** instead — up to 53% of test compounds could have been seen — so **H4
+remains untested for those arms.** The bound's direction is the saving grace:
+contamination can only flatter a transfer arm, so it cannot explain a transfer
+arm losing, and the negative result survives. The asymmetry does not run the
+other way — had transfer won, this design could not have told you whether the
 win was real.
+
+For the **in-domain arms** the corpus is ours, so overlap is measured rather
+than bounded (0 exact, 0 near-duplicate, 61 scaffold-level of 2,974
+measurements) and a decontaminated variant is pretrained and evaluated (§6.4).
+That is the ablation the protocol asks for, on the one pretraining source where
+it is available.
 
 **4. The search budget is unequal, and unequal in the direction that
 disfavours transfer.** `plan.md` §5 specifies an identical fixed budget for
@@ -1319,6 +1333,28 @@ impossible to leave implicit.
 test, so the checker is verified against the errors that motivated it rather
 than only against a clean document. It found one further orphan reference on
 its first run.
+
+**Summaries are checked against the artefacts too, because that is where these
+errors came from.** Every one of the eleven above lived in a *summary* — the
+abstract, a README, a limitations item, the conclusion, the protocol checklist
+— not in a computed number. `verify_manuscript.py` re-derives values and so
+cannot see a sentence that merely restates a conclusion; the eleven were found
+by reading. `scripts/verify_consistency.py` now closes the part of that gap a
+machine can close, across seven documents: a count stated in prose (evaluated
+runs, arms, machine-checked claims, tables, figures) must equal the value
+derived from the artefacts **everywhere it is stated**, and a sentinel fires if
+an artefact exists while a summary still claims the work it represents was not
+done. The append-only histories — the decision log and the literature review —
+are exempt by design, since recording what was true at the time is their job.
+
+It earned its place immediately. On its first run it found **two further stale
+claims the manual audit had missed**, both because a patch script had composed
+the edit in memory and written only a different file: §6.1 still said
+decontamination "remains the one part of §7.1 not performed", and limitation 2
+still described a "five-residue extrapolation". Both had been reported as
+fixed. `tests/test_consistency.py` pins the catchable cases, including a
+negative test that a retrospective mention of a superseded count is *not*
+flagged.
 
 **The one claim we could not re-verify is now checked against primary data
 instead.** §3.1's five-residue CVA16/EV-A71 statement could not be re-retrieved
