@@ -25,9 +25,9 @@ ablations (§6.4–6.5).
 significantly worse than the ECFP4 baseline (paired Wilcoxon, Holm-corrected
 p = 0.012); the fine-tune is also worse but does not reach significance
 (p = 0.074, inconclusive at 10 seeds). Neither reaches the baseline's full-data
-RMSE at any training size, so both have a data-efficiency ratio of zero, and
-the deficit does not shrink in the low-data regime where transfer is supposed
-to pay. The two baselines are statistically indistinguishable from each other
+RMSE at any training size, so both ChemBERTa arms have a data-efficiency ratio
+of zero, and the deficit does not shrink in the low-data regime where transfer
+is supposed to pay. The two baselines are statistically indistinguishable from each other
 (p = 0.56); the nominal best is a random forest on RDKit descriptors, but we do
 not claim it beats gradient-boosted fingerprints.
 
@@ -49,7 +49,7 @@ so a benchmark that fixes hyperparameters across arms will understate transfer,
 and one earlier claim of ours built on that configuration is withdrawn. Even
 tuned, the fine-tune is not shown to beat the baselines (n = 50: better in 3 of
 10 seeds, p = 0.16; full data: 2 of 5, p = 0.63) — indistinguishable rather than
-worse, at ~80× the compute per fit. Separately, up to 53% of test compounds are present in
+worse, at ~70× the compute per fit. Separately, up to 53% of test compounds are present in
 PubChem, an upper bound on pretraining overlap; this cannot explain transfer
 losing, but it caps how much any transfer advantage here should be believed.
 Third, stratifying the test fold by its relationship to training localises the
@@ -602,7 +602,7 @@ fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
    was not re-tuned. The fine-tune, once tuned, is **statistically
    indistinguishable** from the baseline at both sizes tested (n = 50: better in
    3 of 10 seeds, p = 0.16; n = 347: better in 2 of 5, p = 0.63) while costing
-   ~80× more compute per fit. We claim the absence of a demonstrated benefit,
+   ~70× more compute per fit. We claim the absence of a demonstrated benefit,
    **not** a demonstrated deficit — and note the search budget still favours the
    baselines (§6.2).
 2. **The two baselines are indistinguishable** (p = 0.56), and are **not
@@ -749,7 +749,7 @@ direction.
 **The defensible conclusion is therefore weaker than §5 states.** Tuned, we do
 not show that fine-tuning is *worse* than the baselines; we show only that it is
 **not demonstrably better**, at either training-set size, while costing roughly
-two orders of magnitude more compute (≈160 s vs ≈2 s per fit). The strongly
+~70× the compute (185 s vs 2.7 s per fit at full data). The strongly
 negative reading — that transfer loses — survives only for the frozen linear
 probe (§5.4, Holm p = 0.012), which was **not** re-tuned here; its ridge penalty
 is already selected by internal cross-validation, but that is a weaker defence
@@ -757,7 +757,7 @@ than the search the fine-tune received.
 
 **The remaining budget asymmetry disfavours transfer, and we state it plainly.**
 B1 received 32 trials; the fine-tune received 6 at n = 50 and 4 at full data,
-because each of its fits costs ~160 s. This is not the equal budget `plan.md` §5
+because each of its fits costs ~185 s at full data. This is not the equal budget `plan.md` §5
 specifies. The direction matters: the arm with the *smaller* search is the
 transfer arm, so a fuller search could only improve it further. Our conclusion
 is consequently stated as "no demonstrated benefit", not "demonstrated deficit".
@@ -1011,9 +1011,17 @@ call. In-domain adaptation's margin over the same control is 0.030, roughly
 three times as large, and it *is* significant. We claim the contrast between
 those two magnitudes, not that generic pretraining contributes nothing.
 
-**None of it overtakes the fingerprint baseline.** `T4` matches `B1`'s marginal
-median almost exactly (0.6028 vs 0.6031) but loses the paired test in 8 of 10
-seeds (−0.047, p = 0.064, inconclusive); `T5` loses it in 10 of 10 (−0.014,
+**None of it overtakes the fingerprint baseline.** One thing does change from
+§5.3, and it is worth stating because that section's headline was a row of
+zeros: `T4` is the **only** transfer arm in this paper that ever reaches `B1`'s
+full-data RMSE, so it is the only one with a non-zero data-efficiency ratio.
+That ratio is **0.60**, and a DER below 1 means the arm needed *more* training
+data than the baseline to get there — about 1.7× as much, and it only gets
+there at the full training fold. So the data-efficiency conclusion is unchanged
+in direction while no longer being degenerate.
+
+`T4` matches `B1`'s marginal median almost exactly (0.6028 vs 0.6031) but loses
+the paired test in 8 of 10 seeds (−0.047, p = 0.064, inconclusive); `T5` loses it in 10 of 10 (−0.014,
 p = 0.002) on an effect of 0.014 RMSE — significant and practically negligible
 at once, which is the sign-based Wilcoxon behaving exactly as §4.4 warns. So
 the paper's headline is unchanged. What changes is the mechanism underneath it:
@@ -1128,8 +1136,8 @@ it is available.
 **4. The search budget is unequal, and unequal in the direction that
 disfavours transfer.** `plan.md` §5 specifies an identical fixed budget for
 every arm. §6.2 delivers 32 trials to B1 but only 6 to the fine-tune at n = 50
-and 4 at full data, because each fine-tune fit costs ~160 s against the
-baseline's ~2 s. B2 and the frozen probe T1 were not re-tuned at all — and T1
+and 4 at full data, because each fine-tune fit costs ~185 s against the
+baseline's ~2.7 s. B2 and the frozen probe T1 were not re-tuned at all — and T1
 is the arm carrying the one significant negative result (§5.4). Its ridge
 penalty is chosen by internal cross-validation, so it is not untuned, but that
 is weaker than the search its comparator received. This is why §5.7 claims **no
@@ -1167,7 +1175,7 @@ dataset cannot answer.
 **8. Split coverage is incomplete.** The temporal split of `plan.md` §3.3 was
 dropped — the OpenBind release carries no per-compound year — so the
 deployment-realism endpoint is absent. The fine-tune T2 was run on the scaffold
-split only, at ~160 s per fit, so the Butina degradation result of §5.5(ii)
+split only, at ~185 s per fit, so the Butina degradation result of §5.5(ii)
 rests on the frozen probe alone; whether full fine-tuning degrades the same way
 under a stricter split is untested.
 
@@ -1250,8 +1258,8 @@ Concretely, for a project with a few hundred measurements on one target:
 
 1. **Start with ECFP4 counts + gradient boosting, or RDKit descriptors + a
    random forest.** They were statistically indistinguishable from each other
-   here (p = 0.56), both beat both transfer arms, and they fit in ~2 s against
-   the fine-tune's ~160 s. On this evidence a pretrained encoder is not the
+   here (p = 0.56), both beat both transfer arms, and they fit in ~2.7 s against
+   the fine-tune's ~185 s. On this evidence a pretrained encoder is not the
    first thing to reach for.
 2. **If you do evaluate a transfer arm, tune it, and tune it separately at each
    training-set size.** This is the single most consequential finding for how
@@ -1308,8 +1316,8 @@ On a small, high-fidelity, single-target protease dataset, a generically
 pretrained chemical language model did not beat count fingerprints with
 gradient boosting — not at full data, not at 50 compounds, and not on any
 data-efficiency measure. The frozen probe was significantly worse; the
-fine-tune, properly tuned, was merely indistinguishable, at roughly two orders
-of magnitude more compute per fit. For projects in this regime the classical
+fine-tune, properly tuned, was merely indistinguishable, at ~70× the compute
+per fit. For projects in this regime the classical
 baseline remains the right default, and the burden of proof sits with the
 pretrained model.
 
@@ -1356,7 +1364,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **239 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **246 claims** across sections 3.1
 through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number

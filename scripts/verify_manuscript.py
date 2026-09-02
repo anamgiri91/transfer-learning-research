@@ -360,6 +360,37 @@ def build_claims() -> list[Claim]:
         C.append(Claim("6.4", f"{arm} full-data RMSE", "table1", n,
                        t1("scaffold", arm, 347, "median")))
 
+    der_s = read_table("table2_der__scaffold.csv").set_index("arm")
+    C.append(Claim("6.4", "T4 DER is 0.60", "table2", 0.596,
+                   round(float(der_s.loc["T4_indomain_probe", "DER_vs_B1_ecfp_histgb"]), 3)))
+    C.append(Claim("6.4", "T4 is the only transfer arm with a non-zero DER", "table2",
+                   True, bool(all(float(der_s.loc[a, "DER_vs_B1_ecfp_histgb"]) == 0.0
+                                  for a in der_s.index
+                                  if a.startswith("T") and a != "T4_indomain_probe"))))
+    # 346.1 by interpolation, i.e. effectively the full 347-compound fold
+    C.append(Claim("6.4", "T4 reaches the target only at the full fold", "table2", 346,
+                   round(float(der_s.loc["T4_indomain_probe", "n_to_reach_target"]))))
+
+    # ---- Compute cost, claimed in the abstract, §6.2, §8 and §9 ----
+    # These were asserted in prose and never checked; the stated 160 s / 80x
+    # were 185 s / 69x when measured.
+    import glob as _glob
+    secs: dict[tuple[str, int], list[float]] = {}
+    for _f in _glob.glob("results/metrics/*__scaffold__*.json"):
+        _d = json.loads(Path(_f).read_text())
+        secs.setdefault((_d["arm"], _d["n_train"]), []).append(_d["seconds"])
+    import statistics as _st
+    b1_full = _st.median(secs[("B1_ecfp_histgb", 347)])
+    t2_full = _st.median(secs[("T2_chemberta_full_finetune", 347)])
+    C.append(Claim("cost", "B1 full-data fit ~2.7 s", "metrics seconds", 2.7,
+                   round(b1_full, 1)))
+    C.append(Claim("cost", "T2 full-data fit ~185 s", "metrics seconds", 185,
+                   round(t2_full)))
+    C.append(Claim("cost", "T2/B1 ratio ~70x", "metrics seconds", 70,
+                   round(t2_full / b1_full / 10) * 10))
+    C.append(Claim("cost", "the ratio is under two orders of magnitude",
+                   "metrics seconds", True, bool(t2_full / b1_full < 100)))
+
     # ---- Section 6.5: decontamination and its size-matched control ----
     dec = read_table("table10_indomain_contrasts.csv")
     dec = dec[(dec.metric == "rmse") & (dec.n_train == 347)].set_index(["arm", "reference"])
