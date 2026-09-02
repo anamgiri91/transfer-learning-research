@@ -121,6 +121,28 @@ def build_claims() -> list[Claim]:
     C.append(Claim("3.2", "pKD SD 0.86", "eva71_2a.csv", 0.86,
                    round(float(ds.pactivity.std()), 2)))
 
+    # ---- Section 3.1: the CVA16 surrogate, re-derived from UniProt ----
+    sur = read_table("table9_surrogate_divergence.csv").set_index("surrogate")
+    for label, n_diff in [("CVA16 G-10", 7), ("CVA16 Tainan/5079/98", 8)]:
+        C.append(Claim("3.1", f"{label}: {n_diff} 2A differences", "table9",
+                       n_diff, int(sur.loc[label, "n_differences"])))
+        C.append(Claim("3.1", f"{label}: none catalytic", "table9", 0,
+                       int(sur.loc[label, "n_differences_at_catalytic_site"])))
+        C.append(Claim("3.1", f"{label}: nearest catalytic 5 residues", "table9", 5,
+                       int(sur.loc[label, "min_separation_from_catalytic"])))
+        C.append(Claim("3.1", f"{label}: no Zn ligand substituted", "table9", 0,
+                       int(sur.loc[label, "n_differences_at_zinc_site"])))
+    C.append(Claim("3.1", "catalytic triad is 21/39/110", "table9", "21 39 110",
+                   str(sur.iloc[0]["catalytic_positions"])))
+    C.append(Claim("3.1", "Zn ligands are 56/58/116/118", "table9", "56 58 116 118",
+                   str(sur.iloc[0]["zinc_positions"])))
+    C.append(Claim("3.1", "2A chain is 150 residues", "table9", 150,
+                   int(sur.iloc[0]["chain_length"])))
+    C.append(Claim("3.1", "N57D is adjacent to a Zn ligand (separation 1)", "table9", 1,
+                   int(sur.loc["CVA16 G-10", "min_separation_from_zinc"])))
+    C.append(Claim("3.1", "the count of five does not reproduce", "table9", True,
+                   bool(all(int(sur.loc[l, "n_differences"]) != 5 for l in sur.index))))
+
     # ---- Section 5.2: learning curves, scaffold, n=347 ----
     for arm, rmse, sp, r2, lo, hi in [
         ("B2_descriptors_rf", 0.5858, 0.6359, 0.5128, 0.5394, 0.6473),
@@ -246,6 +268,57 @@ def build_claims() -> list[Claim]:
             if len(row):
                 C.append(Claim("6.1", f"{split} test fold PubChem fraction", "table5", frac,
                                round(float(row.frac_in_pubchem.iloc[0]), 3)))
+
+    # ---- Section 6.4: in-domain transfer and the untrained control ----
+    ind = read_table("table10_indomain_contrasts.csv")
+    ind = ind[(ind.metric == "rmse") & (ind.n_train == 347)].set_index(["arm", "reference"])
+    draws = read_table("table11_random_encoder_draws.csv")
+    corp = json.loads(Path("data/processed/indomain_3c.curation.json").read_text())
+
+    for (a, b, delta, wins, pval) in [
+            ("T4", "T1", 0.0351, 7, 0.3750), ("T5", "T1", 0.0252, 9, 0.0059),
+            ("T1", "T0r", 0.0038, 5, 0.4922), ("T2", "T0r", -0.0050, 4, 0.6250),
+            ("T4", "T0r", 0.0299, 7, 0.0488), ("T5", "T0r", 0.0299, 8, 0.0098),
+            ("T4", "B1", -0.0471, 2, 0.0645), ("T5", "B1", -0.0135, 0, 0.0020)]:
+        C.append(Claim("6.4", f"{a} vs {b} delta", "table10", delta,
+                       float(ind.loc[(a, b), "median_delta"])))
+        C.append(Claim("6.4", f"{a} vs {b} seed wins", "table10", wins,
+                       int(ind.loc[(a, b), "arm_better_in_seeds"])))
+        C.append(Claim("6.4", f"{a} vs {b} p", "table10", pval,
+                       float(ind.loc[(a, b), "p_raw"])))
+
+    C.append(Claim("6.4", "T5 beats T1 significantly", "table10", "arm better",
+                   str(ind.loc[("T5", "T1"), "verdict"])))
+    C.append(Claim("6.4", "T4 vs T1 is inconclusive", "table10", "inconclusive",
+                   str(ind.loc[("T4", "T1"), "verdict"])))
+    C.append(Claim("6.4", "T1 vs T0r is inconclusive", "table10", "inconclusive",
+                   str(ind.loc[("T1", "T0r"), "verdict"])))
+
+    C.append(Claim("6.4", "random-draw min RMSE 0.6438", "table11", 0.6438,
+                   float(draws.rmse_median.min())))
+    C.append(Claim("6.4", "random-draw max RMSE 0.6549", "table11", 0.6549,
+                   float(draws.rmse_median.max())))
+    C.append(Claim("6.4", "T1 median lies below every random draw", "table1 vs table11",
+                   True, bool(t1("scaffold", "T1_chemberta_linear_probe", 347, "median")
+                              < float(draws.rmse_median.min()))))
+    C.append(Claim("6.4", "corpus measurements 2974", "indomain curation", 2974,
+                   corp["n_measurements"]))
+    C.append(Claim("6.4", "corpus compounds 2743", "indomain curation", 2743,
+                   corp["n_unique_compounds"]))
+    C.append(Claim("6.4", "coronaviral measurements 2829", "indomain curation", 2829,
+                   corp["per_family_measurements"]["coronaviral"]))
+    C.append(Claim("6.4", "picornaviral measurements 145", "indomain curation", 145,
+                   corp["per_family_measurements"]["picornaviral"]))
+    C.append(Claim("6.4", "zero exact overlap with the eval set", "indomain curation", 0,
+                   corp["n_overlap_exact"]))
+    C.append(Claim("6.4", "zero near-duplicate overlap", "indomain curation", 0,
+                   corp["n_overlap_near_duplicate"]))
+    C.append(Claim("6.4", "61 scaffold-level overlaps", "indomain curation", 61,
+                   corp["n_overlap_scaffold"]))
+    for arm, n in [("T4_indomain_probe", 0.6028), ("T5_chained_probe", 0.6120),
+                   ("T0r_untrained_encoder_probe", 0.6477)]:
+        C.append(Claim("6.4", f"{arm} full-data RMSE", "table1", n,
+                       t1("scaffold", arm, 347, "median")))
 
     # ---- Section 6.3: activity-cliff strata ----
     T1P, T2P = "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"
@@ -378,7 +451,11 @@ def build_claims() -> list[Claim]:
 
     # ---- Run inventory ----
     n_runs = len(list(METRICS.glob("*.json")))
-    C.append(Claim("Abstract", "520 evaluated runs", "metrics/*.json", 520, n_runs))
+    # Parsed from the abstract rather than mirrored here: a hand-copied count
+    # in this file drifts the moment a new arm is run, which it did.
+    stated = re.search(r"with \*?\*?([\d,]+)\*?\*? evaluated runs", MANUSCRIPT.read_text())
+    C.append(Claim("Abstract", "evaluated runs stated in the abstract", "metrics/*.json",
+                   int(stated.group(1).replace(",", "")) if stated else None, n_runs))
     C.append(Claim("4.1", "10 seeds per cell", "table1", 10,
                    int(read_table("table1_learning_curves__scaffold.csv").n_seeds.min())))
     return C

@@ -17,7 +17,7 @@ it helps in the opposite regime — few hundred compounds, one target, one assay
 units). Five arms (median predictor; ECFP4 + gradient boosting; RDKit
 descriptors + random forest; ChemBERTa-2 frozen linear probe; ChemBERTa-2 full
 fine-tune) are compared on identical materialised splits across 10 seeds and
-four training-set sizes, with 520 evaluated runs.
+four training-set sizes, with 640 evaluated runs.
 
 **On this dataset, pretraining did not help.** The frozen probe is
 significantly worse than the ECFP4 baseline (paired Wilcoxon, Holm-corrected
@@ -57,6 +57,15 @@ neither is behind on activity cliffs — on cliffs both are nominally ahead. The
 weakness is extrapolation to novel chemistry, not local label roughness, which
 is the same conclusion the scaffold-to-Butina comparison reaches by an
 independent route.
+
+A fourth ablation locates the failure. Against an **untrained encoder of the
+same architecture**, the pretrained one is statistically indistinguishable
+(5 of 10 seeds, p = 0.49) — generic pretraining buys essentially nothing here.
+Multitask pretraining on a 2,743-compound corpus of related 3C/3C-like
+proteases does clear that control (7–8 of 10 seeds, p = 0.049 and 0.010) and
+beats the generic probe in 9 of 10 seeds (p = 0.006), supporting **H3** for the
+chained arm while the pre-registered T4-vs-T1 form stays inconclusive. In-domain
+pretraining is doing real work; it still does not overtake count fingerprints.
 
 These are single-target, single-assay results with one pretrained encoder. They
 constrain claims about *this* regime; they are not a general verdict on
@@ -166,13 +175,50 @@ compounds measured on a Creoptix WAVEsystem. The underlying fragment campaign
 is described by [Lithgo et al. (2024)](https://doi.org/10.1101/2024.04.29.591684).
 
 **The measured protein is Coxsackievirus A16 2A protease, not Enterovirus A71
-2A protease.** CVA16 2A^pro is used as an experimental surrogate; the two
-sequences differ at five amino acids, none of which lie near or are predicted
-to affect the active site [→ Lithgo et al. 2024, Results: "2A^pro Construct"].
-This is a deliberate and documented choice by the data generators, but it means
-every "EV-A71" result in this paper — including in its title — is strictly a
-CVA16 result with a five-residue extrapolation. We state this here rather than
-in a limitations paragraph because it conditions the entire study.
+2A protease.** CVA16 2A^pro is used as an experimental surrogate. Lithgo et al.
+(2024) state that the two sequences differ at five amino acids, none of which
+lie near or are predicted to affect the active site [→ Lithgo et al. 2024,
+Results: "2A^pro Construct"]. Because this single sentence conditions the
+entire study, we do not take it on citation — we re-derive it from primary
+sequence data [→ `scripts/verify_surrogate.py` →
+`results/tables/table9_surrogate_divergence.csv`].
+
+Comparing the UniProt-annotated Protease 2A chains (150 residues) of EV-A71
+BrCr/1970 (Q66478) against the two reviewed CVA16 reference strains:
+
+<!-- TABLE:surrogate START -->
+| Reference | Surrogate | differences | at catalytic site | nearest catalytic | at Zn site |
+|---|---|---|---|---|---|
+| EV-A71 BrCr/1970 | CVA16 G-10 | 7 | 0 | 5 residues | 0 |
+| EV-A71 BrCr/1970 | CVA16 Tainan/5079/98 | 8 | 0 | 5 residues | 0 |
+<!-- TABLE:surrogate END -->
+
+Two things follow, and they point in opposite directions.
+
+**The count of five does not reproduce, and we do not rely on it.** Against
+these reference strains the divergence is **7** (G-10: F15Y, T26N, N57D, N66S,
+V82I, E102V, S129N) or **8** (Tainan: F15Y, T26N, N66S, R68K, S77T, V82I,
+E102V, S129N). This is not a contradiction of Lithgo et al. — enterovirus
+sequences are strain-dependent and they compared the specific constructs they
+crystallised — but it does mean "five residues" is a property of one strain
+pair, not of EV-A71 versus CVA16 in general. We therefore describe the
+surrogate gap qualitatively rather than quoting a number.
+
+**The claim that actually matters is independently confirmed.** The catalytic
+triad — His21, Asp39, Cys110 in 2A numbering — is **identical across all three
+sequences**, and no differing position is a catalytic residue in either
+surrogate; the nearest substitution to the triad is 5 residues away in
+sequence. The four structural Zn²⁺ ligands (56, 58, 116, 118) are also
+conserved. One caveat we did not find stated anywhere: in the G-10 strain the
+substitution **N57D sits directly between two of those zinc ligands**. That is
+a structural site rather than the catalytic one, and sequence adjacency is not
+structural proximity, but "none near the active site" is a stronger claim than
+"none catalytic", and only the latter is what we have verified.
+
+The consequence for reading this paper is unchanged: every "EV-A71" result
+here — including in the title — is strictly a CVA16 result extrapolated across
+a handful of non-catalytic substitutions. We state it here rather than in a
+limitations paragraph because it conditions the entire study.
 
 ### 3.2 Curation to compound level
 
@@ -555,7 +601,14 @@ fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
 6. **Up to ~53% of test compounds could have been in pretraining** (§6.1, an
    upper bound). This cannot explain transfer losing, but it means no transfer
    advantage measured here should be taken at face value.
-7. **The transfer deficit is concentrated in extrapolation, not activity
+7. **Generic pretraining is indistinguishable from no pretraining here, and
+   in-domain pretraining is not** (§6.4). Against an untrained encoder of the
+   same architecture, ChemBERTa's frozen embeddings win in 5 of 10 seeds
+   (p = 0.49); the in-domain arms win in 7 and 8 of 10 (p = 0.049, p = 0.010).
+   The chained arm T5 beats the generic probe T1 in 9 of 10 seeds (p = 0.006),
+   which supports **H3**; the pre-registered T4-vs-T1 form of H3 is
+   inconclusive. None of them overtakes the fingerprint baseline.
+8. **The transfer deficit is concentrated in extrapolation, not activity
    cliffs** (§6.3). Both transfer arms are significantly worse than B1 on test
    compounds with no training neighbour at Tanimoto ≥ 0.7 (T1 p = 0.018,
    T2 p = 0.019), at every threshold tested; on cliff compounds neither is
@@ -795,6 +848,128 @@ three seeds. And the cliff definition is similarity-based, not a fragmentation
 MMP: it asks whether a close ECFP4 neighbour exists, not whether the pair
 differs by a single well-defined transformation.
 
+### 6.4 In-domain pretraining, and what generic pretraining is worth (H3)
+
+[→ `scripts/fetch_indomain.py`, `prepare_indomain.py`, `pretrain_indomain.py`,
+`analyse_indomain.py` → `results/tables/table10_indomain_contrasts.csv`,
+`table11_random_encoder_draws.csv`]
+
+H3 — that in-domain transfer beats generic self-supervised pretraining — was
+listed in §7.6 as untested, because no in-domain arm existed. This section
+runs it.
+
+**The corpus.** Eight ChEMBL 3C / 3C-like protease targets. ChEMBL files
+picornaviral proteases under the *whole genome polyprotein*, whose component
+synonyms cover 2A, 3C, capsid and RNA polymerase alike, so a target id is no
+evidence of what was assayed; every record is screened on its assay
+description instead. That screen dropped **2,022 non-3C and 757 wrong-enzyme
+records of 7,634**, and two otherwise-obvious targets were excluded outright —
+poliovirus CHEMBL5127 is RNA-polymerase data and HCoV-NL63 CHEMBL3232683 is
+the papain-like protease PLP2, a different fold. After the §3.2 fidelity gate:
+**2,974 measurements on 2,743 compounds**, of which 2,829 are coronaviral and
+145 picornaviral.
+
+**Two things about this corpus have to be said before any result.** Both were
+recorded in the decision log before the arms were run.
+
+First, it is **in-domain by protein family and out-of-domain by chemistry**.
+The median maximum ECFP4 Tanimoto from a 2A evaluation compound to the entire
+corpus is **0.247**, and no evaluation compound has any corpus neighbour at
+≥ 0.5. Median molecular weight is 329 for the evaluation set against 470 for
+the corpus, and median pActivity 4.95 against 6.30: fragments versus optimised
+leads. Second, `plan.md`'s transfer corpus was specified when the target was
+EV-A71 **3C**; Amendment 1's change to **2A** silently demoted it from "same
+protease, related viruses" to "related fold, different viruses". H3 is
+therefore tested in a harder configuration than it was written for.
+
+**The arms.** `T4` initialises the encoder randomly and multitask-pretrains it
+on the corpus — in-domain pretraining *instead of* generic. `T5` starts from
+ChemBERTa-2 and adapts it on the same corpus — in-domain *on top of* generic,
+`plan.md`'s chained arm. Both are then frozen and probed with ridge, exactly as
+`T1` is, at the same 384 dimensions, so a difference is attributable to what
+the encoder was pretrained on and not to how it was adapted.
+
+**The control that makes this readable.** `T4` is a randomly-initialised
+transformer. A randomly-initialised transformer is a random projection of SMILES
+tokens, and random features are a real baseline — so `T0r` takes the same
+architecture, **never trains it at all**, and probes it identically. Without
+`T0r`, a positive `T4` would be uninterpretable.
+
+<!-- TABLE:indomain_curve START -->
+| Arm (RMSE ↓) | n=50 | n=100 | n=250 | n=347 | ρ | R² |
+|---|---|---|---|---|---|---|
+| B1 ECFP4 + HistGB | 0.704 | 0.649 | 0.584 | 0.603 | 0.670 | 0.507 |
+| T0r untrained encoder probe | 0.716 | 0.681 | 0.663 | 0.648 | 0.596 | 0.417 |
+| T1 ChemBERTa probe | 0.730 | 0.695 | 0.643 | 0.637 | 0.612 | 0.421 |
+| T2 ChemBERTa fine-tune | 1.232 | 0.960 | 0.695 | 0.662 | 0.614 | 0.405 |
+| T4 in-domain probe | 0.694 | 0.701 | 0.634 | 0.603 | 0.601 | 0.440 |
+| T5 chained probe | 0.744 | 0.674 | 0.636 | 0.612 | 0.634 | 0.466 |
+<!-- TABLE:indomain_curve END -->
+
+and the contrasts H3 actually needs — pairwise, pre-specified, uncorrected:
+
+<!-- TABLE:indomain_contrasts START -->
+| Contrast (full data) | median ΔRMSE | arm better in | p | verdict |
+|---|---|---|---|---|
+| T4 vs T1 | +0.0351 | 7/10 | 0.3750 | inconclusive |
+| T5 vs T1 | +0.0252 | 9/10 | 0.0059 | arm better |
+| T1 vs T0r | +0.0038 | 5/10 | 0.4922 | inconclusive |
+| T2 vs T0r | -0.0050 | 4/10 | 0.6250 | inconclusive |
+| T4 vs T0r | +0.0299 | 7/10 | 0.0488 | arm better |
+| T5 vs T0r | +0.0299 | 8/10 | 0.0098 | arm better |
+| T4 vs T5 | +0.0074 | 6/10 | 0.8457 | inconclusive |
+| T4 vs B1 | -0.0471 | 2/10 | 0.0645 | inconclusive |
+| T5 vs B1 | -0.0135 | 0/10 | 0.0020 | reference better |
+<!-- TABLE:indomain_contrasts END -->
+
+**H3 is supported for the chained arm and inconclusive for the pure one.**
+`T5` beats `T1` at full data by 0.025 RMSE, winning in **9 of 10 seeds**
+(p = 0.006), and on Spearman ρ as well (+0.028, 8 of 10, p = 0.020). `T4` beats
+`T1` by a similar margin (+0.035) but in only 7 of 10 seeds (p = 0.375), which
+is inconclusive. The pre-registered form of H3 is the `T4` vs `T1` contrast, and
+on that exact test the answer is **not established**; on the chained variant it
+is. We report both rather than the one that reads better.
+
+**The control result is the more important one.** Generic pretraining is
+**statistically indistinguishable from no pretraining at all** on this task.
+`T1` beats `T0r` by 0.004 RMSE at full data, winning in 5 of 10 seeds
+(p = 0.49); the fine-tune `T2` is *behind* the untrained encoder at full data
+and far behind it at n = 50 (−0.534, 0 of 10 seeds, p = 0.002). The in-domain
+arms, by contrast, clear the control decisively: `T4` +0.030 (7 of 10,
+p = 0.049) and `T5` +0.030 (8 of 10, p = 0.010).
+
+This is not an artefact of one lucky random initialisation. Re-drawing the
+untrained encoder five times moves its median RMSE between 0.6438 and 0.6549
+(SD 0.0039):
+
+<!-- TABLE:random_draws START -->
+| Random encoder draw | median RMSE over 10 eval seeds |
+|---|---|
+| 0 | 0.6477 |
+| 1 | 0.6481 |
+| 2 | 0.6526 |
+| 3 | 0.6438 |
+| 4 | 0.6549 |
+| **median** | **0.6481** |
+<!-- TABLE:random_draws END -->
+
+`T1`'s 0.6372 sits just outside that range, so the marginal median does favour
+ChemBERTa slightly — but the paired comparison across evaluation seeds, which
+§5.4 established as the statistic that governs here, cannot separate them. The
+honest statement is that **generic pretraining buys at most about 0.01 RMSE
+over a randomly-initialised encoder of the same architecture, and in-domain
+adaptation buys three times that and is significant.**
+
+**None of it overtakes the fingerprint baseline.** `T4` matches `B1`'s marginal
+median almost exactly (0.6028 vs 0.6031) but loses the paired test in 8 of 10
+seeds (−0.047, p = 0.064, inconclusive); `T5` loses it in 10 of 10 (−0.014,
+p = 0.002) on an effect of 0.014 RMSE — significant and practically negligible
+at once, which is the sign-based Wilcoxon behaving exactly as §4.4 warns. So
+the paper's headline is unchanged. What changes is the mechanism underneath it:
+the failure of transfer here is **not** a failure of pretrained representations
+in general, it is specifically a failure of *generic* pretraining, which on
+this task does no better than random initialisation.
+
 ## 7. Limitations
 
 Ordered by how much each one constrains the conclusions. Every item here is
@@ -847,13 +1022,15 @@ of them in either direction.
 **6. Most of the pre-registered arm list was not run.** `plan.md` §4 freezes
 four baselines and six transfer arms; this paper reports three baselines
 (B0–B2) and two transfer arms (T1, T2). B3 (D-MPNN from scratch), T3
-(alternative encoder), T4 (in-domain multitask pretraining on related
-3C/3CL proteases), T5 (chained pretraining) and T6 (ligand + ESM-2 target
-embedding) were not run. The consequence for the hypotheses is specific:
-**H3 — that in-domain transfer beats generic self-supervised pretraining — is
-entirely untested**, because no in-domain arm exists. Since H3 names the
-mechanism the literature credits for most real transfer gains, the negative
-result should be read as a result about *generic* pretraining only.
+(alternative encoder) and T6 (ligand + ESM-2 target embedding) were not run.
+T4 and T5 **were** run (§6.4), so H3 is tested — but on a corpus that Amendment
+1 made harder than the protocol intended: the in-domain set was specified for
+an EV-A71 3C target and is being transferred to 2A, and it is chemically
+near-disjoint from the evaluation set (median nearest-neighbour Tanimoto 0.247).
+H3 is supported for the chained arm T5 and inconclusive for T4, which is the
+contrast `plan.md` names. A stronger in-domain corpus — picornaviral rather
+than 95% coronaviral, and overlapping the fragment chemistry — could still
+change the answer.
 
 **7. The dataset is a fragment screen, and its regime is narrow.** pK_D spans
 3.44–7.94 with SD 0.86, mostly compressed between 4 and 6, and the compounds
@@ -905,10 +1082,13 @@ full-data RMSE, so both have a data-efficiency ratio of zero — the quantity H2
 was framed to falsify.
 
 What the paper does **not** support is the sentence it would be easiest to
-extract from it. It is not evidence that molecular pretraining does not work.
-One encoder, one target, one assay, and — most importantly — **no in-domain
-pretraining arm was ever run** (§7.6). The mechanism the literature actually
-credits for transfer gains is the one this study failed to test.
+extract from it. It is not evidence that molecular pretraining does not work —
+and §6.4 makes that sharper rather than softer. **Generic** pretraining is what
+fails here, and it fails completely: ChemBERTa's frozen representation is
+statistically indistinguishable from a randomly-initialised encoder of the same
+architecture. In-domain pretraining on 2,743 related-protease compounds is
+distinguishable from random initialisation, and beats the generic probe. It
+still does not overtake count fingerprints.
 
 ### 8.2 Where the deficit lives, and what that suggests
 
@@ -1037,8 +1217,8 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **154 claims** across sections 3.2
-through 6.3. That count is itself one of the claims: the script parses this
+non-zero on any mismatch. It currently checks **207 claims** across sections 3.1
+through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
 is hand-typed cannot go stale either. It has already caught two errors: a count
@@ -1079,18 +1259,38 @@ entries briefly numbered 10 — was introduced *while fixing the other seven*.
 reference numbering, reading-depth labels against a fixed vocabulary, orphan
 references, body citations missing from the list, reading-depth drift between
 this document and `literature.md`, and the `[secondary]`-with-a-number rule.
+
+**Every number borrowed from another paper carries the sentence that supports
+it.** Structural checks cannot tell whether a source actually says what we
+claim — the crossover error was found by reading a third paper's discussion,
+not by any rule. So `docs/citation-claims.yaml` records, for each borrowed
+quantity, the verbatim supporting sentence, the URL it was read at, and the
+date. The checker then enforces that the quoted sentence **contains the number
+it is cited for**, that the claim is still in this manuscript, and that a quote
+read in a different work from the one cited is **declared second-hand** — which
+is precisely how the crossover error hid, since that sentence lives in
+Schimunek et al.'s discussion but belongs to Snyder et al. Any body sentence
+citing an external source alongside a borrowed quantity must have an entry.
+This does not make attribution automatic; it makes an unchecked attribution
+impossible to leave implicit.
 `make verify-online` additionally checks that every cited URL resolves.
 `tests/test_citations.py` pins each of the eight defects above as a regression
 test, so the checker is verified against the errors that motivated it rather
 than only against a clean document. It found one further orphan reference on
 its first run.
 
-**One claim we could not re-verify.** §3.1's five-residue CVA16/EV-A71
-statement is recorded in `literature.md` as a verbatim quote from a full-text
-read, and the paper's author list and abstract figures re-verified cleanly.
-The quoted sentence itself sits in the body text, which bioRxiv rate-limited
-during the audit and which has no PMC or Europe PMC full-text mirror. It is
-flagged here because it conditions the entire study.
+**The one claim we could not re-verify is now checked against primary data
+instead.** §3.1's five-residue CVA16/EV-A71 statement could not be re-retrieved
+during the audit — the sentence sits in bioRxiv body text, which rate-limited
+us, and the paper has no PMC or Europe PMC full-text mirror. Rather than keep
+trying to confirm that a paper says something,
+`scripts/verify_surrogate.py` re-derives the underlying fact from the
+UniProt-annotated 2A chains and `make verify` checks 13 claims against it. That
+is a stronger guarantee than the citation it replaces, and it changed what §3.1
+says: the count of five does not reproduce against the reviewed reference
+strains (7 and 8), while the claim that matters — no catalytic residue differs
+— is independently confirmed. The paper's author list and abstract figures also
+re-verified cleanly via Europe PMC.
 
 **The pipeline is bit-reproducible.** Verified by re-running from scratch and
 comparing checksums:

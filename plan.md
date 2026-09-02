@@ -243,8 +243,10 @@ documents is lying.
 - [x] Build and verify splits → `make splits` (leakage tests pass; `tests/test_splits.py`)
 - [~] Baselines `B0`–`B3` across seeds and sizes — `B0`–`B2` complete over
       10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.6)
-- [~] Transfer arms `T1`–`T6` — `T1` complete, `T2` complete on the scaffold
-      split; **`T3`–`T6` not run**, so **H3 is untested** (§7.6)
+- [~] Transfer arms `T1`–`T6` — `T1`, `T2`, `T4`, `T5` complete on the scaffold
+      split (plus the `T0r` untrained-encoder control added in §6.4);
+      **`T3` and `T6` not run**. **H3 is now tested** (§6.4): supported for the
+      chained arm, inconclusive in its pre-registered `T4`-vs-`T1` form
 - [~] Contamination measurement, then decontaminated re-run — measurement done
       as a PubChem-membership upper bound (53%); **the decontaminated re-run is
       impossible**, the corpus is not redistributed, so **H4 is untested** (§7.3)
@@ -256,7 +258,11 @@ documents is lying.
       generated from source and every prose number is machine-checked
       (`make verify`; the claim count lives in one place, manuscript §10)
 
-Two hypotheses were decided and two were not. **H1** (transfer beats the best
+Three hypotheses were decided and one was not. **H1** (transfer beats the best
 from-scratch baseline) and **H2** (the advantage grows as data shrinks) are
-answered, negatively, on the arms that were run. **H3** and **H4** have no
-evidence either way, for the reasons boxed above.
+answered negatively on every arm run. **H3** (in-domain beats generic
+pretraining) is answered in §6.4 — supported for the chained arm `T5`,
+inconclusive in the exact `T4`-vs-`T1` form this document specifies. **H4**
+still has no evidence for the ChemBERTa arms, whose corpus is not distributed;
+it is answerable for the in-domain arms, whose corpus we built, and that
+ablation is in progress.

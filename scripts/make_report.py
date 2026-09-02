@@ -28,6 +28,18 @@ METRICS = Path("results/metrics")
 TABLES = Path("results/tables")
 FIGURES = Path("results/figures")
 BASELINE = "B1_ecfp_histgb"
+
+# The Holm family for the headline paired tests is the arm list frozen in
+# plan.md §4, and only that. Arms added later (the untrained-encoder control and
+# the in-domain arms of §6.4) are NOT folded in: doing so would retroactively
+# change the correction applied to the pre-registered comparisons every time a
+# new arm is run, which is precisely the researcher degree of freedom the
+# pre-registration exists to remove. Those arms are compared in
+# analyse_indomain.py as pre-specified pairwise contrasts instead.
+PREREGISTERED_FAMILY = {
+    "B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
+    "T1_chemberta_linear_probe", "T2_chemberta_full_finetune",
+}
 PRIMARY_METRIC = "rmse"
 
 # Validated categorical palette (dataviz skill, light mode; see docs/figures.md).
@@ -41,6 +53,7 @@ PALETTE = {
     # In-domain arms. Seven series exceeds what the categorical palette is
     # validated for, so figures that include these are drawn as focused
     # comparisons (B1 vs T1 vs T4 vs T5) rather than all-arm panels.
+    "T0r_untrained_encoder_probe":("#b0b0aa", "*", "T0r untrained encoder"),
     "T4_indomain_probe":         ("#7c5cd6", "P", "T4 in-domain probe"),
     "T5_chained_probe":          ("#c8407a", "X", "T5 chained probe"),
     "T4c_indomain_probe_decontaminated": ("#9d86e0", "P", "T4 in-domain (decontam.)"),
@@ -134,7 +147,7 @@ def table_paired(df, split) -> pd.DataFrame:
     full_n = d.n_train.max()
     at_full = d[d.n_train == full_n]
     scores = {a: g.sort_values("seed")[PRIMARY_METRIC].tolist()
-              for a, g in at_full.groupby("arm")}
+              for a, g in at_full.groupby("arm") if a in PREREGISTERED_FAMILY}
     scores = {a: v for a, v in scores.items() if len(v) == len(scores.get(BASELINE, []))}
     if BASELINE not in scores or len(scores) < 2:
         return pd.DataFrame()

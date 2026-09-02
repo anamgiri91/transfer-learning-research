@@ -53,12 +53,32 @@ def get_features(kind: str, smiles: list[str]) -> np.ndarray:
         x = rdkit_descriptors(smiles)
     elif kind == "chemberta":
         x = chemberta_embeddings(smiles)
+    elif kind == "random_encoder":
+        x = untrained_encoder_embeddings(smiles)
     elif kind.startswith("indomain:"):
         x = indomain_embeddings(kind.split(":", 1)[1], smiles)
     else:
         raise ValueError(kind)
     _cache[kind] = x
     return x
+
+
+def untrained_encoder_embeddings(smiles: list[str], seed: int = 0) -> np.ndarray:
+    """Arm T0r: the SAME architecture, randomly initialised and NEVER trained.
+
+    The control T4 needs. T4 is a randomly-initialised encoder that is then
+    multitask-pretrained in-domain; if an untrained one scores the same, T4's
+    embeddings are a random projection of SMILES tokens and the in-domain
+    pretraining contributed nothing. Random features are a real baseline, so
+    this has to be measured rather than assumed away.
+    """
+    import torch
+
+    from evapro.models.multitask import MultitaskRegressor, embed_smiles
+
+    torch.manual_seed(seed)
+    model = MultitaskRegressor(["dummy"], pretrained=False)
+    return embed_smiles(model, smiles)
 
 
 def indomain_embeddings(tag: str, smiles: list[str]) -> np.ndarray:
@@ -120,7 +140,7 @@ def fit_predict_sklearn(arm, Xtr, ytr, Xte, seed):
     elif arm == "B2":
         model = RandomForestRegressor(n_estimators=500, min_samples_leaf=1,
                                       n_jobs=-1, random_state=seed)
-    elif arm in ("T1", "T4", "T5", "T4c", "T5c"):
+    elif arm in ("T1", "T4", "T5", "T4c", "T5c", "T0r"):
         # Frozen-encoder linear probe: standardise then ridge with internal CV.
         # Identical for every frozen arm, so the arms differ only in the encoder.
         scaler = StandardScaler().fit(Xtr)
@@ -172,12 +192,14 @@ ARM_FEATURES = {
     "B0": "ecfp", "B1": "ecfp", "B2": "descriptors", "T1": "chemberta",
     # In-domain arms: T4 pretrained from random init, T5 chained from ChemBERTa;
     # the "c" variants use the decontaminated corpus (plan.md §7.1).
+    "T0r": "random_encoder",
     "T4": "indomain:indomain_T4", "T5": "indomain:indomain_T5",
     "T4c": "indomain:indomain_T4_clean", "T5c": "indomain:indomain_T5_clean",
 }
 ARM_LABELS = {
     "B0": "B0_median", "B1": "B1_ecfp_histgb", "B2": "B2_descriptors_rf",
     "T1": "T1_chemberta_linear_probe", "T2": "T2_chemberta_full_finetune",
+    "T0r": "T0r_untrained_encoder_probe",
     "T4": "T4_indomain_probe", "T5": "T5_chained_probe",
     "T4c": "T4c_indomain_probe_decontaminated",
     "T5c": "T5c_chained_probe_decontaminated",

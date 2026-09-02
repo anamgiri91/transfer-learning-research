@@ -35,6 +35,11 @@ from pathlib import Path
 
 MANUSCRIPT = Path("paper/manuscript.md")
 LITERATURE = Path("docs/literature.md")
+REGISTER = Path("docs/citation-claims.yaml")
+REGISTER_FIELDS = {"id", "attributed_to", "source_url", "quote_source_url",
+                   "quantity", "claim_in_manuscript", "quote",
+                   "quote_read_in", "second_hand", "retrieved", "status"}
+REGISTER_STATUS = {"verified", "superseded"}
 
 # The vocabulary literature.md defines. A label outside it is a failure, because
 # an unlabelled or ad-hoc-labelled source is one whose provenance nobody checked.
@@ -107,7 +112,76 @@ def sentences(body: str) -> list[str]:
     return re.split(r"(?<=[.!?])\s+", flat)
 
 
-def check(text: str, lit: str, online: bool = False) -> tuple[list[str], list[tuple[str, int]]]:
+def _same_work(a: str, b: str) -> bool:
+    """Do two URLs point at the same work?
+
+    Identifier overlap first; failing that, a DOI's suffix appearing in the
+    other URL (a Zenodo DOI and its record page name the same deposit)."""
+    ka, kb = identifiers(a), identifiers(b)
+    if ka & kb:
+        return True
+    for src, other in ((a, b), (b, a)):
+        for doi in DOI_RE.findall(src):
+            tail = re.split(r"[./]", doi)[-1]
+            if len(tail) >= 6 and tail.lower() in other.lower():
+                return True
+    return False
+
+
+def check_register(body: str, register: Path | None = None) -> tuple[list[str], int]:
+    """Check the claim-support register (docs/citation-claims.yaml).
+
+    verify_citations' other checks are structural. This one is about substance:
+    every number this manuscript borrows from someone else must carry the
+    verbatim sentence that supports it, and that sentence must actually contain
+    the number.
+    """
+    import yaml
+
+    fails: list[str] = []
+    entries = yaml.safe_load((register or REGISTER).read_text()) or []
+    flat = re.sub(r"\s+", " ", body)
+
+    for e in entries:
+        eid = e.get("id", "<no id>")
+        missing = REGISTER_FIELDS - set(e)
+        if missing:
+            fails.append(f"register {eid}: missing field(s) {sorted(missing)}")
+            continue
+        if e["status"] not in REGISTER_STATUS:
+            fails.append(f"register {eid}: status {e['status']!r} not in {REGISTER_STATUS}")
+
+        if e["status"] == "superseded":
+            continue
+
+        # The quote must actually contain the quantity attributed to it.
+        q = str(e["quantity"]).replace(",", "")
+        quote = str(e["quote"]).replace(",", "")
+        if q.lower() not in quote.lower():
+            fails.append(f"register {eid}: quantity {e['quantity']!r} does not appear "
+                         f"in the supporting quote -- the quote does not support the claim")
+
+        # The claim must still be in the manuscript: the register cannot drift.
+        claim = re.sub(r"\s+", " ", str(e["claim_in_manuscript"]))
+        if claim not in flat:
+            fails.append(f"register {eid}: claim {claim!r} is no longer in the manuscript")
+
+        # A quote read in a different work from the one cited is second-hand
+        # and must say so. This is exactly how the crossover error hid: the
+        # sentence was read in Schimunek, but belongs to Snyder.
+        looks_second_hand = not _same_work(str(e["source_url"]),
+                                           str(e["quote_source_url"]))
+        if looks_second_hand != bool(e["second_hand"]):
+            fails.append(
+                f"register {eid}: quote_source_url {e['quote_source_url']} "
+                f"{'differs from' if looks_second_hand else 'matches'} source_url "
+                f"{e['source_url']}, but second_hand is {e['second_hand']}")
+
+    return fails, len(entries)
+
+
+def check(text: str, lit: str, online: bool = False,
+          register: Path | None = REGISTER) -> tuple[list[str], list[tuple[str, int]]]:
     """Run every citation check. Returns (failures, per-check item counts).
 
     Pure in its inputs so the regression tests can feed it the exact defects
@@ -213,11 +287,44 @@ def check(text: str, lit: str, online: bool = False) -> tuple[list[str], list[tu
             except Exception as exc:                      # noqa: BLE001
                 fails.append(f"cited URL unreachable ({type(exc).__name__}): {u}")
 
+    if register is None:                 # structural checks only
+        reg_fails, n_reg = [], 0
+    else:
+        reg_fails, n_reg = check_register(body, register)
+    fails += reg_fails
+
+    # Coverage: a body sentence citing a non-software source and carrying a
+    # borrowed quantity must be backed by a register entry.
+    reg_keys: set[str] = set()
+    if register is not None:
+        import yaml
+        for e in (yaml.safe_load(register.read_text()) or []):
+            reg_keys |= identifiers(str(e["source_url"]))
+    software_keys: set[str] = set()
+    for n, section, keys in ref_key_sets:
+        if section == SOFTWARE:
+            software_keys |= keys
+    for sent in sentences(body):
+        urls = MD_LINK.findall(sent) + BARE_LINK.findall(sent)
+        if not urls:
+            continue
+        keys: set[str] = set()
+        for u in urls:
+            keys |= identifiers(u)
+        if keys & software_keys or not (keys & all_ref_keys):
+            continue
+        if register is None:
+            continue
+        if QUANTITY.search(YEAR.sub("", sent)) and not (keys & reg_keys):
+            fails.append("a borrowed quantity is cited with no entry in "
+                         f"docs/citation-claims.yaml: {sent[:140]!r}")
+
     checks = [("numbering", len(nums)), ("reading-depth labels", len(entries)),
               ("orphan references", len(entries)),
               ("dangling body citations", len(set(MD_LINK.findall(body)))),
               ("depth drift vs literature.md", len(entries)),
-              ("[secondary]-with-a-number rule", len(secondary_keys))]
+              ("[secondary]-with-a-number rule", len(secondary_keys)),
+              ("claim-support register", n_reg)]
     return fails, checks
 
 

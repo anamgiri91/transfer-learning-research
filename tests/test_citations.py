@@ -7,7 +7,12 @@ errors by hand and the point of the checker is that the eighth is found by CI.
 """
 import pytest
 
-from scripts.verify_citations import check
+from scripts.verify_citations import check as _check
+
+
+def check(text, lit, **kw):
+    """Structural checks only; the register has its own tests below."""
+    return _check(text, lit, register=None, **kw)
 
 LIT = """# Annotated literature review
 
@@ -132,3 +137,97 @@ def test_labels_outside_the_vocabulary_are_rejected(label):
     bad = BODY.replace("**[abstract]**", f"**{label}**")
     fails, _ = check(bad, LIT)
     assert any("outside" in f for f in fails), fails
+
+
+# ---------------------------------------------------------------------------
+# The claim-support register: does a source actually say what we claim?
+# ---------------------------------------------------------------------------
+
+import yaml
+
+from scripts.verify_citations import REGISTER, _same_work, check_register
+
+
+def _entry(**over):
+    e = {
+        "id": "x", "attributed_to": "Someone 2024",
+        "source_url": "https://arxiv.org/abs/1234.56789",
+        "quote_source_url": "https://arxiv.org/abs/1234.56789",
+        "quantity": "50", "claim_in_manuscript": "roughly 50 molecules",
+        "quote": "from 50 molecules upward things change",
+        "quote_read_in": "the abstract", "second_hand": False,
+        "retrieved": "2026-09-02", "status": "verified",
+    }
+    e.update(over)
+    return e
+
+
+def _run(entries, body="text with roughly 50 molecules in it", monkeypatch=None, tmp_path=None):
+    f = tmp_path / "reg.yaml"
+    f.write_text(yaml.safe_dump(entries))
+    return check_register(body, register=f)[0]
+
+
+def test_register_entry_that_supports_its_claim_passes(tmp_path, monkeypatch):
+    assert _run([_entry()], monkeypatch=monkeypatch, tmp_path=tmp_path) == []
+
+
+def test_quote_not_containing_the_quantity_is_caught(tmp_path, monkeypatch):
+    """A quote that does not contain the number cannot support it."""
+    bad = _entry(quote="machine learning is useful for molecules")
+    fails = _run([bad], monkeypatch=monkeypatch, tmp_path=tmp_path)
+    assert any("does not support" in f for f in fails), fails
+
+
+def test_claim_no_longer_in_the_manuscript_is_caught(tmp_path, monkeypatch):
+    fails = _run([_entry()], body="unrelated prose",
+                 monkeypatch=monkeypatch, tmp_path=tmp_path)
+    assert any("no longer in the manuscript" in f for f in fails), fails
+
+
+def test_undeclared_second_hand_quote_is_caught(tmp_path, monkeypatch):
+    """The exact 2026-09-02 error: the sentence was read in Schimunek but
+    belongs to Snyder, and nothing recorded that."""
+    bad = _entry(source_url="https://www.nature.com/articles/s42004-024-01220-4",
+                 quote_source_url="https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/",
+                 second_hand=False)
+    fails = _run([bad], monkeypatch=monkeypatch, tmp_path=tmp_path)
+    assert any("second_hand" in f for f in fails), fails
+
+
+def test_second_hand_wrongly_declared_is_also_caught(tmp_path, monkeypatch):
+    fails = _run([_entry(second_hand=True)], monkeypatch=monkeypatch, tmp_path=tmp_path)
+    assert any("second_hand" in f for f in fails), fails
+
+
+def test_missing_field_is_caught(tmp_path, monkeypatch):
+    bad = _entry(); del bad["quote"]
+    fails = _run([bad], monkeypatch=monkeypatch, tmp_path=tmp_path)
+    assert any("missing field" in f for f in fails), fails
+
+
+def test_superseded_entries_are_not_required_to_still_be_claimed(tmp_path, monkeypatch):
+    """A superseded entry is kept for provenance, not enforced."""
+    e = _entry(status="superseded", quote="no number here",
+               claim_in_manuscript="text that is absent")
+    assert _run([e], body="unrelated", monkeypatch=monkeypatch, tmp_path=tmp_path) == []
+
+
+def test_a_doi_and_its_landing_page_count_as_the_same_work():
+    assert _same_work("https://doi.org/10.5281/zenodo.20026661",
+                      "https://zenodo.org/records/20026661")
+    assert _same_work("https://arxiv.org/abs/2503.03360",
+                      "https://arxiv.org/pdf/2503.03360")
+    assert not _same_work("https://www.nature.com/articles/s42004-024-01220-4",
+                          "https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/")
+
+
+def test_the_shipped_register_is_internally_consistent():
+    """The real file, not a fixture: every entry parses and is well formed."""
+    entries = yaml.safe_load(REGISTER.read_text())
+    assert entries, "register must not be empty"
+    ids = [e["id"] for e in entries]
+    assert len(ids) == len(set(ids)), "duplicate register ids"
+    for e in entries:
+        assert e["status"] in {"verified", "superseded"}
+        assert str(e["retrieved"]).startswith("2026-"), e["id"]

@@ -17,6 +17,7 @@ belong in the paper.
 | Per-compound predictions | `scripts/run_arms.py --save-preds` | `results/predictions/<arm>__<split>__seed<N>__n<size>.npz` | as above |
 | In-domain corpus (raw) | `scripts/fetch_indomain.py` | `data/raw/indomain_<target>.csv` + `.manifest.json` | ChEMBL activity API, 8 targets |
 | In-domain corpus (curated) | `scripts/prepare_indomain.py` | `data/processed/indomain_3c.csv`, `.curation.json` | the 8 raw pulls + `eva71_2a.csv` for overlap flags |
+| 2A surrogate divergence | `scripts/verify_surrogate.py` | `results/tables/table9_surrogate_divergence.csv` | UniProt Q66478 / Q65900 / Q9QF31 |
 | In-domain encoders | `scripts/pretrain_indomain.py` | `models/indomain_{T4,T5}[_clean].pt` + `.json` | `indomain_3c.csv` |
 
 ## Tables and figures
@@ -42,6 +43,8 @@ belong in the paper.
 |---|---|---|
 | Tables are generated, not typed | `scripts/render_manuscript_tables.py` | Every results table in the manuscript is written from `results/tables/*.csv`; `--check` fails if stale |
 | Citations are checked | `scripts/verify_citations.py` | Reference numbering, reading-depth labels, orphan references, dangling body citations, depth drift against `literature.md`, and the `[secondary]`-with-a-number rule. `--online` also checks every cited URL resolves. Added after a manual audit found seven prose citation errors that no existing check could see |
+| Borrowed numbers carry their source sentence | `docs/citation-claims.yaml` + `scripts/verify_citations.py` | Each externally-sourced quantity records the verbatim quote, the URL it was read at and the date; the checker enforces that the quote contains the number, that the claim is still made, and that second-hand quotes are declared |
+| The surrogate claim is re-derived, not cited | `scripts/verify_surrogate.py` | §3.1's CVA16/EV-A71 comparison is recomputed from UniProt-annotated 2A chains into `table9_surrogate_divergence.csv`; 13 claims check against it |
 | The citation checker is itself checked | `tests/test_citations.py` | Each of the eight defects the audit found is pinned as a regression test |
 | Prose numbers are re-derived | `scripts/verify_manuscript.py` | Every numeric claim re-computed from artefacts; non-zero exit on mismatch. The *number* of claims is not restated here — it is asserted against manuscript §10 by the script itself, so there is one place for it to drift and it is checked |
 | Re-running reproduces committed metrics | `scripts/run_arms.py --save-preds` | Re-runs each completed cell and fails if any stored metric moves by more than 1e-9 |

@@ -1,0 +1,142 @@
+# Claim-support register.
+#
+# verify_citations.py checks that citations are structurally sound: numbered,
+# labelled, cited, not orphaned. What it cannot check is whether a source
+# actually SAYS what we claim it says. That is what caught us out on
+# 2026-09-02: the ~50-molecule crossover was attributed to two papers, and
+# finding the real source meant reading a third paper's discussion section.
+#
+# So every number this manuscript takes from someone else's work is recorded
+# here with the verbatim sentence that supports it, where that sentence was
+# read, and when. The checker then enforces:
+#
+#   - the quoted sentence actually contains the quantity we claim from it
+#   - the claim still appears in the manuscript (the register cannot drift)
+#   - a quote read in a DIFFERENT work from the one cited is declared
+#     second-hand, rather than silently passed off as first-hand. This is
+#     decided by comparing quote_source_url against source_url, not by
+#     guessing from prose.
+#   - every number-carrying citation in the body has an entry here
+#
+# status: verified   quote retrieved and checked on `retrieved`
+#         superseded no longer relied on; kept so the history is legible
+#
+# This register covers ONLY numbers taken from other papers. Numbers derived
+# from our own artefacts are checked by verify_manuscript.py instead.
+
+- id: crossover-50
+  quote_source_url: https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/
+  attributed_to: "Snyder et al. 2024"
+  source_url: https://www.nature.com/articles/s42004-024-01220-4
+  quantity: "50"
+  claim_in_manuscript: "from roughly 50 measured\nmolecules upward"
+  quote: "from 50 measures molecules upward, classic machine learning methods start outperforming few-shot learning methods"
+  quote_read_in: "Schimunek et al. 2025, Discussion (PMC12076497), quoting Snyder et al. 2024"
+  second_hand: true
+  retrieved: 2026-09-02
+  status: verified
+  note: >
+    The error that motivated this register. Previously attributed to
+    Altae-Tran 2017 and Schimunek 2025; it is neither's. It is load-bearing:
+    it is why the learning curves start at exactly n = 50.
+
+- id: guo-model-count
+  quote_source_url: https://arxiv.org/abs/2406.00873
+  attributed_to: "Guo, Hernandez-Hernandez & Ballester 2024"
+  source_url: https://arxiv.org/abs/2406.00873
+  quantity: "2,100"
+  claim_in_manuscript: "2,100 models"
+  quote: "2,100 models total (700 per splitting algorithm) across 60 NCI-60 datasets"
+  quote_read_in: "arXiv:2406.00873 abstract page"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+
+- id: sultan-pretraining-saturation
+  quote_source_url: https://arxiv.org/abs/2503.03360
+  attributed_to: "Sultan et al. 2025"
+  source_url: https://arxiv.org/abs/2503.03360
+  quantity: "400K"
+  claim_in_manuscript: "400K–800K molecules"
+  quote: "increasing the dataset beyond approximately 400K to 800K molecules from large-scale unlabeled databases does not enhance performance"
+  quote_read_in: "arXiv:2503.03360 abstract"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+
+- id: sultan-domain-adaptation-size
+  quote_source_url: https://arxiv.org/abs/2503.03360
+  attributed_to: "Sultan et al. 2025"
+  source_url: https://arxiv.org/abs/2503.03360
+  quantity: "4K"
+  claim_in_manuscript: "4K-molecule"
+  quote: "domain adaptation ... on small, domain-specific datasets ... containing less than or equal 4K molecules"
+  quote_read_in: "arXiv:2503.03360 abstract"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+  note: >
+    Recovered only during the audit. The entry was previously marked
+    [secondary] and barred from carrying figures, so the in-domain corpus of
+    §6.4 was assembled without knowing the scale they report adaptation
+    working at. Ours is 2,743 compounds.
+
+- id: chemberta-corpus-size
+  quote_source_url: https://arxiv.org/abs/2010.09885
+  attributed_to: "Chithrananda, Grand & Ramsundar 2020"
+  source_url: https://arxiv.org/abs/2010.09885
+  quantity: "77M"
+  claim_in_manuscript: "77M-compound PubChem corpus"
+  quote: "we release a curated dataset of 77M SMILES from PubChem suitable for large-scale self-supervised pretraining"
+  quote_read_in: "arXiv:2010.09885 abstract"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+
+- id: openbind-release-contents
+  quote_source_url: https://doi.org/10.5281/zenodo.20026661
+  attributed_to: "OpenBind Consortium 2026"
+  source_url: https://doi.org/10.5281/zenodo.20026661
+  quantity: "925"
+  claim_in_manuscript: "925 crystallographic binding events"
+  quote: "925 crystallographic binding events from 699 compounds; 601 compounds with affinity measurements, measured using the Creoptix WAVEsystem"
+  quote_read_in: "Zenodo record 20026661"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+
+- id: moleculeace-targets
+  quote_source_url: https://doi.org/10.1021/acs.jcim.2c01073
+  attributed_to: "van Tilborg, Alenicheva & Grisoni 2022"
+  source_url: https://doi.org/10.1021/acs.jcim.2c01073
+  quantity: "30"
+  claim_in_manuscript: "30 ChEMBL\ntargets"
+  quote: "We benchmarked a total of 24 machine and deep learning approaches on curated bioactivity data from 30 macromolecular targets for their performance on activity cliff compounds. While all methods struggled in the presence of activity cliffs, machine learning approaches based on molecular descriptors outperformed more complex deep learning methods."
+  quote_read_in: "Europe PMC record for 10.1021/acs.jcim.2c01073"
+  second_hand: false
+  retrieved: 2026-09-02
+  status: verified
+  note: >
+    Written into §6.3 before it was verified; the register is what forced the
+    check. The second sentence is the contrast §6.3 draws against our result.
+
+
+- id: lithgo-five-residues
+  quote_source_url: https://doi.org/10.1101/2024.04.29.591684
+  attributed_to: "Lithgo et al. 2024"
+  source_url: https://doi.org/10.1101/2024.04.29.591684
+  quantity: "five"
+  claim_in_manuscript: "differ at five amino acids"
+  quote: "The 2A^pro sequence of EV-A71 and CVA16 differ by 5 amino acids, none of which are near or predicted to affect [the active site]"
+  quote_read_in: "docs/literature.md §1.1, recorded from a full-text read on 2026-09-01"
+  second_hand: false
+  retrieved: 2026-09-01
+  status: superseded
+  note: >
+    Could not be re-retrieved during the audit: the sentence is in bioRxiv body
+    text, which rate-limited us, and there is no PMC mirror. Rather than rely
+    on it, §3.1 now re-derives the comparison from UniProt-annotated 2A chains
+    (scripts/verify_surrogate.py). That check does not reproduce the count of
+    five (7 and 8 against the reviewed reference strains) but does confirm the
+    substantive claim that no catalytic residue differs. Retained as
+    superseded so the provenance of the change is legible.

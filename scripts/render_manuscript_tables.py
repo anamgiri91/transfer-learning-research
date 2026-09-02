@@ -31,12 +31,20 @@ ARM_LABEL = {
     "B2_descriptors_rf": "B2 descriptors + RF",
     "T1_chemberta_linear_probe": "T1 ChemBERTa probe",
     "T2_chemberta_full_finetune": "T2 ChemBERTa fine-tune",
+    "T0r_untrained_encoder_probe": "T0r untrained encoder probe",
     "T4_indomain_probe": "T4 in-domain probe",
     "T5_chained_probe": "T5 chained probe",
     "T4c_indomain_probe_decontaminated": "T4 in-domain probe (decontaminated)",
     "T5c_chained_probe_decontaminated": "T5 chained probe (decontaminated)",
 }
 ORDER = list(ARM_LABEL)
+
+# Tables in §5 describe the pre-registered five-arm sweep across three splits.
+# The control and in-domain arms were run on the scaffold split only and are
+# reported in §6.4, so including them here would add a row of em-dashes to a
+# table whose entire point is the cross-split comparison.
+PREREGISTERED = ["B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
+                 "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"]
 
 
 def _read(name: str) -> pd.DataFrame:
@@ -60,7 +68,7 @@ def table_full_data(split="scaffold") -> str:
     df = _read(f"table1_learning_curves__{split}.csv")
     d = df[df.n_train == df.n_train.max()].set_index("arm")
     rows = []
-    for arm in ORDER:
+    for arm in PREREGISTERED:
         if arm not in d.index:
             continue
         r = d.loc[arm]
@@ -84,7 +92,7 @@ def table_curve(split="scaffold") -> str:
     df = _read(f"table1_learning_curves__{split}.csv")
     sizes = sorted(df.n_train.unique())
     rows = []
-    for arm in ORDER:
+    for arm in PREREGISTERED:
         d = df[df.arm == arm].set_index("n_train")
         if d.empty:
             continue
@@ -96,7 +104,7 @@ def table_curve(split="scaffold") -> str:
 def table_splits() -> str:
     df = _read("table4_split_difficulty.csv")
     rows = []
-    for arm in ORDER:
+    for arm in PREREGISTERED:
         d = df[df.arm == arm].set_index("split")
         if d.empty:
             continue
@@ -123,7 +131,7 @@ def table_audit() -> str:
 def table_der(split="scaffold") -> str:
     df = _read(f"table2_der__{split}.csv")
     rows = []
-    for arm in ORDER:
+    for arm in PREREGISTERED:
         d = df[df.arm == arm]
         if d.empty:
             continue
@@ -177,6 +185,53 @@ def table_tuning() -> str:
 
 CLIFF_T = 0.7          # primary threshold, matching the Table 0 near-neighbour cut
 STRATA = ("cliff", "smooth", "distant", "all")
+
+
+INDOMAIN_ORDER = ["B1_ecfp_histgb", "T0r_untrained_encoder_probe",
+                  "T1_chemberta_linear_probe", "T2_chemberta_full_finetune",
+                  "T4_indomain_probe", "T5_chained_probe"]
+
+
+def table_indomain_curve(split="scaffold") -> str:
+    df = _read(f"table1_learning_curves__{split}.csv")
+    sizes = sorted(df.n_train.unique())
+    rows = []
+    for arm in INDOMAIN_ORDER:
+        d = df[df.arm == arm].set_index("n_train")
+        if d.empty:
+            continue
+        rows.append([ARM_LABEL[arm]]
+                    + [_fmt(d.loc[n, "median"]) if n in d.index else "—" for n in sizes]
+                    + [_fmt(d.loc[sizes[-1], "spearman_median"]),
+                       _fmt(d.loc[sizes[-1], "r2_median"])])
+    return _md(["Arm (RMSE ↓)"] + [f"n={n}" for n in sizes] + ["ρ", "R²"], rows)
+
+
+def table_indomain_contrasts() -> str:
+    df = _read("table10_indomain_contrasts.csv")
+    df = df[(df.metric == "rmse") & (df.n_train == df.n_train.max())]
+    rows = [[f"{r.arm} vs {r.reference}", f"{r.median_delta:+.4f}",
+             f"{r.arm_better_in_seeds}/{r.n_seeds}", f"{r.p_raw:.4f}", r.verdict]
+            for r in df.itertuples()]
+    return _md(["Contrast (full data)", "median ΔRMSE", "arm better in",
+                "p", "verdict"], rows)
+
+
+def table_random_draws() -> str:
+    df = _read("table11_random_encoder_draws.csv")
+    rows = [[str(int(r.encoder_draw)), _fmt(r.rmse_median, 4)] for r in df.itertuples()]
+    rows.append(["**median**", f"**{df.rmse_median.median():.4f}**"])
+    return _md(["Random encoder draw", "median RMSE over 10 eval seeds"], rows)
+
+
+def table_surrogate() -> str:
+    df = _read("table9_surrogate_divergence.csv")
+    rows = [[r.reference, r.surrogate, str(int(r.n_differences)),
+             str(int(r.n_differences_at_catalytic_site)),
+             f"{int(r.min_separation_from_catalytic)} residues",
+             str(int(r.n_differences_at_zinc_site))] for r in df.itertuples()]
+    return _md(["Reference", "Surrogate", "differences", "at catalytic site",
+                "nearest catalytic", "at Zn site"], rows)
 
 
 def table_cliff_pairs() -> str:
@@ -243,6 +298,10 @@ RENDERERS = {
     "splits": table_splits,
     "audit": table_audit,
     "der": table_der,
+    "surrogate": table_surrogate,
+    "indomain_curve": table_indomain_curve,
+    "indomain_contrasts": table_indomain_contrasts,
+    "random_draws": table_random_draws,
     "cliff_pairs": table_cliff_pairs,
     "cliff_strata": table_cliff_strata,
     "cliff_paired": table_cliff_paired,
