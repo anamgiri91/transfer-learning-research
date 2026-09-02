@@ -23,7 +23,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,35 +30,11 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from evapro.data.indomain import EXCLUDED, TARGETS, screen
+
 CHEMBL_BASE = "https://www.ebi.ac.uk/chembl/api/data"
 RAW = Path("data/raw")
 ACTIVITY_TYPES = ["IC50", "Ki", "Kd", "EC50"]
-
-# label -> (chembl target id, virus family). Verified against the target
-# endpoint on 2026-09-02; counts in the manifest let a rebuild detect drift.
-TARGETS = {
-    "sars2_3cl":  ("CHEMBL4523582", "coronaviral"),
-    "sars1_3cl":  ("CHEMBL3927",    "coronaviral"),
-    "mers_3cl":   ("CHEMBL4295557", "coronaviral"),
-    "ibv_3cl":    ("CHEMBL1293307", "coronaviral"),
-    "cvb3_3c":    ("CHEMBL2396505", "picornaviral"),
-    "ev71_3c":    ("CHEMBL4295525", "picornaviral"),
-    "hrv14_3c":   ("CHEMBL4295564", "picornaviral"),
-    "hrv16_3c":   ("CHEMBL5296",    "picornaviral"),
-}
-
-# Excluded with the reason, rather than quietly omitted from TARGETS.
-EXCLUDED = {
-    "CHEMBL5127": "poliovirus entry is RNA-polymerase data, not a protease",
-    "CHEMBL3232683": "HCoV-NL63 entry is PLP2, a papain-like protease -- different fold",
-}
-
-# An assay counts as 3C / 3C-like only if it says so. Cell-based antiviral and
-# capsid assays are a different readout and plan.md §3.2 forbids pooling them.
-KEEP = re.compile(r"3c[\s-]*like|3cl|\b3c\b|main protease|mpro|picornain", re.I)
-DROP = re.compile(r"papain|plpro|plp2|\bpl-?pro\b|polymerase|capsid|2a\s*protease|"
-                  r"helicase|methyltransferase|cytotox|cell viability", re.I)
-
 
 def get(url: str, params: dict | None = None, tries: int = 5) -> dict:
     """ChEMBL intermittently 500s and times out; retry with backoff."""
@@ -91,21 +66,6 @@ def fetch_target(target_id: str, page_size: int = 1000) -> pd.DataFrame:
         if not batch or offset >= total:
             break
     return pd.DataFrame(rows)
-
-
-def screen(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
-    """Keep only records whose assay description names a 3C / 3C-like protease."""
-    if df.empty:
-        return df, {"kept": 0, "dropped_not_3c": 0, "dropped_wrong_enzyme": 0}
-    desc = df.get("assay_description", pd.Series([""] * len(df))).fillna("")
-    wrong = desc.str.contains(DROP)
-    named = desc.str.contains(KEEP)
-    keep = named & ~wrong
-    return df[keep].copy(), {
-        "kept": int(keep.sum()),
-        "dropped_not_3c": int((~named & ~wrong).sum()),
-        "dropped_wrong_enzyme": int(wrong.sum()),
-    }
 
 
 def main() -> int:

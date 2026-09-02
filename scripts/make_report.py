@@ -38,6 +38,13 @@ PALETTE = {
     "B2_descriptors_rf":         ("#eb6834", "^", "B2 descriptors+RF"),
     "T1_chemberta_linear_probe": ("#1baf7a", "D", "T1 ChemBERTa probe"),
     "T2_chemberta_full_finetune":("#eda100", "v", "T2 ChemBERTa FT"),
+    # In-domain arms. Seven series exceeds what the categorical palette is
+    # validated for, so figures that include these are drawn as focused
+    # comparisons (B1 vs T1 vs T4 vs T5) rather than all-arm panels.
+    "T4_indomain_probe":         ("#7c5cd6", "P", "T4 in-domain probe"),
+    "T5_chained_probe":          ("#c8407a", "X", "T5 chained probe"),
+    "T4c_indomain_probe_decontaminated": ("#9d86e0", "P", "T4 in-domain (decontam.)"),
+    "T5c_chained_probe_decontaminated":  ("#d9769c", "X", "T5 chained (decontam.)"),
 }
 ORDER = list(PALETTE)
 

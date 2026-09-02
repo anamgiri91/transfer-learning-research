@@ -108,20 +108,37 @@ language modelling over SMILES at scale, releasing a 77M-compound PubChem
 corpus and reporting competitive — not dominant — MoleculeNet results
 ([Chithrananda et al. 2020](https://arxiv.org/abs/2010.09885)). ChemBERTa-2
 extended this to multi-task regression (MTR) pretraining
-([Ahmad et al. 2022](https://arxiv.org/abs/2209.01712)); **the encoder used in
-this study, `DeepChem/ChemBERTa-77M-MTR`, is the ChemBERTa-2 MTR model**, and we
-cite it accordingly. Subsequent work reports that transformer advantages over
-Morgan-fingerprint baselines depend more on domain-adapted pretraining than on
-corpus scale, with random forests over RDKit descriptors remaining strong
-baselines ([J. Cheminform. 2026](https://doi.org/10.1186/s13321-026-01252-z);
-abstract only — not cited for a specific figure).
+([Ahmad et al. 2022](https://arxiv.org/abs/2209.01712)). **We take the encoder
+used in this study, `DeepChem/ChemBERTa-77M-MTR`, to be the ChemBERTa-2 MTR
+model** and cite it accordingly: MTR (multi-task regression) is ChemBERTa-2's
+objective, not the original ChemBERTa's masked language modelling, and 77M is
+the corpus size both papers use. We flag that this is an inference from the
+checkpoint's name and training objective — its HuggingFace model card is empty
+— rather than a claim documented at source.
 
-**The low-data regime.** Few-shot and one-shot approaches were developed
-precisely for this setting ([Altae-Tran et al. 2017](https://arxiv.org/pdf/1611.03199);
-[Schimunek et al. 2025](https://pubs.acs.org/doi/10.1021/acs.jcim.4c02373)),
-with the reported observation that **classical ML overtakes few-shot methods
-from roughly 50 measured molecules upward** — a crossover our learning curves
-are designed to straddle, starting at exactly n = 50.
+[Sultan et al. (2025)](https://arxiv.org/abs/2503.03360) report that
+transformer advantages over fingerprint baselines depend more on
+domain-adapted pretraining than on corpus scale: pretraining beyond roughly
+**400K–800K molecules** stops helping, while domain adaptation on a
+**≤ 4K-molecule** set significantly improves performance, and a random forest
+remains a strong baseline. That corpus figure is the same order as the
+in-domain corpus assembled in §6.4, which is why the arm is worth running.
+
+**The low-data regime.** The tension this study probes — deep models fitting
+millions of parameters against discovery projects that are structurally
+low-data — is reviewed by
+[van Tilborg et al. (2024)](https://doi.org/10.1016/j.sbi.2024.102818).
+Few-shot and one-shot approaches were developed precisely for this setting
+([Altae-Tran et al. 2017](https://doi.org/10.1021/acscentsci.6b00367);
+[Schimunek et al. 2025](https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/)).
+The observation that matters for our design is
+[Snyder et al. (2024)](https://www.nature.com/articles/s42004-024-01220-4)'s:
+**classical ML starts to outperform few-shot methods from roughly 50 measured
+molecules upward** — a crossover our learning curves are designed to straddle,
+starting at exactly n = 50. (We previously credited this figure to the two
+few-shot papers above; it is Snyder et al.'s, quoted in Schimunek et al.'s
+discussion, and the mis-attribution is recorded in
+[`../docs/literature.md`](../docs/literature.md) §2.6.)
 
 **Evaluation and splitting.** Scaffold splitting is the field's standard
 concession to realism, but [Guo, Hernandez-Hernandez and Ballester
@@ -751,12 +768,25 @@ show it. Two different cuts of the data, one varying the split and one holding
 it fixed, agree that the pretrained representation's weakness is novel
 chemistry rather than local label roughness.
 
-The activity-cliff literature's usual worry is the opposite: that learned
-representations are needed *because* fingerprints cannot separate cliff pairs,
-whose ECFP4 vectors are near-identical. This dataset is consistent with the
-premise — cliffs are the hardest stratum in raw RMSE for every arm — but not
-with the conclusion that pretraining is what fixes it. The pretrained arms are
-no worse on cliffs and much worse elsewhere.
+**Against the activity-cliff benchmark.** The reference point here is
+[van Tilborg, Alenicheva and Grisoni (2022)](https://doi.org/10.1021/acs.jcim.2c01073)'s
+MoleculeACE, which reports that descriptor- and fingerprint-based models are
+frequently *better* than deep models on cliff compounds. Our result does not
+reproduce that contrast: on this dataset the pretrained arms are, if anything,
+the stronger ones on cliffs, and their deficit is elsewhere. Two differences
+plausibly matter and we cannot separate them — their benchmark spans 30 ChEMBL
+targets of lead-like compounds, while this is a single fragment screen with 9
+cliff compounds per fold; and their cliff definition combines substructure and
+scaffold criteria with a similarity cut, where ours is the single ECFP4
+threshold already fixed by Table 0. We therefore report ours as a discrepant
+observation on one dataset, not as a correction to theirs.
+
+The intuition behind that literature is that learned representations are needed
+*because* fingerprints cannot separate cliff pairs, whose ECFP4 vectors are
+near-identical. This dataset is consistent with the premise — cliffs are the
+hardest stratum in raw RMSE for every arm — but not with the conclusion that
+pretraining is what fixes it. The pretrained arms are no worse on cliffs and
+much worse elsewhere.
 
 Two caveats, both real. A median of **9 cliff compounds per test fold** at
 T = 0.7 is a thin basis for a null, and at T = 0.8 only 3 of 10 seeds clear the
@@ -943,12 +973,17 @@ Concretely, for a project with a few hundred measurements on one target:
 Two experiments, both specified in the pre-registration and neither run:
 
 - **H3, in-domain pretraining (arm T4).** Multitask pretraining on related
-  3C / 3C-like proteases, then fine-tuning on this target. This is the highest-
-  value remaining experiment, because it tests the mechanism §2 identifies as
-  the actual source of transfer gains. A positive T4 against T1 would convert
-  this paper's headline from "pretraining did not help" to "generic pretraining
-  did not help, in-domain pretraining did" — a materially stronger and more
-  useful claim.
+  3C / 3C-like proteases, then fine-tuning on this target. This is the
+  highest-value remaining experiment, because it tests the mechanism §2
+  identifies as the actual source of transfer gains. A positive T4 against T1
+  would convert this paper's headline from "pretraining did not help" to
+  "generic pretraining did not help, in-domain pretraining did" — a materially
+  stronger and more useful claim. The prior is better than it might look:
+  [Sultan et al. (2025)](https://arxiv.org/abs/2503.03360) report domain
+  adaptation working on sets of **≤ 4K molecules**, and report pretraining
+  corpus size saturating at **400K–800K** — so the relevant scale for this
+  intervention is one a single-target project can actually assemble, and is the
+  same order as the corpus §6.4 builds.
 - **H4, decontamination.** Not answerable with an encoder whose corpus is not
   distributed; §6.1 could only bound test-set overlap at 53%. It becomes
   answerable by *changing the design*: pretrain a smaller encoder on a corpus
@@ -1017,6 +1052,45 @@ are recomputed from saved per-compound predictions by a different script than
 the headline tests, and the `all` stratum must reproduce Table 3's deltas and
 Holm p-values exactly. If the stratification ever stopped being a partition of
 the numbers §5.4 rests on, the check would fail.
+
+**Citations are machine-checked too, and were not always.** Every check above
+covers numbers derived from artefacts. Citations are prose, and prose was
+unguarded — which showed. An audit on 2026-09-02 re-retrieved every source in
+the reference list and found **seven errors**, all of them invisible to
+`make verify` as it then stood:
+
+| Error | Consequence |
+|---|---|
+| A fabricated author initial (`Guo, X.` for `Guo, Q.`) | Wrong attribution in the reference list |
+| The ~50-molecule crossover credited to Altae-Tran and Schimunek | It is **Snyder et al. (8)**'s, only quoted by Schimunek. This figure justifies starting the learning curves at n = 50 |
+| A `[secondary]` source cited for a specific number | Breaks the rule `literature.md` itself states |
+| Two references left author-less as "unretrievable" | Both had open preprints that were never looked for |
+| `Schimunek et al.` for a three-author paper | Avoidable vagueness |
+| The ChemBERTa-2 attribution asserted as fact | It is an inference; the checkpoint's model card is empty |
+| §6.3 written without citing the activity-cliff benchmark it departs from | Fixed in §6.3 against MoleculeACE (11) |
+
+The costly one is the fourth. [Sultan et al. (2025)](https://arxiv.org/abs/2503.03360)
+is the paper motivating the in-domain arm; marked `[secondary]`, it was barred
+from carrying any figure, so that arm's corpus was assembled without knowing
+their reported domain-adaptation set size. An eighth error — two reference
+entries briefly numbered 10 — was introduced *while fixing the other seven*.
+
+`scripts/verify_citations.py` now runs inside `make verify` and checks
+reference numbering, reading-depth labels against a fixed vocabulary, orphan
+references, body citations missing from the list, reading-depth drift between
+this document and `literature.md`, and the `[secondary]`-with-a-number rule.
+`make verify-online` additionally checks that every cited URL resolves.
+`tests/test_citations.py` pins each of the eight defects above as a regression
+test, so the checker is verified against the errors that motivated it rather
+than only against a clean document. It found one further orphan reference on
+its first run.
+
+**One claim we could not re-verify.** §3.1's five-residue CVA16/EV-A71
+statement is recorded in `literature.md` as a verbatim quote from a full-text
+read, and the paper's author list and abstract figures re-verified cleanly.
+The quoted sentence itself sits in the body text, which bioRxiv rate-limited
+during the audit and which has no PMC or Europe PMC full-text mirror. It is
+flagged here because it conditions the entire study.
 
 **The pipeline is bit-reproducible.** Verified by re-running from scratch and
 comparing checksums:
@@ -1097,60 +1171,89 @@ they are listed by title rather than given an invented authorship.
    The MTR-vs-MLM comparison is not quoted numerically because the full text
    was not retrieved.
 
-5. *Transformers for molecular property prediction: domain adaptation
-   efficiently improves performance.* Journal of Cheminformatics (2026).
-   <https://doi.org/10.1186/s13321-026-01252-z> — **[secondary]**; retrieval
-   blocked by an authentication redirect, and the author list was therefore not
-   obtained. Cited **only** as motivation for the in-domain arm T4 and for the
-   qualitative claim that descriptor-based random forests remain strong
-   baselines. No number in this manuscript rests on it.
+5. Sultan, A., Rausch-Dupont, M., Khan, S., Kalinina, O., Klakow, D.,
+   Volkamer, A. (2025). *Transformers for molecular property prediction: domain
+   adaptation efficiently improves performance.* arXiv:2503.03360; Journal of
+   Cheminformatics (2026), <https://doi.org/10.1186/s13321-026-01252-z> —
+   **[abstract]**, read from the open preprint. Source of the 400K–800K
+   pretraining-saturation figure and the ≤ 4K-molecule domain-adaptation set
+   cited in §2 and §6.4. The journal version is paywalled; an earlier draft of
+   this manuscript recorded the source as unretrievable and author-less, which
+   was wrong — the preprint was open throughout.
 
 ### The low-data regime
 
 6. Altae-Tran, H., Ramsundar, B., Pappu, A. S., Pande, V. (2017). *Low data
-   drug discovery with one-shot learning.* ACS Central Science 3(4), 283–293;
-   arXiv:1611.03199. <https://arxiv.org/pdf/1611.03199> — **[secondary]**.
+   drug discovery with one-shot learning.* ACS Central Science 3(4), 283–293.
+   <https://doi.org/10.1021/acscentsci.6b00367>; open at
+   <https://ncbi.nlm.nih.gov/pmc/articles/PMC5408335> — **[abstract]**. Cited
+   for the existence of one-shot approaches to this regime, **not** for the
+   ~50-molecule crossover (8), which an earlier draft wrongly attributed here.
 
-7. Schimunek, J., et al. (2025). *MHNfs: prompting in-context bioactivity
-   predictions for low-data drug discovery.* Journal of Chemical Information
-   and Modeling. <https://pubs.acs.org/doi/10.1021/acs.jcim.4c02373> —
-   **[secondary]**. Source of the reported ~50-molecule crossover above which
-   classical ML overtakes few-shot methods; our learning curves begin at
-   exactly n = 50 for that reason. Reported as their finding, not re-derived
-   here.
+7. Schimunek, J., Luukkonen, S., Klambauer, G. (2025). *MHNfs: prompting
+   in-context bioactivity predictions for low-data drug discovery.* Journal of
+   Chemical Information and Modeling. DOI 10.1021/acs.jcim.4c02373; open at
+   <https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/> — **[full text via
+   PMC]**. Cited for few-shot methods in this regime. **Not** the source of the
+   ~50-molecule crossover: its discussion quotes that from (8).
 
-8. *Deep learning for low-data drug discovery: hurdles and opportunities.*
-   Current Opinion in Structural Biology (2024).
-   <https://www.sciencedirect.com/science/article/pii/S0959440X24000459> —
-   **[secondary]**; author list not obtained. Cited only as framing.
+8. Snyder, S., et al. (2024). *The Goldilocks paradigm: comparing classical
+   machine learning, large language models, and few-shot learning for drug
+   discovery applications.* Communications Chemistry 7.
+   <https://www.nature.com/articles/s42004-024-01220-4> — **[abstract]**.
+   Origin of the ~50-molecule crossover above which classical ML overtakes
+   few-shot methods; our learning curves begin at exactly n = 50 for that
+   reason. Reported as their finding, not re-derived here.
+
+9. van Tilborg, D., et al. (2024). *Deep learning for low-data drug discovery:
+   hurdles and opportunities.* Current Opinion in Structural Biology 86,
+   102818. <https://doi.org/10.1016/j.sbi.2024.102818>; open preprint
+   <https://chemrxiv.org/engage/chemrxiv/article-details/65b154a166c13817292fad82>
+   — **[secondary]**. Cited only as framing.
 
 ### Evaluation and splitting
 
-9. Guo, X., Hernandez-Hernandez, S., Ballester, P. J. (2024). *Scaffold splits
-   overestimate virtual screening performance.* arXiv:2406.00873; ICANN 2024,
-   LNCS. <https://arxiv.org/abs/2406.00873> — **[full text of abstract and
-   landing page]**. Source of the random < scaffold < Butina < UMAP difficulty
-   ordering across 2,100 models on 60 NCI-60 datasets, and the reason Butina
-   clustering is reported here as the stricter check. Our §5.5 result is
-   consistent with their argument on one further dataset; a single target is
-   not a replication of their 60-dataset study and is not claimed as one.
+10. Guo, Q., Hernandez-Hernandez, S., Ballester, P. J. (2024). *Scaffold splits
+    overestimate virtual screening performance.* arXiv:2406.00873; ICANN 2024,
+    LNCS. <https://arxiv.org/abs/2406.00873> — **[full text of abstract and
+    landing page]**. Source of the random < scaffold < Butina < UMAP difficulty
+    ordering across 2,100 models (700 per splitting algorithm) on 60 NCI-60
+    datasets, and the reason Butina clustering is reported here as the stricter
+    check. Our §5.5 result is consistent with their argument on one further
+    dataset; a single target is not a replication of their 60-dataset study and
+    is not claimed as one.
+
+11. van Tilborg, D., Alenicheva, A., Grisoni, F. (2022). *Exposing the
+    limitations of molecular machine learning with activity cliffs.* Journal of
+    Chemical Information and Modeling 62(23), 5938–5951.
+    DOI 10.1021/acs.jcim.2c01073; open preprint
+    <https://chemrxiv.org/engage/chemrxiv/article-details/630cc44058843b8403a19810>
+    — **[abstract]**. The standard ML benchmark for activity cliffs
+    (MoleculeACE); §6.3 states how our stratification differs from it and how
+    our result sits against theirs. Two corrections were subsequently published,
+    one for a bug that mislabelled cliff pairs across the train/test split.
 
 ### Software, models and data resources
 
-10. RDKit: open-source cheminformatics. <https://www.rdkit.org> — fingerprints,
+12. RDKit: open-source cheminformatics. <https://www.rdkit.org> — fingerprints,
     descriptors, Bemis–Murcko scaffolds, standardisation.
-11. Pedregosa, F., et al. (2011). *Scikit-learn: machine learning in Python.*
+13. Pedregosa, F., et al. (2011). *Scikit-learn: machine learning in Python.*
     JMLR 12, 2825–2830. <https://scikit-learn.org> — `HistGradientBoosting`
-    (B1), `RandomForest` (B2), `RidgeCV` (T1).
-12. Paszke, A., et al. (2019). *PyTorch: an imperative style, high-performance
-    deep learning library.* NeurIPS 32. <https://pytorch.org> — arm T2.
-13. Wolf, T., et al. (2020). *Transformers: state-of-the-art natural language
+    (B1), `RandomForest` (B2), `RidgeCV` (T1, T4, T5).
+14. Paszke, A., et al. (2019). *PyTorch: an imperative style, high-performance
+    deep learning library.* NeurIPS 32. <https://pytorch.org> — arms T2, T4, T5.
+15. Wolf, T., et al. (2020). *Transformers: state-of-the-art natural language
     processing.* EMNLP System Demonstrations, 38–45.
-    <https://huggingface.co/docs/transformers> — encoder loading for T1 and T2.
-14. `DeepChem/ChemBERTa-77M-MTR` model checkpoint.
+    <https://huggingface.co/docs/transformers> — encoder loading.
+16. `DeepChem/ChemBERTa-77M-MTR` model checkpoint.
     <https://huggingface.co/DeepChem/ChemBERTa-77M-MTR> — the pretrained
-    encoder evaluated in this study.
-15. PubChem PUG REST. Kim, S., et al. (2023). *PubChem 2023 update.* Nucleic
+    encoder evaluated in this study. Its model card is empty; the attribution
+    to ChemBERTa-2 (4) is our inference from the checkpoint name and objective.
+17. ChEMBL. Activity records for the eight 3C / 3C-like protease targets of
+    §6.4, retrieved 2026-09-02 via the ChEMBL API.
+    <https://www.ebi.ac.uk/chembl/> — per-target manifests in
+    `data/raw/indomain_*.manifest.json`.
+18. PubChem PUG REST. Kim, S., et al. (2023). *PubChem 2023 update.* Nucleic
     Acids Research 51(D1), D1373–D1380.
     <https://pubchem.ncbi.nlm.nih.gov/docs/pug-rest> — membership queries for
     the contamination upper bound of §6.1.

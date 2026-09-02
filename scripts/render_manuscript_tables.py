@@ -31,6 +31,10 @@ ARM_LABEL = {
     "B2_descriptors_rf": "B2 descriptors + RF",
     "T1_chemberta_linear_probe": "T1 ChemBERTa probe",
     "T2_chemberta_full_finetune": "T2 ChemBERTa fine-tune",
+    "T4_indomain_probe": "T4 in-domain probe",
+    "T5_chained_probe": "T5 chained probe",
+    "T4c_indomain_probe_decontaminated": "T4 in-domain probe (decontaminated)",
+    "T5c_chained_probe_decontaminated": "T5 chained probe (decontaminated)",
 }
 ORDER = list(ARM_LABEL)
 

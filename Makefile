@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench report test lint check-private clean verify
+.PHONY: help setup data splits bench indomain report test lint check-private clean verify verify-online
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -29,16 +29,29 @@ bench:  ## Run every arm in config/ across seeds and training sizes
 	  echo "== $$cfg"; $(PY) scripts/run_benchmark.py --config $$cfg || exit 1; \
 	done
 
+indomain:  ## Fetch, curate and pretrain the in-domain 3C/3CL corpus (arms T4/T5)
+	$(PY) scripts/fetch_indomain.py
+	$(PY) scripts/prepare_indomain.py
+	@for a in T4 T5; do \
+	  $(PY) scripts/pretrain_indomain.py --arm $$a || exit 1; \
+	  $(PY) scripts/pretrain_indomain.py --arm $$a --decontaminate || exit 1; \
+	done
+
 report:  ## Regenerate figures and tables from results/metrics/
 	$(PY) scripts/make_report.py
 
 test:  ## Run the test suite
 	$(PY) -m pytest
 
-verify:  ## Run tests, check manuscript tables are fresh, verify every claim
+verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) -m pytest -q
 	$(PY) scripts/render_manuscript_tables.py --check
 	$(PY) scripts/verify_manuscript.py
+	$(PY) scripts/verify_citations.py
+
+verify-online:  ## verify, plus check that every cited URL still resolves
+	$(MAKE) verify
+	$(PY) scripts/verify_citations.py --online
 
 lint:  ## Lint and format-check
 	ruff check src tests scripts

@@ -1,0 +1,50 @@
+{
+  "dropped": {
+    "activity_type": 0,
+    "low_confidence": 0,
+    "missing_value": 0,
+    "mw_out_of_range": 67,
+    "pactivity_out_of_range": 2,
+    "replicate_disagreement": 53,
+    "unparseable_structure": 0
+  },
+  "dropped_no_structure": 19,
+  "dropped_non_nm_units": 145,
+  "generated_utc": "2026-09-02T16:21:06+00:00",
+  "n_censored_held_out": 866,
+  "n_clean": 2913,
+  "n_contaminated": 61,
+  "n_input": 4691,
+  "n_measurements": 2974,
+  "n_output": 2974,
+  "n_overlap_exact": 0,
+  "n_overlap_near_duplicate": 0,
+  "n_overlap_scaffold": 61,
+  "n_unique_compounds": 2743,
+  "near_duplicate_threshold": 0.7,
+  "per_family_measurements": {
+    "coronaviral": 2829,
+    "picornaviral": 145
+  },
+  "per_target_measurements": {
+    "cvb3_3c": 98,
+    "ev71_3c": 26,
+    "hrv14_3c": 16,
+    "hrv16_3c": 5,
+    "ibv_3cl": 85,
+    "mers_3cl": 20,
+    "sars1_3cl": 203,
+    "sars2_3cl": 2521
+  },
+  "raw_rows_per_target": {
+    "cvb3_3c": 117,
+    "ev71_3c": 30,
+    "hrv14_3c": 16,
+    "hrv16_3c": 5,
+    "ibv_3cl": 102,
+    "mers_3cl": 96,
+    "sars1_3cl": 282,
+    "sars2_3cl": 4207
+  },
+  "source_script": "scripts/prepare_indomain.py"
+}

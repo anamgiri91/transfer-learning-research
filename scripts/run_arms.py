@@ -53,10 +53,29 @@ def get_features(kind: str, smiles: list[str]) -> np.ndarray:
         x = rdkit_descriptors(smiles)
     elif kind == "chemberta":
         x = chemberta_embeddings(smiles)
+    elif kind.startswith("indomain:"):
+        x = indomain_embeddings(kind.split(":", 1)[1], smiles)
     else:
         raise ValueError(kind)
     _cache[kind] = x
     return x
+
+
+def indomain_embeddings(tag: str, smiles: list[str]) -> np.ndarray:
+    """Frozen embeddings from an in-domain multitask-pretrained encoder (T4/T5).
+
+    Mean-pooled exactly as T1 is, and the same 384 dimensions, so the ridge
+    probe downstream is given an identical shape of input. Any difference
+    against T1 is therefore attributable to what the encoder was pretrained on.
+    """
+    import torch
+
+    from evapro.models.multitask import MultitaskRegressor, embed_smiles
+
+    meta = json.loads(Path(f"models/{tag}.json").read_text())
+    model = MultitaskRegressor(meta["tasks"], pretrained=False)
+    model.load_state_dict(torch.load(f"models/{tag}.pt", map_location="cpu"))
+    return embed_smiles(model, smiles)
 
 
 def chemberta_embeddings(smiles: list[str], batch_size: int = 64) -> np.ndarray:
@@ -101,8 +120,9 @@ def fit_predict_sklearn(arm, Xtr, ytr, Xte, seed):
     elif arm == "B2":
         model = RandomForestRegressor(n_estimators=500, min_samples_leaf=1,
                                       n_jobs=-1, random_state=seed)
-    elif arm == "T1":
+    elif arm in ("T1", "T4", "T5", "T4c", "T5c"):
         # Frozen-encoder linear probe: standardise then ridge with internal CV.
+        # Identical for every frozen arm, so the arms differ only in the encoder.
         scaler = StandardScaler().fit(Xtr)
         Xtr, Xte = scaler.transform(Xtr), scaler.transform(Xte)
         model = RidgeCV(alphas=np.logspace(-2, 4, 25))
@@ -148,10 +168,19 @@ def finetune_chemberta(smiles_tr, ytr, smiles_te, seed, epochs=40, lr=3e-5, bs=1
     return preds
 
 
-ARM_FEATURES = {"B0": "ecfp", "B1": "ecfp", "B2": "descriptors", "T1": "chemberta"}
+ARM_FEATURES = {
+    "B0": "ecfp", "B1": "ecfp", "B2": "descriptors", "T1": "chemberta",
+    # In-domain arms: T4 pretrained from random init, T5 chained from ChemBERTa;
+    # the "c" variants use the decontaminated corpus (plan.md §7.1).
+    "T4": "indomain:indomain_T4", "T5": "indomain:indomain_T5",
+    "T4c": "indomain:indomain_T4_clean", "T5c": "indomain:indomain_T5_clean",
+}
 ARM_LABELS = {
     "B0": "B0_median", "B1": "B1_ecfp_histgb", "B2": "B2_descriptors_rf",
     "T1": "T1_chemberta_linear_probe", "T2": "T2_chemberta_full_finetune",
+    "T4": "T4_indomain_probe", "T5": "T5_chained_probe",
+    "T4c": "T4c_indomain_probe_decontaminated",
+    "T5c": "T5c_chained_probe_decontaminated",
 }
 
 

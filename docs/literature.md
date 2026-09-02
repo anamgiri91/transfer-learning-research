@@ -99,17 +99,33 @@ against self-supervised pretraining while varying hyperparameters and
 pretraining-set size, on up to 77M PubChem compounds. *(We did not retrieve the
 full text; the MTR-vs-MLM comparison is therefore not quoted numerically.)*
 
-### 2.3 Domain adaptation for molecular transformers (2026) — [secondary]
+### 2.3 Sultan, Rausch-Dupont, Khan, Kalinina, Klakow, Volkamer (2025/2026) — [abstract]
 *Transformers for molecular property prediction: domain adaptation efficiently
-improves performance.* J. Cheminformatics, DOI 10.1186/s13321-026-01252-z.
-<https://doi.org/10.1186/s13321-026-01252-z>
+improves performance.* J. Cheminformatics (2026), DOI 10.1186/s13321-026-01252-z.
+**Open preprint: arXiv:2503.03360** <https://arxiv.org/abs/2503.03360>
 
-Reported finding: transformers beat Morgan-fingerprint baselines on most
-datasets, but the margin comes mainly from **domain-adapted** pretraining
-rather than from scale alone; a random forest on RDKit descriptors remains a
-strong baseline. **Retrieval blocked by an authentication redirect**, so this
-is cited only as motivation for arm T4 (in-domain transfer) and never for a
-specific number.
+> **Correction, 2026-09-02.** This entry previously read "(2026) — [secondary]
+> ... retrieval blocked by an authentication redirect", with no author list.
+> The Springer version is indeed paywalled, but an **open arXiv preprint was
+> available all along** and was simply not found. The label is corrected to
+> [abstract] and the authors are named. The practical cost of the error: this
+> is the paper motivating arm T4, and the old label barred it from carrying any
+> number, so T4's design was argued without its most relevant figures.
+
+Reported findings, from the abstract:
+- Pretraining beyond roughly **400K–800K molecules does not improve
+  performance** across seven datasets covering five ADME endpoints.
+- **Domain adaptation** — multi-task regression of physicochemical properties
+  on a small domain-specific set of **≤ 4K molecules** — significantly improves
+  performance and generalisation (reported p < 0.001).
+- Chemically and physically informed features consistently do better across
+  model types, and **random forest remains a strong baseline**.
+
+**Consequence for this work:** it puts a number on the corpus size at which
+in-domain adaptation is reported to work (≤ 4K), which is the same order as our
+own 2,743-compound in-domain corpus (§6.4). Note the difference in adaptation
+signal: theirs is computed physicochemical properties, ours is measured
+bioactivity across eight protease targets.
 
 ### 2.4 Deep learning for low-data drug discovery — [secondary]
 *Deep learning for low-data drug discovery: Hurdles and opportunities.*
@@ -119,19 +135,44 @@ Current Opinion in Structural Biology (2024).
 Frames the central tension this study probes: deep models fit millions of
 parameters while discovery projects are structurally low-data.
 
-### 2.5 Altae-Tran, Ramsundar, Pappu, Pande (2017) — [secondary]
-*Low Data Drug Discovery with One-Shot Learning.* ACS Cent. Sci.;
-arXiv:1611.03199. <https://arxiv.org/pdf/1611.03199>
+### 2.5 Altae-Tran, Ramsundar, Pappu, Pande (2017) — [abstract]
+*Low Data Drug Discovery with One-Shot Learning.* ACS Cent. Sci. **3(4),
+283–293**; DOI 10.1021/acscentsci.6b00367; arXiv:1611.03199.
+Open full text: <https://ncbi.nlm.nih.gov/pmc/articles/PMC5408335>
 
-### 2.6 Schimunek et al. (2025) — [secondary]
+Cited **only** for the existence of one-shot/few-shot approaches to this
+regime. It does **not** report the ~50-molecule crossover of §2.7, and an
+earlier draft of the manuscript cited it alongside that claim in error.
+
+### 2.6 Schimunek, Luukkonen, Klambauer (2025) — [full text via PMC]
 *MHNfs: Prompting In-Context Bioactivity Predictions for Low-Data Drug
-Discovery.* J. Chem. Inf. Model.
-<https://pubs.acs.org/doi/10.1021/acs.jcim.4c02373> ·
-<https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/>
+Discovery.* J. Chem. Inf. Model., April 2025.
+DOI 10.1021/acs.jcim.4c02373 ·
+open: <https://pmc.ncbi.nlm.nih.gov/articles/PMC12076497/>
 
-Relevant reported observation: **from roughly 50 measured molecules upward,
-classical ML begins to outperform few-shot methods** — a crossover directly
-comparable to the learning curves measured here.
+Few-shot bioactivity prediction, developed and evaluated on the FS-Mol
+benchmark (4,938 training tasks, 157 test tasks from ChEMBL27). MHNfs
+outperforms other few-shot models on the FS-Mol test set.
+
+> **Correction, 2026-09-02.** This entry previously attributed the
+> ~50-molecule crossover to this paper. It does not originate here: the
+> Discussion **quotes it from Snyder et al. 2024** (§2.7) — "from 50 measures
+> molecules upward, classic machine learning methods start outperforming
+> few-shot learning methods". Cite §2.7 for the crossover, not this entry.
+
+### 2.7 Snyder et al. (2024) — [abstract] — **primary source for the ~50-molecule crossover**
+*The Goldilocks paradigm: comparing classical machine learning, large language
+models, and few-shot learning for drug discovery applications.*
+Communications Chemistry 7 (2024).
+<https://www.nature.com/articles/s42004-024-01220-4>
+
+Compares classical ML, LLMs and few-shot learning across a range of dataset
+sizes and diversities, identifying an optimal regime for each model type. This
+is the origin of the statement quoted by Schimunek et al. (§2.6) that **from
+about 50 measured molecules upward, classical ML starts to outperform few-shot
+methods** — the crossover our learning curves are built to straddle, starting
+at exactly n = 50. Located 2026-09-02 while auditing the review; the manuscript
+previously cited the figure to §2.5 and §2.6, neither of which is its source.
 
 ---
 
@@ -158,6 +199,30 @@ prospective choices.
 *primary* endpoint is defensible but not conservative. This paper is the reason
 Butina clustering is reported as the stricter check, and the reason we do not
 present scaffold-split numbers as prospective estimates.
+
+### 3.2 van Tilborg, Alenicheva, Grisoni (2022) — [abstract] — **the activity-cliff benchmark**
+*Exposing the Limitations of Molecular Machine Learning with Activity Cliffs.*
+J. Chem. Inf. Model. **62(23), 5938–5951**. DOI 10.1021/acs.jcim.2c01073 ·
+open preprint: <https://chemrxiv.org/engage/chemrxiv/article-details/630cc44058843b8403a19810>
+
+The standard ML benchmark for activity cliffs (MoleculeACE): pairs of
+structurally similar molecules with large potency differences, and how badly
+models handle them. Reports that descriptor- and fingerprint-based models are
+frequently **better** than deep models on cliff compounds.
+
+**Two published corrections** exist (<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10091401/>,
+<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11683855/>), one for a software
+bug that mislabelled activity-cliff pairs in the train/test split. The
+conclusions survived retraining. Worth citing for its own sake: it is the same
+class of split-construction bug this project's decision log records catching in
+`splits.py`.
+
+**Consequence for this work:** added 2026-09-02, after §6.3 had already been
+written and committed. §6.3 defined cliffs from scratch, on similarity rather
+than fragmentation, and argued the definition without citing the convention it
+departs from. Our finding — that the *pretrained* arms are no worse on cliffs
+and much worse on distant compounds — sits against this paper's reported
+fingerprint advantage on cliffs, and should be presented as such.
 
 ---
 
