@@ -59,8 +59,9 @@ is the same conclusion the scaffold-to-Butina comparison reaches by an
 independent route.
 
 A fourth ablation locates the failure. Against an **untrained encoder of the
-same architecture**, the pretrained one is statistically indistinguishable
-(5 of 10 seeds, p = 0.49) — generic pretraining buys essentially nothing here.
+same architecture**, the pretrained one is ahead by a median of only 0.011 RMSE
+and wins in 5 of 10 seeds (p = 0.49), so generic pretraining's contribution
+here is not separable from zero.
 Multitask pretraining on a 2,743-compound corpus of related 3C/3C-like
 proteases does clear that control (7–8 of 10 seeds, p = 0.049 and 0.010) and
 beats the generic probe in 9 of 10 seeds (p = 0.006), supporting **H3** for the
@@ -601,8 +602,8 @@ fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
 6. **Up to ~53% of test compounds could have been in pretraining** (§6.1, an
    upper bound). This cannot explain transfer losing, but it means no transfer
    advantage measured here should be taken at face value.
-7. **Generic pretraining is indistinguishable from no pretraining here, and
-   in-domain pretraining is not** (§6.4). Against an untrained encoder of the
+7. **Generic pretraining is not separable from no pretraining here; in-domain
+   pretraining is** (§6.4). Against an untrained encoder of the
    same architecture, ChemBERTa's frozen embeddings win in 5 of 10 seeds
    (p = 0.49); the in-domain arms win in 7 and 8 of 10 (p = 0.049, p = 0.010).
    The chained arm T5 beats the generic probe T1 in 9 of 10 seeds (p = 0.006),
@@ -931,7 +932,7 @@ on that exact test the answer is **not established**; on the chained variant it
 is. We report both rather than the one that reads better.
 
 **The control result is the more important one.** Generic pretraining is
-**statistically indistinguishable from no pretraining at all** on this task.
+**not distinguishable from no pretraining** on this task by the paired test.
 `T1` beats `T0r` by 0.004 RMSE at full data, winning in 5 of 10 seeds
 (p = 0.49); the fine-tune `T2` is *behind* the untrained encoder at full data
 and far behind it at n = 50 (−0.534, 0 of 10 seeds, p = 0.002). The in-domain
@@ -953,12 +954,27 @@ untrained encoder five times moves its median RMSE between 0.6438 and 0.6549
 | **median** | **0.6481** |
 <!-- TABLE:random_draws END -->
 
+![Learning curves for the in-domain comparison on the scaffold split.](../results/figures/fig_indomain__scaffold.png)
+
+**Figure 5 — In-domain vs generic pretraining, scaffold split.** Test RMSE
+against training-set size, median over 10 seeds, interquartile bands. `T2` is
+omitted: its n = 50 RMSE of 1.23 stretches the axis until the arms this panel
+exists to separate become indistinguishable; it appears in Figures 1–2 and in
+the table above. **The bands overlap heavily throughout, and that is the
+honest visual summary** — the differences established by the paired tests are
+of order 0.03 RMSE against a seed-to-seed spread several times larger. What the
+panel shows is the ordering, not a separation you could read off a single run.
+[→ `scripts/make_report.py` → `fig_indomain__scaffold.png`]
+
 `T1`'s 0.6372 sits just outside that range, so the marginal median does favour
 ChemBERTa slightly — but the paired comparison across evaluation seeds, which
 §5.4 established as the statistic that governs here, cannot separate them. The
-honest statement is that **generic pretraining buys at most about 0.01 RMSE
-over a randomly-initialised encoder of the same architecture, and in-domain
-adaptation buys three times that and is significant.**
+honest statement is quantitative: against the five random draws, `T1` is ahead
+by **0.007 to 0.018 RMSE (median 0.011)** — a real margin on the marginal
+median, too small and too inconsistent across seeds for the paired test to
+call. In-domain adaptation's margin over the same control is 0.030, roughly
+three times as large, and it *is* significant. We claim the contrast between
+those two magnitudes, not that generic pretraining contributes nothing.
 
 **None of it overtakes the fingerprint baseline.** `T4` matches `B1`'s marginal
 median almost exactly (0.6028 vs 0.6031) but loses the paired test in 8 of 10
@@ -967,8 +983,9 @@ p = 0.002) on an effect of 0.014 RMSE — significant and practically negligible
 at once, which is the sign-based Wilcoxon behaving exactly as §4.4 warns. So
 the paper's headline is unchanged. What changes is the mechanism underneath it:
 the failure of transfer here is **not** a failure of pretrained representations
-in general, it is specifically a failure of *generic* pretraining, which on
-this task does no better than random initialisation.
+in general. It is specifically a failure of *generic* pretraining, which on
+this task is not measurably better than random initialisation — while in-domain
+pretraining, on the same architecture and the same probe, is.
 
 ## 7. Limitations
 
@@ -1084,11 +1101,14 @@ was framed to falsify.
 What the paper does **not** support is the sentence it would be easiest to
 extract from it. It is not evidence that molecular pretraining does not work —
 and §6.4 makes that sharper rather than softer. **Generic** pretraining is what
-fails here, and it fails completely: ChemBERTa's frozen representation is
-statistically indistinguishable from a randomly-initialised encoder of the same
-architecture. In-domain pretraining on 2,743 related-protease compounds is
-distinguishable from random initialisation, and beats the generic probe. It
-still does not overtake count fingerprints.
+fails here, and it fails in a specific and measurable way: ChemBERTa's frozen
+representation is ahead of a randomly-initialised encoder of the same
+architecture by a median of 0.011 RMSE, which the paired test across seeds
+cannot distinguish from zero. In-domain pretraining on 2,743 related-protease
+compounds is ahead of that same control by 0.030 and *is* distinguishable, and
+it beats the generic probe. It still does not overtake count fingerprints. A
+null result is not proof of no effect, and we do not read it as one — what we
+claim is the ratio between two margins measured the same way.
 
 ### 8.2 Where the deficit lives, and what that suggests
 
@@ -1185,23 +1205,34 @@ of magnitude more compute per fit. For projects in this regime the classical
 baseline remains the right default, and the burden of proof sits with the
 pretrained model.
 
+**But the failure is specific, not general, and two controls locate it.**
+Measured against an untrained encoder of the same architecture, the pretrained
+one is ahead by a median of 0.011 RMSE — a margin the paired test across seeds
+cannot separate from zero. Multitask pretraining on 2,743 compounds from
+related 3C/3C-like proteases is ahead of that same control by 0.030, which it
+can, and beats the generic probe in 9 of 10 seeds. So what does not work here
+is *generic* pretraining specifically; in-domain pretraining does measurable
+work, and still does not overtake count fingerprints. Where the generic arms'
+deficit concentrated was not on activity cliffs but on compounds unlike
+anything in the training fold — a distinction a single aggregate score hides.
+
 Three methodological points generalise further than the headline. Transfer arms
 are far more sensitive to their training schedule than the baselines are, so
 equalising hyperparameters across arms — the intuitive fairness move —
 systematically disadvantages transfer, and cost us a claim we had to retract.
 Raw RMSE is not comparable across splitting strategies, because stricter splits
 change the variance of the target. And zero scaffold overlap is not chemical
-novelty: our scaffold split was no harder than a random one. Where transfer's
-deficit actually concentrated was not on activity cliffs but on compounds
-unlike anything in the training fold — a distinction a single aggregate score
-hides, and one worth reporting separately.
+novelty: our scaffold split was no harder than a random one.
 
-Finally, the scope. This is one encoder on one assay against one protein that
-is itself a five-residue surrogate for the protein in the title, with two of
-the four pre-registered hypotheses untested. The result constrains what to
-expect in this regime; it is not a verdict on molecular pretraining, and the
-experiment that would test the mechanism most likely to overturn it (§8.4) has
-not been run.
+Finally, the scope, which is narrow. One encoder family, one assay, one protein
+— itself a surrogate differing from the one in the title at a handful of
+non-catalytic residues (§3.1). H1 and H2 are answered negatively; H3 is
+supported only in its chained form and inconclusive in the form this study
+pre-registered; H4 remains unanswerable for the ChemBERTa arms, whose corpus is
+not distributed. The in-domain corpus that supports H3 is 95% coronaviral and
+chemically near-disjoint from the evaluation set, so it tests a weaker version
+of "in-domain" than the phrase suggests. These results constrain what to expect
+in this regime. They are not a verdict on molecular pretraining.
 
 ## 10. Reproduction and verification
 
@@ -1217,7 +1248,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **207 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **221 claims** across sections 3.1
 through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
@@ -1298,9 +1329,13 @@ comparing checksums:
 | Stage | Result |
 |---|---|
 | `prepare_openbind.py` → `eva71_2a.csv` | byte-identical |
+| `prepare_indomain.py` → `indomain_3c.csv` | byte-identical |
 | `build_splits.py` → 30 split files | byte-identical (all 30) |
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
+| `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
+| all 19 tables in `results/tables/` | data rows byte-identical |
+| all 7 figures in `results/figures/` | byte-identical |
 
 Determinism comes from seeding Python, NumPy and torch per run
 (`evapro.utils.seeding.set_seed`, with `torch.use_deterministic_algorithms`)

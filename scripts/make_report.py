@@ -40,6 +40,14 @@ PREREGISTERED_FAMILY = {
     "B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
     "T1_chemberta_linear_probe", "T2_chemberta_full_finetune",
 }
+PREREGISTERED_ORDER = ["B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
+                       "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"]
+# Figure 3 (§6.4). T2 is left out on purpose: its n=50 RMSE of 1.23 stretches
+# the y-axis so far that the arms this panel exists to separate become
+# indistinguishable. It is in the §6.4 table, and in Figures 1-2.
+INDOMAIN_FIG_ORDER = ["B1_ecfp_histgb", "T0r_untrained_encoder_probe",
+                      "T1_chemberta_linear_probe", "T4_indomain_probe",
+                      "T5_chained_probe"]
 PRIMARY_METRIC = "rmse"
 
 # Validated categorical palette (dataviz skill, light mode; see docs/figures.md).
@@ -50,9 +58,10 @@ PALETTE = {
     "B2_descriptors_rf":         ("#eb6834", "^", "B2 descriptors+RF"),
     "T1_chemberta_linear_probe": ("#1baf7a", "D", "T1 ChemBERTa probe"),
     "T2_chemberta_full_finetune":("#eda100", "v", "T2 ChemBERTa FT"),
-    # In-domain arms. Seven series exceeds what the categorical palette is
-    # validated for, so figures that include these are drawn as focused
-    # comparisons (B1 vs T1 vs T4 vs T5) rather than all-arm panels.
+    # In-domain arms (§6.4). Eight series exceeds what the categorical palette
+    # is validated for, and an all-arm panel bunches six curves into a 0.17
+    # RMSE band with overlapping IQR ribbons. So fig1/fig2 keep the
+    # pre-registered five and fig3 is a focused §6.4 comparison.
     "T0r_untrained_encoder_probe":("#b0b0aa", "*", "T0r untrained encoder"),
     "T4_indomain_probe":         ("#7c5cd6", "P", "T4 in-domain probe"),
     "T5_chained_probe":          ("#c8407a", "X", "T5 chained probe"),
@@ -188,7 +197,8 @@ def table_split_difficulty(df) -> pd.DataFrame:
     return out.sort_values(["arm", "split"])
 
 
-def figure_learning_curves(df, split) -> None:
+def figure_learning_curves(df, split, arms=None, name="fig1_learning_curves",
+                           title=None) -> None:
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -199,7 +209,7 @@ def figure_learning_curves(df, split) -> None:
 
     # Collect end-points first so direct labels can be de-collided.
     ends = []
-    for arm in ORDER:
+    for arm in (arms or PREREGISTERED_ORDER):
         if arm not in set(d.arm):
             continue
         color, marker, label = PALETTE[arm]
@@ -230,7 +240,7 @@ def figure_learning_curves(df, split) -> None:
     ax.get_xaxis().set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel("training set size (compounds, log scale)", fontsize=9, color="#52514e")
     ax.set_ylabel("test RMSE (pK$_D$)  ↓ better", fontsize=9, color="#52514e")
-    ax.set_title(f"Learning curves, {split} split — EV-A71/CVA16 2A protease",
+    ax.set_title(title or f"Learning curves, {split} split — EV-A71/CVA16 2A protease",
                  fontsize=10.5, color="#0b0b0b", loc="left")
     ax.grid(axis="y", color="#e5e5e2", linewidth=0.8)
     ax.set_axisbelow(True)
@@ -244,13 +254,14 @@ def figure_learning_curves(df, split) -> None:
     fig.tight_layout()
 
     FIGURES.mkdir(parents=True, exist_ok=True)
-    out = FIGURES / f"fig1_learning_curves__{split}.png"
+    out = FIGURES / f"{name}__{split}.png"
     fig.savefig(out, facecolor=fig.get_facecolor())
     plt.close(fig)
     print(f"  wrote {out}")
 
 
-def figure_ranking_curves(df, split) -> None:
+def figure_ranking_curves(df, split, arms=None, name="fig2_ranking",
+                          title=None) -> None:
     """Figure 2: Spearman rho. Bounded [0,1], so it is not compressed by the
     fine-tune arm's low-n RMSE excursion, and it is the view that separates
     ranking ability from calibration (see manuscript 5.6)."""
@@ -265,7 +276,7 @@ def figure_ranking_curves(df, split) -> None:
     fig.patch.set_facecolor("#fcfcfb"); ax.set_facecolor("#fcfcfb")
 
     ends = []
-    for arm in ORDER:
+    for arm in (arms or PREREGISTERED_ORDER):
         if arm not in set(d.arm):
             continue
         color, marker, label = PALETTE[arm]
@@ -293,7 +304,7 @@ def figure_ranking_curves(df, split) -> None:
     ax.get_xaxis().set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_xlabel("training set size (compounds, log scale)", fontsize=9, color="#52514e")
     ax.set_ylabel(r"test Spearman $\rho$   ↑ better", fontsize=9, color="#52514e")
-    ax.set_title(f"Ranking ability, {split} split — EV-A71/CVA16 2A protease",
+    ax.set_title(title or f"Ranking ability, {split} split — EV-A71/CVA16 2A protease",
                  fontsize=10.5, color="#0b0b0b", loc="left")
     ax.grid(axis="y", color="#e5e5e2", linewidth=0.8)
     ax.set_axisbelow(True)
@@ -305,7 +316,7 @@ def figure_ranking_curves(df, split) -> None:
     ax.legend(frameon=False, fontsize=8, loc="lower right", ncol=2)
     ax.margins(x=0.22, y=0.12)
     fig.tight_layout()
-    out = FIGURES / f"fig2_ranking__{split}.png"
+    out = FIGURES / f"{name}__{split}.png"
     fig.savefig(out, facecolor=fig.get_facecolor())
     plt.close(fig)
     print(f"  wrote {out}")
@@ -343,6 +354,10 @@ def main() -> int:
             write_csv(paired, TABLES / f"table3_paired_tests__{split}.csv", inputs, index=False)
         figure_learning_curves(df, split)
         figure_ranking_curves(df, split)
+        if set(INDOMAIN_FIG_ORDER) <= set(df[df.split == split].arm):
+            figure_learning_curves(
+                df, split, arms=INDOMAIN_FIG_ORDER, name="fig_indomain",
+                title=f"In-domain vs generic pretraining, {split} split (§6.4)")
 
     if df.split.nunique() > 1:
         write_csv(table_split_difficulty(df),

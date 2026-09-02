@@ -16,6 +16,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 TABLES = Path("results/tables")
@@ -294,6 +295,18 @@ def build_claims() -> list[Claim]:
     C.append(Claim("6.4", "T1 vs T0r is inconclusive", "table10", "inconclusive",
                    str(ind.loc[("T1", "T0r"), "verdict"])))
 
+    # The T1-vs-control margin, stated as a range because a single "at most"
+    # figure was wrong here: it understated the upper end by ~75%.
+    t1_full = t1("scaffold", "T1_chemberta_linear_probe", 347, "median")
+    gaps = sorted(round(float(v) - t1_full, 4) for v in draws.rmse_median)
+    C.append(Claim("6.4", "T1 margin over the control, low end 0.007", "table11", 0.007,
+                   round(gaps[0], 3)))
+    C.append(Claim("6.4", "T1 margin over the control, high end 0.018", "table11", 0.018,
+                   round(gaps[-1], 3)))
+    C.append(Claim("6.4", "T1 margin over the control, median 0.011", "table11", 0.011,
+                   round(float(np.median(gaps)), 3)))
+    C.append(Claim("6.4", "in-domain margin is ~3x the generic margin", "table10 vs table11",
+                   True, bool(2.0 <= 0.0299 / float(np.median(gaps)) <= 4.0)))
     C.append(Claim("6.4", "random-draw min RMSE 0.6438", "table11", 0.6438,
                    float(draws.rmse_median.min())))
     C.append(Claim("6.4", "random-draw max RMSE 0.6549", "table11", 0.6549,
@@ -301,6 +314,31 @@ def build_claims() -> list[Claim]:
     C.append(Claim("6.4", "T1 median lies below every random draw", "table1 vs table11",
                    True, bool(t1("scaffold", "T1_chemberta_linear_probe", 347, "median")
                               < float(draws.rmse_median.min()))))
+    chem = read_table("table12_corpus_chemistry.csv").set_index("set")
+    EV, CO = "evaluation set (EV-A71/CVA16 2A)", "in-domain corpus (3C/3CL)"
+    C.append(Claim("6.4", "median NN Tanimoto eval->corpus 0.247", "table12", 0.2468,
+                   float(chem.loc[EV, "nn_tanimoto_to_other_median"])))
+    C.append(Claim("6.4", "no eval compound has a corpus neighbour >= 0.5", "table12", 0.0,
+                   float(chem.loc[EV, "frac_with_neighbour_ge_0.5"])))
+    C.append(Claim("6.4", "eval MW median 329", "table12", 328.8,
+                   float(chem.loc[EV, "mw_median"])))
+    C.append(Claim("6.4", "corpus MW median 470", "table12", 469.6,
+                   float(chem.loc[CO, "mw_median"])))
+    C.append(Claim("6.4", "eval pActivity median 4.95", "table12", 4.95,
+                   float(chem.loc[EV, "pactivity_median"])))
+    C.append(Claim("6.4", "corpus pActivity median 6.30", "table12", 6.30,
+                   float(chem.loc[CO, "pactivity_median"])))
+    C.append(Claim("6.4", "corpus compound count matches curation", "table12", 2743,
+                   int(chem.loc[CO, "n_compounds"])))
+    C.append(Claim("6.4", "screen dropped 2022 non-3C records", "indomain manifests", 2022,
+                   sum(json.loads(f.read_text())["dropped_not_3c"]
+                       for f in sorted(Path("data/raw").glob("indomain_*.manifest.json")))))
+    C.append(Claim("6.4", "screen dropped 757 wrong-enzyme records", "indomain manifests", 757,
+                   sum(json.loads(f.read_text())["dropped_wrong_enzyme"]
+                       for f in sorted(Path("data/raw").glob("indomain_*.manifest.json")))))
+    C.append(Claim("6.4", "7634 raw records fetched", "indomain manifests", 7634,
+                   sum(json.loads(f.read_text())["n_raw"]
+                       for f in sorted(Path("data/raw").glob("indomain_*.manifest.json")))))
     C.append(Claim("6.4", "corpus measurements 2974", "indomain curation", 2974,
                    corp["n_measurements"]))
     C.append(Claim("6.4", "corpus compounds 2743", "indomain curation", 2743,

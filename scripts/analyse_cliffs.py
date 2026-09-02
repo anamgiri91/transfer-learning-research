@@ -52,6 +52,13 @@ THRESHOLDS = [0.6, 0.7, 0.8]
 PRIMARY = 0.7
 MIN_STRATUM = 5                 # below this an RMSE is too noisy to report per seed
 BASELINE = "B1_ecfp_histgb"     # the arm to beat (plan.md §4)
+# §6.3 is an ablation OF THE PRE-REGISTERED SWEEP, and its per-stratum tests are
+# Holm-corrected over the arm family. Letting later arms in would silently
+# re-correct those p-values every time one is added -- when the in-domain arms
+# of §6.4 arrived, T1's `distant` p moved 0.018 -> 0.035 and a verdict flipped.
+# The family is therefore pinned, exactly as make_report.py pins table 3.
+PREREGISTERED_FAMILY = ["B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
+                        "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"]
 BASELINE0 = "B0_median"         # the variance floor, for skill normalisation
 
 
@@ -64,6 +71,9 @@ def main() -> int:
     ap.add_argument("--split", default="scaffold")
     ap.add_argument("--n-train", type=int, default=347)
     ap.add_argument("--seeds", type=int, nargs="+", default=list(range(10)))
+    ap.add_argument("--all-arms", action="store_true",
+                    help="include arms outside the pre-registered family. Changes "
+                         "the Holm correction for every arm, so it is off by default.")
     ap.add_argument("--require-seeds", type=int, default=None,
                     help="Drop any arm without predictions for this many seeds "
                          "(default: all requested). An interim read of a "
@@ -88,6 +98,12 @@ def main() -> int:
         if int(seed_tag.removeprefix("seed")) in args.seeds:
             found[arm] = found.get(arm, 0) + 1
     arms = sorted(a for a, k in found.items() if k >= need)
+    if not args.all_arms:
+        skipped = [a for a in arms if a not in PREREGISTERED_FAMILY]
+        arms = [a for a in arms if a in PREREGISTERED_FAMILY]
+        for a in skipped:
+            print(f"  skipping {a}: outside the pre-registered family "
+                  f"(pass --all-arms to include, which re-corrects every p-value)")
     for a, k in sorted(found.items()):
         if k < need:
             print(f"  skipping {a}: {k}/{need} seeds -- incomplete arms are not reported")

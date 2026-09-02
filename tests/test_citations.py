@@ -132,6 +132,20 @@ def test_doi_and_arxiv_links_to_the_same_paper_are_matched():
     assert not any("never cited" in f or "no reference entry" in f for f in fails), fails
 
 
+def test_missing_embedded_figure_is_caught(tmp_path, monkeypatch):
+    """A renumbering once left a caption pointing at a file that had moved."""
+    body = BODY.replace("# Paper", "# Paper\n\n![x](../results/figures/nope.png)\n\n"
+                                   "**Figure 1 — x.**")
+    fails, _ = check(body, LIT)
+    assert any("does not exist" in f for f in fails), fails
+
+
+def test_non_sequential_figure_numbers_are_caught(tmp_path, monkeypatch):
+    body = BODY.replace("# Paper", "# Paper\n\n**Figure 1 — a.**\n\n**Figure 3 — b.**")
+    fails, _ = check(body, LIT)
+    assert any("figure numbering" in f for f in fails), fails
+
+
 @pytest.mark.parametrize("label", ["[read twice]", "[skimmed]", "[trust me]"])
 def test_labels_outside_the_vocabulary_are_rejected(label):
     bad = BODY.replace("**[abstract]**", f"**{label}**")

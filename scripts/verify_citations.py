@@ -47,6 +47,8 @@ LABELS = ["full text", "abstract", "secondary"]
 LABEL_RE = re.compile(r"\*\*\[([^\]]+)\]\*\*")
 
 MD_LINK = re.compile(r"\[[^\]]*\]\((https?://[^)\s]+)\)")
+LOCAL_IMG = re.compile(r"!\[[^\]]*\]\((?!https?://)([^)\s]+)\)")
+FIG_LABEL = re.compile(r"^\*\*Figure (\d+) ", re.M)
 BARE_LINK = re.compile(r"<(https?://[^>\s]+)>")
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:a-z0-9]+", re.I)
 ARXIV_RE = re.compile(r"arxiv\.org/(?:abs|pdf|html)/([0-9]{4}\.[0-9]{4,5})", re.I)
@@ -272,6 +274,21 @@ def check(text: str, lit: str, online: bool = False,
             fails.append("a [secondary] source is cited in a sentence carrying a "
                          f"quantity, which literature.md forbids: {sent[:150]!r}")
 
+    # 6b. figures: every embedded image must exist, and the visible Figure
+    # numbers must be sequential. A renumbering left "Figure 5" pointing at a
+    # file called fig3_*, which is how a stale panel survives a rewrite.
+    n_figs = 0
+    for rel in LOCAL_IMG.findall(body):
+        n_figs += 1
+        target = (MANUSCRIPT.parent / rel).resolve()
+        if not target.exists():
+            fails.append(f"embedded image does not exist: {rel}")
+    labels = [int(x) for x in FIG_LABEL.findall(body)]
+    if labels != list(range(1, len(labels) + 1)):
+        fails.append(f"figure numbering is not 1..N: {labels}")
+    if labels and n_figs != len(labels):
+        fails.append(f"{n_figs} embedded images but {len(labels)} numbered captions")
+
     # 7. optional liveness ----------------------------------------------------
     if online:
         import requests
@@ -324,7 +341,8 @@ def check(text: str, lit: str, online: bool = False,
               ("dangling body citations", len(set(MD_LINK.findall(body)))),
               ("depth drift vs literature.md", len(entries)),
               ("[secondary]-with-a-number rule", len(secondary_keys)),
-              ("claim-support register", n_reg)]
+              ("claim-support register", n_reg),
+              ("figures embedded and numbered", n_figs)]
     return fails, checks
 
 
