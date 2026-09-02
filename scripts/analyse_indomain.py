@@ -35,6 +35,10 @@ OUT_D = Path("results/tables/table11_random_encoder_draws.csv")
 
 ARM = {
     "B1": "B1_ecfp_histgb",
+    "T4c": "T4c_indomain_probe_decontaminated",
+    "T5c": "T5c_chained_probe_decontaminated",
+    "T4r": "T4r_indomain_probe_random_ablation",
+    "T5r": "T5r_chained_probe_random_ablation",
     "T0r": "T0r_untrained_encoder_probe",
     "T1": "T1_chemberta_linear_probe",
     "T2": "T2_chemberta_full_finetune",
@@ -53,6 +57,16 @@ CONTRASTS = [
     ("T4", "T5", "does starting from ChemBERTa matter once adapted in-domain?"),
     ("T4", "B1", "in-domain vs the fingerprint baseline"),
     ("T5", "B1", "chained vs the fingerprint baseline"),
+    # H4 (plan.md §7.1). Decontamination removes the overlapping records AND
+    # 2% of the corpus, so on its own it cannot separate leakage from data
+    # volume. The size-matched random ablation is what makes it readable, and
+    # the third row is the comparison that actually decides H4.
+    ("T4c", "T4", "H4: effect of removing the 61 overlapping records"),
+    ("T5c", "T5", "H4: effect of removing the 61 overlapping records"),
+    ("T4r", "T4", "control: effect of removing 61 RANDOM records"),
+    ("T5r", "T5", "control: effect of removing 61 RANDOM records"),
+    ("T4c", "T4r", "H4 decided: decontaminated vs size-matched random ablation"),
+    ("T5c", "T5r", "H4 decided: decontaminated vs size-matched random ablation"),
 ]
 
 

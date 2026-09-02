@@ -224,6 +224,31 @@ def table_random_draws() -> str:
     return _md(["Random encoder draw", "median RMSE over 10 eval seeds"], rows)
 
 
+DECONTAM_ROWS = [("T4c", "T4", "remove the 61 overlapping records"),
+                 ("T4r", "T4", "remove 61 **random** records (size-matched control)"),
+                 ("T4c", "T4r", "**decontaminated vs the control** — decides H4"),
+                 ("T5c", "T5", "remove the 61 overlapping records"),
+                 ("T5r", "T5", "remove 61 **random** records (size-matched control)"),
+                 ("T5c", "T5r", "**decontaminated vs the control** — decides H4")]
+
+
+def table_decontamination() -> str:
+    df = _read("table10_indomain_contrasts.csv")
+    df = df[(df.metric == "rmse") & (df.n_train == df.n_train.max())]
+    idx = df.set_index(["arm", "reference"])
+    rows = []
+    for a, b, what in DECONTAM_ROWS:
+        if (a, b) not in idx.index:
+            rows.append([f"{a} vs {b}", what, "—", "—", "—", "not yet run"])
+            continue
+        r = idx.loc[(a, b)]
+        rows.append([f"{a} vs {b}", what, f"{r['median_delta']:+.4f}",
+                     f"{int(r['arm_better_in_seeds'])}/{int(r['n_seeds'])}",
+                     f"{r['p_raw']:.4f}", str(r["verdict"])])
+    return _md(["Contrast", "What it removes", "median ΔRMSE", "arm better in",
+                "p", "verdict"], rows)
+
+
 def table_surrogate() -> str:
     df = _read("table9_surrogate_divergence.csv")
     rows = [[r.reference, r.surrogate, str(int(r.n_differences)),
@@ -299,6 +324,7 @@ RENDERERS = {
     "audit": table_audit,
     "der": table_der,
     "surrogate": table_surrogate,
+    "decontamination": table_decontamination,
     "indomain_curve": table_indomain_curve,
     "indomain_contrasts": table_indomain_contrasts,
     "random_draws": table_random_draws,

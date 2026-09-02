@@ -14,11 +14,12 @@ prediction, but its evidence base is large, noisy benchmarks. We test whether
 it helps in the opposite regime — few hundred compounds, one target, one assay
 — using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
 (494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
-units). Ten arms are compared on identical materialised splits across
-10 seeds and four training-set sizes, with 720 evaluated runs: five
+units). Eleven arms are compared on identical materialised splits across
+10 seeds and four training-set sizes, with 760 evaluated runs: five
 pre-registered (median predictor; ECFP4 + gradient boosting; RDKit descriptors
 + random forest; ChemBERTa-2 frozen probe; ChemBERTa-2 full fine-tune) and
-five added as controls and in-domain arms (§6.4).
+six added as controls, in-domain arms and decontamination
+ablations (§6.4–6.5).
 
 **On this dataset, pretraining did not help.** The frozen probe is
 significantly worse than the ECFP4 baseline (paired Wilcoxon, Holm-corrected
@@ -68,6 +69,16 @@ proteases does clear that control (7–8 of 10 seeds, p = 0.049 and 0.010) and
 beats the generic probe in 9 of 10 seeds (p = 0.006), supporting **H3** for the
 chained arm while the pre-registered T4-vs-T1 form stays inconclusive. In-domain
 pretraining is doing real work; it still does not overtake count fingerprints.
+
+Because that corpus is ours, **H4 is also testable for those arms**, and the
+result depends entirely on a control. Removing the 61 records overlapping the
+evaluation set makes the in-domain arm significantly worse (9 of 10 seeds,
+p = 0.010), which reads as leakage having helped. Removing 61 *random* records
+costs more (10 of 10, p = 0.002), and head to head the decontaminated encoder
+beats the size-matched control (7 of 10, p = 0.027). The penalty is corpus size,
+not leakage: **no evidence that overlap inflated these arms.** Run as the
+protocol specifies it, without the control, the same ablation would have
+reported a significant effect with the causal arrow reversed.
 
 These are single-target, single-assay results. The generic encoder is a single
 model family, and the in-domain corpus is 95% coronaviral and chemically
@@ -618,7 +629,13 @@ fixed-hyperparameter benchmark; §6.2 qualifies how far point 1 can be pushed.**
    The chained arm T5 beats the generic probe T1 in 9 of 10 seeds (p = 0.006),
    which supports **H3**; the pre-registered T4-vs-T1 form of H3 is
    inconclusive. None of them overtakes the fingerprint baseline.
-8. **The transfer deficit is concentrated in extrapolation, not activity
+8. **Decontaminating the in-domain corpus shows no leakage advantage, but only
+   against a size-matched control** (§6.5). Removing the 61 overlapping records
+   hurts (p = 0.010); removing 61 random records hurts more (p = 0.002); the
+   decontaminated encoder beats the size-matched control (p = 0.027). H4 is
+   answered negatively for these arms and stays untestable for the ChemBERTa
+   ones.
+9. **The transfer deficit is concentrated in extrapolation, not activity
    cliffs** (§6.3). Both transfer arms are significantly worse than B1 on test
    compounds with no training neighbour at Tanimoto ≥ 0.7 (T1 p = 0.018,
    T2 p = 0.019), at every threshold tested; on cliff compounds neither is
@@ -934,6 +951,10 @@ and the contrasts H3 actually needs — pairwise, pre-specified, uncorrected:
 | T4 vs T5 | +0.0074 | 6/10 | 0.8457 | inconclusive |
 | T4 vs B1 | -0.0471 | 2/10 | 0.0645 | inconclusive |
 | T5 vs B1 | -0.0135 | 0/10 | 0.0020 | reference better |
+| T4c vs T4 | -0.0158 | 1/10 | 0.0098 | reference better |
+| T5c vs T5 | +0.0060 | 7/10 | 0.0840 | inconclusive |
+| T4r vs T4 | -0.0308 | 0/10 | 0.0020 | reference better |
+| T4c vs T4r | +0.0141 | 7/10 | 0.0273 | arm better |
 <!-- TABLE:indomain_contrasts END -->
 
 **H3 is supported for the chained arm and inconclusive for the pure one.**
@@ -1000,6 +1021,67 @@ the failure of transfer here is **not** a failure of pretrained representations
 in general. It is specifically a failure of *generic* pretraining, which on
 this task is not measurably better than random initialisation — while in-domain
 pretraining, on the same architecture and the same probe, is.
+
+### 6.5 Decontamination, and the control that reverses its reading (H4)
+
+[→ `scripts/pretrain_indomain.py --decontaminate / --drop-random` →
+`results/tables/table10_indomain_contrasts.csv`]
+
+H4 — that part of any apparent transfer gain is leakage — is the hypothesis
+`plan.md` §7.1 was written to decide, by re-pretraining on a decontaminated
+corpus. That is impossible for ChemBERTa (§6.1). For the in-domain arms the
+corpus is ours, so it is not: overlap with the evaluation set is **0 exact, 0
+near-duplicate and 61 scaffold-level of 2,974 measurements**, and we can simply
+pretrain again without them.
+
+**The naive form of this ablation gives the wrong answer, and it is worth
+showing why.** Removing the 61 overlapping records makes `T4` significantly
+*worse* — 0.6028 → 0.6241, losing in 9 of 10 seeds (p = 0.010). Read at face
+value that says the overlap had been helping, i.e. leakage was inflating the
+arm. But decontamination removes two things at once: the overlap, and 2% of the
+training corpus. A size-matched control separates them — pretrain again having
+dropped **61 randomly chosen** records instead.
+
+<!-- TABLE:decontamination START -->
+| Contrast | What it removes | median ΔRMSE | arm better in | p | verdict |
+|---|---|---|---|---|---|
+| T4c vs T4 | remove the 61 overlapping records | -0.0158 | 1/10 | 0.0098 | reference better |
+| T4r vs T4 | remove 61 **random** records (size-matched control) | -0.0308 | 0/10 | 0.0020 | reference better |
+| T4c vs T4r | **decontaminated vs the control** — decides H4 | +0.0141 | 7/10 | 0.0273 | arm better |
+| T5c vs T5 | remove the 61 overlapping records | +0.0060 | 7/10 | 0.0840 | inconclusive |
+| T5r vs T5 | remove 61 **random** records (size-matched control) | — | — | — | not yet run |
+| T5c vs T5r | **decontaminated vs the control** — decides H4 | — | — | — | not yet run |
+<!-- TABLE:decontamination END -->
+
+**The control reverses the reading.** Dropping 61 random records costs *more*
+than dropping the 61 overlapping ones: 0.6297 against 0.6241, and the random
+ablation loses to the full corpus in 10 of 10 seeds (−0.031, p = 0.002) where
+decontamination loses in 9 (−0.016, p = 0.010). Compared head to head, the
+decontaminated encoder is **better** than the size-matched control (+0.014, 7
+of 10 seeds, p = 0.027).
+
+The logic is worth stating plainly, because the sign is easy to lose. If
+scaffold-level overlap had been inflating `T4`, removing it would cost *more*
+than removing the same number of arbitrary records. It costs **less**. So the
+apparent decontamination penalty is a corpus-size effect, not a leakage effect,
+and there is **no evidence that overlap with the evaluation set inflated the
+in-domain arms.** Had we run the ablation without the control — which is the
+ablation as `plan.md` specifies it — we would have reported a significant
+result (p = 0.010) with the causal arrow pointing the wrong way.
+
+For `T5` the question barely arises: decontamination does not significantly
+change it either way (+0.006, 7 of 10 seeds, p = 0.084), so there is no effect
+needing an explanation. Its size-matched control is reported in the table for
+symmetry.
+
+**What this does and does not settle.** H4 is answered **for the in-domain arms
+only**, and answered in the negative: no detectable leakage advantage. It stays
+untestable for the ChemBERTa arms, where §6.1's 53% PubChem membership remains
+an upper bound rather than a measurement (§7.3). And the finding is easier than
+it sounds — with 0 exact and 0 near-duplicate overlap, there was little for
+decontamination to remove, which is itself a consequence of the corpus being
+chemically near-disjoint from the evaluation set (§6.4). A corpus that actually
+overlapped the target chemistry would be a sterner test of H4 than this one.
 
 ## 7. Limitations
 
@@ -1208,11 +1290,13 @@ Two experiments, both specified in the pre-registration and neither run:
   corpus size saturating at **400K–800K** — so the relevant scale for this
   intervention is one a single-target project can actually assemble, and is the
   same order as the corpus §6.4 builds.
-- **H4, decontamination.** Not answerable with an encoder whose corpus is not
-  distributed; §6.1 could only bound test-set overlap at 53%. It becomes
-  answerable by *changing the design*: pretrain a smaller encoder on a corpus
-  under our own control, and decontamination is available by construction
-  rather than by inference.
+- **H4, decontamination.** Still not answerable for ChemBERTa, whose corpus is
+  not distributed; §6.1 could only bound test-set overlap at 53%. Changing the
+  design does make it answerable, and §6.5 does so for the in-domain arms —
+  negatively, and only because a size-matched control was run alongside. What
+  remains open is the harder version: a corpus that genuinely overlaps the
+  target chemistry, where decontamination would have something substantial to
+  remove. Ours had zero exact and zero near-duplicate overlap to begin with.
 
 Both would also address the asymmetry that currently limits this study's
 positive claims: because contamination can only flatter a transfer arm, this
@@ -1272,7 +1356,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **222 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **239 claims** across sections 3.1
 through 6.4. That count is itself one of the claims: the script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number

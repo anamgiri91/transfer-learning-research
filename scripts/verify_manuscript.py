@@ -360,6 +360,32 @@ def build_claims() -> list[Claim]:
         C.append(Claim("6.4", f"{arm} full-data RMSE", "table1", n,
                        t1("scaffold", arm, 347, "median")))
 
+    # ---- Section 6.5: decontamination and its size-matched control ----
+    dec = read_table("table10_indomain_contrasts.csv")
+    dec = dec[(dec.metric == "rmse") & (dec.n_train == 347)].set_index(["arm", "reference"])
+    for (a, b, delta, wins, pv) in [("T4c", "T4", -0.0158, 1, 0.0098),
+                                    ("T4r", "T4", -0.0308, 0, 0.0020),
+                                    ("T4c", "T4r", 0.0141, 7, 0.0273),
+                                    ("T5c", "T5", 0.0060, 7, 0.0840)]:
+        C.append(Claim("6.5", f"{a} vs {b} delta", "table10", delta,
+                       float(dec.loc[(a, b), "median_delta"])))
+        C.append(Claim("6.5", f"{a} vs {b} seed wins", "table10", wins,
+                       int(dec.loc[(a, b), "arm_better_in_seeds"])))
+        C.append(Claim("6.5", f"{a} vs {b} p", "table10", pv,
+                       float(dec.loc[(a, b), "p_raw"])))
+    for arm, val in [("T4_indomain_probe", 0.6028),
+                     ("T4c_indomain_probe_decontaminated", 0.6241),
+                     ("T4r_indomain_probe_random_ablation", 0.6297)]:
+        C.append(Claim("6.5", f"{arm} full-data RMSE", "table1", val,
+                       t1("scaffold", arm, 347, "median")))
+    # The load-bearing inference: random ablation must cost MORE than
+    # decontamination, or the section's conclusion inverts.
+    C.append(Claim("6.5", "random ablation costs more than decontamination", "table10",
+                   True, bool(float(dec.loc[("T4r", "T4"), "median_delta"])
+                              < float(dec.loc[("T4c", "T4"), "median_delta"]))))
+    C.append(Claim("6.5", "decontaminated beats the size-matched control", "table10",
+                   "arm better", str(dec.loc[("T4c", "T4r"), "verdict"])))
+
     # ---- Section 6.3: activity-cliff strata ----
     T1P, T2P = "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"
     B1A, B2A, B0A = "B1_ecfp_histgb", "B2_descriptors_rf", "B0_median"
