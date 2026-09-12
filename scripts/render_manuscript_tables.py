@@ -218,6 +218,38 @@ def table_amended_progress() -> str:
     return _md(["Arm", "Size", "planned", "complete", "missing", "failures"], rows)
 
 
+def table_amended_curve() -> str:
+    df = _read("table17_amended_finetune.csv")
+    rows = [[r.arm, f"n = {int(r.n_train)}", _fmt(r.median_rmse), _fmt(r.b1_median_rmse),
+             _fmt(r.t2_median_rmse), f"{r.median_selected_lr:g}",
+             f"{r.median_selected_epoch:.0f}", f"{int(r.n_train_fitted)}/{int(r.n_internal_val)}",
+             f"{r.median_seconds:.0f} s"] for r in df.itertuples()]
+    return _md(["Arm", "Size", "RMSE", "B1", "T2 (untuned)", "median lr",
+                "median best epoch", "fit/val", "median cost"], rows)
+
+
+def table_amended_contrasts() -> str:
+    df = _read("table18_amended_contrasts.csv")
+    rows = [[f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
+             f"{r.median_delta:+.4f}", f"{int(r.arm_better_in_seeds)}/{int(r.n_seeds)}",
+             f"{r.p_raw:.4f}", f"{r.p_holm:.4f}", r.verdict] for r in df.itertuples()]
+    return _md(["Contrast", "Size", "median ΔRMSE", "arm better in",
+                "p raw", "p Holm", "verdict"], rows)
+
+
+def table_amended_h2() -> str:
+    df = _read("table20_amended_h2_slope.csv")
+    r = df.iloc[0]
+    rows = [["T2 (untuned, fixed 40 epochs)", f"{r['untuned_T2_median_slope']:+.4f}",
+             "—", "0/10", "0.0020", "slope < 0: contrary to H2"],
+            ["T2v (validation-selected)", f"{r['median_slope']:+.4f}",
+             f"[{r['slope_ci_lo']:+.4f}, {r['slope_ci_hi']:+.4f}]",
+             f"{int(r['slope_positive_in_seeds'])}/{int(r['n_seeds'])}",
+             f"{r['p_raw']:.4f}", r["h2_verdict"]]]
+    return _md(["Condition", "median slope", "95% CI", "slope > 0 in", "p raw",
+                "verdict"], rows)
+
+
 def table_contamination() -> str:
     df = _read("table5_contamination.csv")
     rows = [[r.scope, r.split, str(int(r.n)), str(int(r.n_in_pubchem)),
@@ -454,6 +486,9 @@ RENDERERS = {
     "h2_interaction": table_h2_interaction,
     "der_uncertainty": table_der_uncertainty,
     "amended_progress": table_amended_progress,
+    "amended_curve": table_amended_curve,
+    "amended_contrasts": table_amended_contrasts,
+    "amended_h2": table_amended_h2,
     "surrogate": table_surrogate,
     "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,

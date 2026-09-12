@@ -231,10 +231,63 @@ def build_claims() -> list[Claim]:
     # in-flight sweep is guaranteed to go stale. What is checked here is that
     # the rendered table still matches the filesystem.
     _prog = read_table("table19_amended_progress.csv")
-    C.append(Claim("6.6", "progress table matches metrics_ft", "table19",
+    # Expected to fail WHILE a sweep is running: every cell that lands makes
+    # table19 stale. That is the check doing its job, not flakiness -- the fix
+    # is `python scripts/analyse_amended.py && make report`, and a green run
+    # means the manuscript's progress figures are the current ones.
+    C.append(Claim("6.6", "progress table matches metrics_ft (stale during a run; "
+                          "refresh with analyse_amended.py)", "table19",
                    len(_ft_ok), int(_prog.complete.sum())))
     C.append(Claim("6.6", "60 amended cells planned", "Amendment 4", 60,
                    int(_prog.planned.sum())))
+    # --- the completed amended results -------------------------------------
+    if Path("results/tables/table20_amended_h2_slope.csv").exists():
+        _sl = read_table("table20_amended_h2_slope.csv").iloc[0]
+        C.append(Claim("6.6", "T2v slope -0.0521", "table20", -0.0521,
+                       float(_sl.median_slope)))
+        C.append(Claim("6.6", "T2v slope CI [-0.0944, -0.0218]", "table20",
+                       "-0.0944/-0.0218",
+                       f"{_sl.slope_ci_lo}/{_sl.slope_ci_hi}"))
+        C.append(Claim("6.6", "T2v slope positive in 1 of 10 seeds", "table20", 1,
+                       int(_sl.slope_positive_in_seeds)))
+        C.append(Claim("6.6", "T2v slope p = 0.0059", "table20", 0.0059,
+                       float(_sl.p_raw)))
+        C.append(Claim("6.6", "untuned T2 slope -0.1764 for comparison", "table20",
+                       -0.1764, float(_sl.untuned_T2_median_slope)))
+    if Path("results/tables/table17_amended_finetune.csv").exists():
+        _c = read_table("table17_amended_finetune.csv").set_index("n_train")
+        C.append(Claim("6.6", "T2v RMSE 0.918 at n=50", "table17", 0.9183,
+                       float(_c.loc[50, "median_rmse"])))
+        C.append(Claim("6.6", "untuned T2 RMSE 1.232 at n=50", "table17", 1.2321,
+                       float(_c.loc[50, "t2_median_rmse"])))
+        C.append(Claim("6.6", "T2v RMSE 0.656 at full data", "table17", 0.6561,
+                       float(_c.loc[347, "median_rmse"])))
+        C.append(Claim("6.6", "untuned T2 RMSE 0.662 at full data", "table17", 0.6621,
+                       float(_c.loc[347, "t2_median_rmse"])))
+        C.append(Claim("6.6", "selected epoch 37.5 at n=50", "table17", 37.5,
+                       float(_c.loc[50, "median_selected_epoch"])))
+        C.append(Claim("6.6", "selected epoch 17.5 at full data", "table17", 17.5,
+                       float(_c.loc[347, "median_selected_epoch"])))
+        C.append(Claim("6.6", "lr 1e-4 selected at every size", "table17", 1,
+                       int(read_table("table17_amended_finetune.csv")
+                           .median_selected_lr.nunique())))
+    if Path("results/tables/table18_amended_contrasts.csv").exists():
+        _t = read_table("table18_amended_contrasts.csv")
+        _b1 = _t[(_t.reference == "B1")]
+        C.append(Claim("6.6", "T2v worse than B1 at all four sizes", "table18", 4,
+                       int((_b1.p_holm <= 0.05).sum())))
+        C.append(Claim("6.6", "largest T2v-vs-B1 Holm p is 0.012", "table18", 0.0118,
+                       float(_b1.p_holm.max())))
+        C.append(Claim("6.6", "T2v full-data delta -0.0481", "table18", -0.0481,
+                       float(_b1[_b1.n_train == 347].median_delta.iloc[0])))
+        C.append(Claim("6.6", "T2v loses in 10 of 10 seeds at full data", "table18", 0,
+                       int(_b1[_b1.n_train == 347].arm_better_in_seeds.iloc[0])))
+        _v = _t[_t.reference == "T2"]
+        if len(_v):
+            C.append(Claim("6.6", "T2v vs T2 is 5 of 10, p = 0.70", "table18", 5,
+                           int(_v.arm_better_in_seeds.iloc[0])))
+            C.append(Claim("6.6", "T2v vs T2 p = 0.6953", "table18", 0.6953,
+                           float(_v.p_raw.iloc[0])))
     C.append(Claim("6.6", "recorded failures match the filesystem", "table19",
                    len(_ft) - len(_ft_ok), int(_prog.failures.iloc[0])))
     C.append(Claim("6.6", "all 55 encoder tensors load into the backbone",

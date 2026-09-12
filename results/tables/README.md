@@ -19,7 +19,7 @@ python scripts/analyse_tuning.py                   # table 13
 python scripts/analyse_endpoints.py                # table 14
 ```
 
-Verified 2026-09-11: a full regeneration reproduces the **data rows of all 24
+Verified 2026-09-11: a full regeneration reproduces the **data rows of all 27
 tables byte-identically**. Only the `#`-prefixed provenance header changes,
 because it carries a generation timestamp.
 

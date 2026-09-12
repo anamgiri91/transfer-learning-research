@@ -1478,20 +1478,77 @@ until it is not.**
 <!-- TABLE:amended_progress START -->
 | Arm | Size | planned | complete | missing | failures |
 |---|---|---|---|---|---|
-| T2v | n = 50 | 10 | 5 | 5 | 0 |
-| T2v | n = 100 | 10 | 5 | 5 | 0 |
-| T2v | n = 250 | 10 | 5 | 5 | 0 |
-| T2v | n = 347 | 10 | 4 | 6 | 0 |
-| T4ft | n = 347 | 10 | 0 | 10 | 0 |
+| T2v | n = 50 | 10 | 10 | 0 | 0 |
+| T2v | n = 100 | 10 | 10 | 0 | 0 |
+| T2v | n = 250 | 10 | 10 | 0 | 0 |
+| T2v | n = 347 | 10 | 10 | 0 | 0 |
+| T4ft | n = 347 | 10 | 4 | 6 | 0 |
 | T5ft | n = 347 | 10 | 0 | 10 | 0 |
-| **total** |  | **60** | **19** | **41** | **0** |
+| **total** |  | **60** | **44** | **16** | **0** |
 <!-- TABLE:amended_progress END -->
 
-`analyse_amended.py` exits without computing a test statistic while any
-planned cell is missing, because a table summarising whichever seeds happen to
-have finished is a stopping rule introduced by accident. Measured cost is 128 s
-per cell at n = 50 and 566 s at n = 347, so the sweep is ≈ 7 h on the available
-hardware. Every planned cell will be reported, including unfavourable ones.
+`analyse_amended.py` withholds any contrast still missing a planned cell —
+summarising whichever seeds happen to have finished is a stopping rule
+introduced by accident — and reports one whose own ten seeds are all present.
+`T2v` is complete at all four sizes with no failures; the H3 arms are still
+running and every number they produce will be reported, favourable or not.
+
+#### What the corrected fine-tune shows (H1, and H2 again)
+
+<!-- TABLE:amended_curve START -->
+| Arm | Size | RMSE | B1 | T2 (untuned) | median lr | median best epoch | fit/val | median cost |
+|---|---|---|---|---|---|---|---|---|
+| T2v | n = 50 | 0.918 | 0.704 | 1.232 | 0.0001 | 38 | 42/8 | 85 s |
+| T2v | n = 100 | 0.781 | 0.649 | 0.960 | 0.0001 | 22 | 85/15 | 160 s |
+| T2v | n = 250 | 0.678 | 0.584 | 0.695 | 0.0001 | 16 | 212/38 | 374 s |
+| T2v | n = 347 | 0.656 | 0.603 | 0.662 | 0.0001 | 18 | 295/52 | 515 s |
+<!-- TABLE:amended_curve END -->
+
+The schedule was doing real damage at the small end: at n = 50 the untuned `T2`
+scores 1.232 and `T2v` 0.918. At full data the two are indistinguishable
+(0.656 vs 0.662, 5 of 10 seeds, p = 0.70), so §6.2's diagnosis was right about
+where the artefact lived. Validation-selected learning rate is 1e-4 at every
+size, and the selected epoch falls from a median of 37.5 at n = 50 to 17.5 at
+full data — the fixed 40-epoch schedule was roughly twice too long wherever it
+mattered.
+
+<!-- TABLE:amended_contrasts START -->
+| Contrast | Size | median ΔRMSE | arm better in | p raw | p Holm | verdict |
+|---|---|---|---|---|---|---|
+| T2v vs B1 | n = 50 | -0.1898 | 0/10 | 0.0020 | 0.0100 | arm worse |
+| T2v vs B1 | n = 100 | -0.1170 | 0/10 | 0.0020 | 0.0100 | arm worse |
+| T2v vs B1 | n = 250 | -0.0849 | 1/10 | 0.0059 | 0.0118 | arm worse |
+| T2v vs B1 | n = 347 | -0.0481 | 0/10 | 0.0020 | 0.0100 | arm worse |
+| T2v vs T2 | n = 347 | +0.0127 | 5/10 | 0.6953 | 0.6953 | inconclusive |
+<!-- TABLE:amended_contrasts END -->
+
+**`T2v` is significantly worse than `B1` at every training-set size**, Holm
+p ≤ 0.012 within the amended family. That is a *stronger* negative than the
+published `T2`, which was inconclusive at full data (p = 0.074) — and the
+reason is worth stating, because it is the caveat §4.4 raises about this test.
+`T2v`'s median deficit at full data (−0.048) is **smaller** than `T2`'s
+(−0.088); it reaches significance because it is more *consistent*, losing in
+10 of 10 seeds against `T2`'s 7 of 10. Wilcoxon ranks signs, not magnitudes.
+The corrected arm is closer to the baseline and more reliably behind it.
+
+**H2 survives the correction.** §5.3 declined to advance `T2`'s significant
+anti-H2 slope because it was measured under the artefactual schedule. Measured
+again under a validation-selected one:
+
+<!-- TABLE:amended_h2 START -->
+| Condition | median slope | 95% CI | slope > 0 in | p raw | verdict |
+|---|---|---|---|---|---|
+| T2 (untuned, fixed 40 epochs) | -0.1764 | — | 0/10 | 0.0020 | slope < 0: contrary to H2 |
+| T2v (validation-selected) | -0.0521 | [-0.0944, -0.0218] | 1/10 | 0.0059 | slope < 0: contrary to H2 |
+<!-- TABLE:amended_h2 END -->
+
+The magnitude falls by roughly a factor of three and **the sign and the
+significance survive** (median −0.052, CI [−0.094, −0.022], positive in 1 of 10
+seeds, p = 0.0059). So the fine-tune's deficit really does grow as the training
+set shrinks, and that finding was not the harness talking. It remains an
+amended result on one arm, and it does not change H2 for the frozen probe,
+which is inconclusive (§5.3). Measured cost was 128 s per cell at n = 50 and
+566 s at n = 347.
 
  `analyse_amended.py` exits
 without computing a test statistic while any planned cell is missing, because a
@@ -1519,8 +1576,8 @@ to have been performed.
 
 | | Planned comparison (`plan.md` §1) | Analysis actually performed | Current conclusion | Remaining gap |
 |---|---|---|---|---|
-| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2) and all five endpoints (§5.7) | **Answered negatively** on the primary endpoint: the frozen probe is significantly worse (Holm p = 0.012), the tuned fine-tune indistinguishable. On precision@10% the fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
-| **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term now run (§5.3) | **Unanswered** for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, and the same on both other splits). Contrary to H2 for `T2`, but confounded by the fixed schedule | The corrected fine-tune (`T2v`) at all four sizes — **running, 4 of 40 cells complete**. More seeds would narrow the probe's interval |
+| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2), all five endpoints (§5.7) and a corrected fine-tune at every size (§6.6) | **Answered negatively**, and more firmly than before: the frozen probe is significantly worse (Holm p = 0.012), and the corrected fine-tune is significantly worse at **all four** sizes (Holm ≤ 0.012). On precision@10% the untuned fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
+| **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term run for every arm (§5.3), then re-run on a corrected fine-tune (§6.6) | **Split by arm.** Unanswered for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, same on both other splits). **Answered negatively for the fine-tune**: the deficit grows as data shrinks, and the effect survives correcting the schedule (−0.176 untuned → −0.052 validation-selected, p = 0.0059) | The probe's interval is wide enough to hide a real crossover; more seeds would narrow it. `T2v` is one arm on one split |
 | **H3** | Direct arm contrast `T4` vs `T1` — in-domain **fine-tune** vs generic **fine-tune** | **Not performed.** No in-domain fine-tune existed; the study ran probe-vs-probe instead (§6.4), a substituted form | **Suggestive, in a substituted form only.** The chained probe beats the generic probe in 9 of 10 seeds (raw p = 0.006), clearing Benjamini–Hochberg and not Holm | The pre-registered form itself: `T4ft` vs `T2v` — **queued, 0 of 20 cells complete**. And a corpus that is in-domain chemically, not only by protein family |
 | **H4** | Decontamination ablation: re-pretrain with test overlap removed | Performed for the in-domain arms with a size-matched control the protocol did not ask for (§6.5). Impossible for ChemBERTa | **Bounded, not answered.** No evidence overlap inflated the in-domain arms; the decisive contrast is Holm 0.273. Untestable for ChemBERTa, whose 77M corpus is not distributed | A corpus that genuinely overlaps the target chemistry — ours had 0 exact and 0 near-duplicate overlap, so decontamination had almost nothing to remove |
 
@@ -1920,7 +1977,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **419 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **437 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2039,7 +2096,7 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
 - **Reconstructed — the artefacts a stage rewrites.** Watching **1,787**
   artefacts in total, a full-tier run **reconstructs 1,495** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
-  every arm except the ChemBERTa fine-tune, all 24 tables and 9 figures.
+  every arm except the ChemBERTa fine-tune, all 27 tables and 9 figures.
 - **Compared only — 292 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
@@ -2099,7 +2156,7 @@ The stage table below was the original hand check:
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
-| all 24 tables in `results/tables/` | data rows byte-identical |
+| all 27 tables in `results/tables/` | data rows byte-identical |
 | all 9 figures in `results/figures/` | regenerated; **no committed baseline** (gitignored as regenerable), so not verified |
 
 Determinism comes from seeding Python, NumPy and torch per run
