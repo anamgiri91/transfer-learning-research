@@ -193,6 +193,98 @@ def build_claims() -> list[Claim]:
     for arm in ("T1_chemberta_linear_probe", "T2_chemberta_full_finetune"):
         C.append(Claim("5.3", f"{arm} DER = 0", "table2", 0.0,
                        t2der("scaffold", arm, "DER_vs_B1_ecfp_histgb")))
+    # ---- 5.3, the H2 interaction term and the DER's censoring -------------
+    # plan.md §6 names both; only the DER had ever been computed. These claims
+    # exist so the correction to H2 cannot go stale the way the DER text did.
+    def t15(split, arm, col):
+        df = read_table("table15_h2_interaction.csv")
+        row = df[(df.split == split) & (df.arm == arm)]
+        return row[col].iloc[0] if len(row) else None
+
+    def t16(split, arm, col):
+        df = read_table("table16_der_uncertainty.csv")
+        row = df[(df.split == split) & (df.arm == arm)]
+        return row[col].iloc[0] if len(row) else None
+
+    C.append(Claim("5.3", "B0 interaction slope +0.0306 (sanity check)", "table15",
+                   0.0306, t15("scaffold", "B0_median", "median_slope")))
+    C.append(Claim("5.3", "B0 slope Holm p = 0.023", "table15", 0.0234,
+                   t15("scaffold", "B0_median", "p_holm")))
+    C.append(Claim("5.3", "T1 interaction slope +0.0073", "table15", 0.0073,
+                   t15("scaffold", "T1_chemberta_linear_probe", "median_slope")))
+    C.append(Claim("5.3", "T1 slope CI lower -0.0174", "table15", -0.0174,
+                   t15("scaffold", "T1_chemberta_linear_probe", "slope_ci_lo")))
+    C.append(Claim("5.3", "T1 slope CI upper +0.0189", "table15", 0.0189,
+                   t15("scaffold", "T1_chemberta_linear_probe", "slope_ci_hi")))
+    C.append(Claim("5.3", "T1 slope positive in 6 of 10 seeds", "table15", 6,
+                   t15("scaffold", "T1_chemberta_linear_probe", "slope_positive_in_seeds")))
+    C.append(Claim("5.3", "T1 slope p = 0.77", "table15", 0.7695,
+                   t15("scaffold", "T1_chemberta_linear_probe", "p_raw")))
+    C.append(Claim("5.3", "T1 slope inconclusive on scaffold", "table15", "inconclusive",
+                   t15("scaffold", "T1_chemberta_linear_probe", "h2_verdict")))
+    C.append(Claim("5.3", "T1 slope p = 0.85 on random", "table15", 0.8457,
+                   t15("random", "T1_chemberta_linear_probe", "p_raw")))
+    C.append(Claim("5.3", "T1 slope raw p = 0.037 on Butina", "table15", 0.0371,
+                   t15("butina", "T1_chemberta_linear_probe", "p_raw")))
+    C.append(Claim("5.3", "T1 positive in 8 of 10 seeds on Butina", "table15", 8,
+                   t15("butina", "T1_chemberta_linear_probe", "slope_positive_in_seeds")))
+    C.append(Claim("5.3", "T2 interaction slope -0.1764", "table15", -0.1764,
+                   t15("scaffold", "T2_chemberta_full_finetune", "median_slope")))
+    C.append(Claim("5.3", "T2 slope CI [-0.2216, -0.1215]", "table15", "-0.2216/-0.1215",
+                   f'{t15("scaffold", "T2_chemberta_full_finetune", "slope_ci_lo")}/'
+                   f'{t15("scaffold", "T2_chemberta_full_finetune", "slope_ci_hi")}'))
+    C.append(Claim("5.3", "T2 slope negative in 10 of 10 seeds", "table15", 0,
+                   t15("scaffold", "T2_chemberta_full_finetune", "slope_positive_in_seeds")))
+    C.append(Claim("5.3", "T2 slope Holm p = 0.014", "table15", 0.014,
+                   t15("scaffold", "T2_chemberta_full_finetune", "p_holm")))
+    C.append(Claim("5.3", "T2 is the only arm contrary to H2", "table15", 1,
+                   int((read_table("table15_h2_interaction.csv")
+                        .query("split == 'scaffold'").h2_verdict
+                        .str.startswith("slope < 0")).sum())))
+    C.append(Claim("5.3", "T1 reaches the target on 1 of 10 seeds", "table16", 1,
+                   t16("scaffold", "T1_chemberta_linear_probe", "seeds_reaching_target")))
+    C.append(Claim("5.3", "T2 reaches the target on 3 of 10 seeds", "table16", 3,
+                   t16("scaffold", "T2_chemberta_full_finetune", "seeds_reaching_target")))
+    C.append(Claim("5.3", "B1's curve is non-monotonic on 9 of 10 seeds", "table16", 9,
+                   t16("scaffold", "B1_ecfp_histgb", "curves_non_monotonic")))
+    C.append(Claim("5.3", "B2 per-seed DER 1.37", "table16", 1.3701,
+                   t16("scaffold", "B2_descriptors_rf", "median_der_where_defined")))
+    C.append(Claim("5.3", "B2 per-seed DER CI [0.98, 2.93]", "table16", "0.98/2.93",
+                   f'{round(float(t16("scaffold", "B2_descriptors_rf", "der_ci_lo")), 2)}/'
+                   f'{round(float(t16("scaffold", "B2_descriptors_rf", "der_ci_hi")), 2)}'))
+
+    # ---- 5.7, the pooled-family sensitivity analysis ----------------------
+    # Recomputed here from table14's own raw p-values rather than copied from
+    # the prose: the point of the sensitivity analysis is that the family size
+    # drives the answer, so the family size has to be derived, not asserted.
+    def _pooled_holm():
+        d = read_table("table14_all_endpoints.csv")
+        d = d[d.p_raw.notna()]
+        pv = d.p_raw.to_numpy(float)
+        order = np.argsort(pv)
+        adj = np.empty(len(pv)); run = 0.0
+        for r, i in enumerate(order):
+            run = max(run, min(1.0, pv[i] * (len(pv) - r)))
+            adj[i] = run
+        d = d.assign(p_pooled=adj)
+        row = d[(d.metric == "precision_at_10pct")
+                & (d.arm == "T2_chemberta_full_finetune")]
+        return len(d), float(row.p_pooled.iloc[0]), int((adj <= 0.05).sum())
+
+    _n_pooled, _p_pooled, _n_survive = _pooled_holm()
+    C.append(Claim("5.7", "pooled endpoint family has 31 tests", "table14", 31, _n_pooled))
+    C.append(Claim("5.7", "T2 enrichment pooled Holm p = 0.0975", "table14", 0.0975,
+                   round(_p_pooled, 4)))
+    C.append(Claim("5.7", "nothing survives the pooled correction", "table14", 0,
+                   _n_survive))
+    C.append(Claim("5.7", "enrichment family is six arms", "table14", 6,
+                   int(read_table("table14_all_endpoints.csv")
+                       .query("metric == 'precision_at_10pct'").p_raw.notna().sum())))
+    C.append(Claim("Abstract", "abstract states the pooled 31-test count", "table14",
+                   31, _n_pooled))
+    C.append(Claim("Abstract", "abstract states the pooled p = 0.0975", "table14",
+                   0.0975, round(_p_pooled, 4)))
+
     for arm, v in [("T1_chemberta_linear_probe", 0.7297), ("B1_ecfp_histgb", 0.7042),
                    ("B2_descriptors_rf", 0.6705)]:
         C.append(Claim("5.3", f"{arm} RMSE at n=50", "table1", v,
@@ -776,6 +868,89 @@ def build_claims() -> list[Claim]:
             C.append(Claim("6.2", "tuned T2 beats B1 at n=347 in 2 of 5 seeds",
                            "tuned_metrics", "2/5", f"{wins}/{len(seeds)}"))
 
+    # ---- Section 3.3: the split strategies -------------------------------
+    # §3.3 described two strategies and defined neither the Butina one nor the
+    # fact that its scaffold guarantee does not hold. The numbers it now states
+    # are checked like any other.
+    _aud = read_table("table0_split_audit.csv")
+    C.append(Claim("3.3", "three strategies, 10 seeds, 30 split files", "splits/", 30,
+                   len(list(Path("data/processed/splits/eva71_2a").glob("*.json")))))
+    C.append(Claim("3.3", "the scaffold split shares no scaffolds", "table0", 0,
+                   int(_aud[_aud.split == "scaffold"]
+                       ["scaffolds_in_train_and_test"].max())))
+    C.append(Claim("3.3", "Butina shares a median of 13 scaffolds", "table0", 13,
+                   int(_aud[_aud.split == "butina"]
+                       ["scaffolds_in_train_and_test"].median())))
+    C.append(Claim("3.3", "no compound straddles train and test on any split",
+                   "table0", 0, int(_aud["compounds_in_train_and_test"].max())))
+
+    # ---- Summary sections (§5.8, §8, §9) --------------------------------
+    # The 2026-09-06 audit found every drifted claim in these sections: they
+    # restate conclusions, so nothing here re-derived them, and the
+    # cross-document checker can only see counts. §5.8 point 1 read as a flat
+    # negative the endpoint set does not support; §8.1 called an inconclusive
+    # contrast "distinguishable"; §8.1, §9 and the abstract attached a paired
+    # p-value to a margin measured against a different comparator; §8.3 told
+    # practitioners both baselines "beat both transfer arms". The sentences
+    # that replaced them are checked here.
+    _ep = read_table("table14_all_endpoints.csv")
+    _pr = _ep[_ep.metric == "precision_at_10pct"].set_index("arm")
+    _T2, _B1 = "T2_chemberta_full_finetune", "B1_ecfp_histgb"
+
+    C.append(Claim("5.8", "point 10: T2 precision@10% is 0.50", "table14", 0.50,
+                   round(float(_pr.loc[_T2, "median"]), 2)))
+    C.append(Claim("5.8", "point 10: B1 precision@10% is 0.40", "table14", 0.40,
+                   round(float(_pr.loc[_B1, "median"]), 2)))
+    C.append(Claim("5.8", "point 10: T2 wins 9 of 10 seeds", "table14", 9,
+                   int(_pr.loc[_T2, "arm_better_in_seeds"])))
+    C.append(Claim("5.8", "point 10: Holm p = 0.023", "table14", 0.023,
+                   round(float(_pr.loc[_T2, "p_holm"]), 3)))
+    C.append(Claim("5.8", "point 10: the top decile is k = 10 compounds", "table0", 10,
+                   round(int(read_table("table0_split_audit.csv")["n_test"].iloc[0]) * 0.10)))
+    C.append(Claim("5.8", "point 10: every transfer arm matches or beats B1 there",
+                   "table14", True,
+                   bool((_pr.loc[[a for a in _pr.index if a.startswith("T")],
+                                 "median_delta_vs_B1"] >= 0).all())))
+    C.append(Claim("5.8", "point 10: the advantage does not replicate off scaffold",
+                   "metrics", True,
+                   bool(all(_p(a, sp) > 0.05 for sp in ("random", "butina")
+                            for a in ("T1_chemberta_linear_probe", "T4_indomain_probe",
+                                      "T5_chained_probe")))))
+    # point 1 is scoped to the primary endpoint precisely because point 10 exists
+    C.append(Claim("5.8", "point 1: the frozen probe's deficit is Holm-significant",
+                   "table3", True,
+                   bool(float(t3("scaffold", "T1_chemberta_linear_probe", "p_holm")) <= 0.05)))
+    C.append(Claim("5.8", "point 1: the fine-tune's deficit is not", "table3", True,
+                   bool(float(t3("scaffold", "T2_chemberta_full_finetune", "p_holm")) > 0.05)))
+
+    # §8.1, §9 and the abstract: two margins against the same untrained control,
+    # which three summaries had fused into one quantity with one p-value.
+    C.append(Claim("8.1", "generic margin over five control draws is 0.011", "table11",
+                   0.011, round(float(np.median(gaps)), 3)))
+    C.append(Claim("8.1", "generic margin against the tested draw is 0.004", "table10",
+                   0.004, round(float(ind.loc[("T1", "T0r"), "median_delta"]), 3)))
+    C.append(Claim("8.1", "that contrast wins 5 of 10 seeds", "table10", 5,
+                   int(ind.loc[("T1", "T0r"), "arm_better_in_seeds"])))
+    C.append(Claim("8.1", "and its raw p is 0.49", "table10", 0.49,
+                   round(float(ind.loc[("T1", "T0r"), "p_raw"]), 2)))
+    C.append(Claim("8.1", "in-domain margin over the same control is 0.030", "table10",
+                   0.030, round(float(ind.loc[("T5", "T0r"), "median_delta"]), 3)))
+    C.append(Claim("8.1", "the chained arm beats the generic probe in 9 of 10", "table10",
+                   9, int(ind.loc[("T5", "T1"), "arm_better_in_seeds"])))
+    C.append(Claim("8.1", "but that contrast does not survive Holm", "table10", True,
+                   bool(float(ind.loc[("T5", "T1"), "p_holm"]) > 0.05)))
+    C.append(Claim("8.1", "the pre-registered T4-vs-T1 form is inconclusive", "table10",
+                   "inconclusive", str(ind.loc[("T4", "T1"), "verdict"])))
+    # §8.3: the practitioner advice may not assert a deficit the tests do not show
+    C.append(Claim("8.3", "no transfer arm is shown to beat B1 on RMSE at any size",
+                   "table3 + table10", True,
+                   bool(float(t3("scaffold", "T1_chemberta_linear_probe",
+                                 "median_rmse_delta_vs_baseline")) < 0
+                        and float(t3("scaffold", "T2_chemberta_full_finetune",
+                                     "median_rmse_delta_vs_baseline")) < 0)))
+    C.append(Claim("8.3", "and B2 is not shown to beat them either", "table3", True,
+                   bool(float(t3("scaffold", "B2_descriptors_rf", "p_holm")) > 0.05)))
+
     # ---- Run inventory ----
     n_runs = len(list(METRICS.glob("*.json")))
     # Parsed from the abstract rather than mirrored here: a hand-copied count
@@ -798,11 +973,36 @@ def self_count_claim(n_claims: int) -> Claim:
                  int(m.group(1)) if m else None, n_claims)
 
 
+def section_count_claim(claims: list[Claim]) -> Claim:
+    """§10 also states how many of those checks belong to §6.3. That number was
+    written as a word ("Forty-three") against an actual 44, and a word is
+    invisible to a checker that parses digits -- so it sat wrong through two
+    audits. It is a digit now, and checked like any other."""
+    text = MANUSCRIPT.read_text()
+    m = re.search(r"\*\*(\d+)\*\* of those checks belong to §6\.3", text)
+    return Claim("10", "stated §6.3 check count in §10", "verify_manuscript.py itself",
+                 int(m.group(1)) if m else None,
+                 sum(1 for c in claims if c.section == "6.3"))
+
+
+def all_claims() -> list[Claim]:
+    """The complete claim list, self-referential entries included.
+
+    One place assembles it. verify_consistency.py used to reimplement this as
+    `len(build_claims()) + 1`, which silently went stale the moment a second
+    meta-claim was added -- a duplicated count drifting from its source, which
+    is the exact failure these checkers exist to catch.
+    """
+    claims = build_claims()
+    claims.append(section_count_claim(claims))
+    claims.append(self_count_claim(len(claims) + 1))
+    return claims
+
+
 def main() -> int:
     if not MANUSCRIPT.exists():
         print("manuscript not found"); return 1
-    claims = build_claims()
-    claims.append(self_count_claim(len(claims) + 1))
+    claims = all_claims()
     fails = [c for c in claims if not c.ok()]
 
     by_sec: dict[str, list[Claim]] = {}

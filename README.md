@@ -11,8 +11,14 @@ assay. Maximum replicate spread across the whole set is 0.49 log units — this
 really is a high-fidelity dataset, which is what makes the question clean.
 
 **Note on the target.** Affinities are measured on *Coxsackievirus A16* 2A
-protease as a surrogate for EV-A71; the two differ at five residues, none near
-the active site. See `paper/manuscript.md` §3.1.
+protease as a surrogate for EV-A71. The source paper reports a five-residue
+difference for its own constructs; re-deriving it from the UniProt-annotated 2A
+chains gives **7 or 8 residues depending on the CVA16 reference strain**, so we
+do not rely on the count. What is independently confirmed is the claim that
+matters: the catalytic triad is identical and no differing residue is
+catalytic. Note that this is weaker than "none near the active site" — in the
+G-10 strain the N57D substitution sits between two structural zinc ligands. See
+`paper/manuscript.md` §3.1 and `results/tables/table9_surrogate_divergence.csv`.
 
 **Claim under test.** Transfer learning improves data efficiency on
 high-fidelity, low-volume protease datasets — and the improvement survives
@@ -54,16 +60,19 @@ python scripts/prepare_openbind.py                # master.csv -> 494 compounds
 python scripts/build_splits.py --target eva71_2a  # splits + leakage assertions
 python scripts/audit_splits.py                    # Table 0: leakage audit
 python scripts/run_arms.py --arms B0 B1 B2 T1     # baselines + frozen-encoder probe
-python scripts/run_arms.py --arms T2              # ChemBERTa fine-tune (slow)
+python scripts/run_arms.py --arms T2 --splits scaffold   # ChemBERTa fine-tune (slow)
 make indomain                                     # in-domain corpus + encoders (§6.4)
-python scripts/run_arms.py --arms T0r T4 T5 T4c T5c --splits scaffold
+python scripts/run_arms.py --arms T0r T4 T5      # controls, all three splits
+python scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold   # §6.5 ablations
+python scripts/analyse_h2.py                      # H2 interaction + DER CIs (§5.3)
 python scripts/make_report.py                     # tables + figures
 ```
 
 Then verify nothing drifted:
 
 ```bash
-make verify   # tests + table freshness + every machine-checked claim + citations
+make verify        # tests + table freshness + every machine-checked claim + citations
+make verify-repro  # re-run every offline stage and diff it against what is committed
 ```
 
 Full artefact map: [`paper/provenance.md`](paper/provenance.md).

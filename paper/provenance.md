@@ -12,7 +12,7 @@ belong in the paper.
 | Raw structure–affinity release | — (third party) | `data/raw/OpenBind_EV-A71_2A.zip`, `data/processed/master.csv` | Zenodo 10.5281/zenodo.20026661 |
 | Compound-level curated set | `scripts/prepare_openbind.py` | `data/processed/eva71_2a.csv` | `data/processed/master.csv` |
 | Curation funnel counts | `scripts/prepare_openbind.py` | `data/processed/eva71_2a.curation.json` | as above |
-| Split assignments | `scripts/build_splits.py` | `data/processed/splits/eva71_2a/{scaffold,random}__seed{0..9}.json` | `eva71_2a.csv` |
+| Split assignments | `scripts/build_splits.py` | `data/processed/splits/eva71_2a/{scaffold,butina,random}__seed{0..9}.json` (30 files) | `eva71_2a.csv` |
 | Per-run metrics | `scripts/run_arms.py` | `results/metrics/<arm>__<split>__seed<N>__n<size>.json` | curated set + split files |
 | Per-compound predictions | `scripts/run_arms.py --save-preds` | `results/predictions/<arm>__<split>__seed<N>__n<size>.npz` | as above |
 | In-domain corpus (raw) | `scripts/fetch_indomain.py` | `data/raw/indomain_<target>.csv` + `.manifest.json` | ChEMBL activity API, 8 targets |
@@ -29,13 +29,26 @@ belong in the paper.
 | Table 3 — paired tests vs baseline | `scripts/make_report.py` | `results/tables/table3_paired_tests__<split>.csv` |
 | Table 4 — split difficulty (R², skill vs B0) | `scripts/make_report.py` | `results/tables/table4_split_difficulty.csv` |
 | Table 5 — contamination upper bound | `scripts/measure_contamination.py` | `results/tables/table5_contamination.csv` |
-| Tuning ablation table (§6.2) | `scripts/tune_arms.py` + `render_manuscript_tables.py` | `results/tuned_metrics/*.json` |
-| Figure 1 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
-| Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
 | Table 0 — split leakage + NN-similarity audit | `scripts/audit_splits.py` | `results/tables/table0_split_audit.csv` |
 | Table 6 — per-stratum performance (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table6_activity_cliffs.csv` |
 | Table 7 — dataset cliff-pair census (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table7_cliff_pairs.csv` |
 | Table 8 — per-stratum paired tests (§6.3) | `scripts/analyse_cliffs.py` | `results/tables/table8_cliff_paired.csv` |
+| Table 9 — CVA16/EV-A71 2A divergence (§3.1) | `scripts/verify_surrogate.py` | `results/tables/table9_surrogate_divergence.csv` |
+| Table 10 — in-domain and decontamination contrasts (§6.4, §6.5) | `scripts/analyse_indomain.py` | `results/tables/table10_indomain_contrasts.csv` |
+| Table 11 — untrained-encoder random draws (§6.4) | `scripts/analyse_indomain.py` | `results/tables/table11_random_encoder_draws.csv` |
+| Table 12 — corpus vs evaluation-set chemistry (§6.4) | `scripts/prepare_indomain.py` | `results/tables/table12_corpus_chemistry.csv` |
+| Table 13 — tuned fine-tune vs both baseline bases (§6.2) | `scripts/analyse_tuning.py` (over `results/tuned_metrics/*.json` from `scripts/tune_arms.py`) | `results/tables/table13_tuned_comparison.csv` |
+| Table 14 — every pre-registered endpoint (§5.7) | `scripts/analyse_endpoints.py` | `results/tables/table14_all_endpoints.csv` |
+| Table 15 — H2's interaction term (§5.3) | `scripts/analyse_h2.py` | `results/tables/table15_h2_interaction.csv` |
+| Table 16 — DER per seed, with censoring (§5.3) | `scripts/analyse_h2.py` | `results/tables/table16_der_uncertainty.csv` |
+| Figures 1, 3, 4 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
+| Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
+| Figure 5 — in-domain vs generic (§6.4) | `scripts/make_report.py` | `results/figures/fig_indomain__<split>.png` |
+
+The manuscript numbers figures by order of appearance, so the file names and the
+visible Figure numbers do not line up one-to-one; `results/figures/README.md`
+carries the mapping and `scripts/verify_citations.py` checks that every embedded
+image exists and that the visible numbers run 1..N.
 
 ## Verification
 
@@ -50,15 +63,23 @@ belong in the paper.
 | The citation checker is itself checked | `tests/test_citations.py` | Each of the eight defects the audit found is pinned as a regression test |
 | Prose numbers are re-derived | `scripts/verify_manuscript.py` | Every numeric claim re-computed from artefacts; non-zero exit on mismatch. The *number* of claims is not restated here — it is asserted against manuscript §10 by the script itself, so there is one place for it to drift and it is checked |
 | Re-running reproduces committed metrics | `scripts/run_arms.py --save-preds` | Re-runs each completed cell and fails if any stored metric moves by more than 1e-9 |
+| The whole pipeline reproduces | `scripts/verify_reproducibility.py` (`make verify-repro`) | Re-runs all twelve offline stages, watching 1,106 committed artefacts and **regenerating 424** of them — tables on data rows, metrics/figures/splits byte for byte at a 1e-9 relative tolerance. The other 682 (transfer-arm metrics, in-domain encoders) are inputs, not outputs, and the run says so rather than counting them as verified. Refuses to start against a tree already dirty, so a previous failure cannot become the next run's baseline. Restores the committed copies on success |
 | Cliff stratification edge cases | `tests/test_cliffs.py` | `distant` is never merged into `smooth`; only training compounds can create a cliff |
 | In-domain corpus membership | `tests/test_indomain.py` | Capsid, RNA-polymerase and papain-like assays cannot enter a '3C-like' corpus on target name alone; every exclusion carries a stated reason |
 | Split integrity | `tests/test_splits.py` | No compound or scaffold straddles train/test |
 | All of the above | `make verify` | Runs tests + freshness check + claim verification + citation checks |
 | Plus link liveness | `make verify-online` | As above, and every cited URL must still resolve |
 
-Bit-reproducibility was verified by re-running each stage and comparing
-checksums: `eva71_2a.csv` and all 30 split files are byte-identical, and
-re-running B1/B2/T1/T2 cells reproduces their metrics exactly.
+Bit-reproducibility is verified on every `make verify-repro`, not once by hand:
+`eva71_2a.csv`, `indomain_3c.csv` and all 30 split files are byte-identical,
+the 360 re-fitted baseline metric files match to ~1e-15 relative, and the data
+rows of all 23 tables and all 9 figures are byte-identical. The transfer arms'
+metrics are **not** re-fitted by that run — the figures below for T1/T2/T0r/T4/T5
+come from the original hand check and from `run_arms.py --save-preds`, which
+re-runs a completed cell and fails if a stored metric moves by more than 1e-9. The full stage-level
+table is in `manuscript.md` §10, including the one caveat — the random-forest
+arm reproduces to ~1e-16 rather than bit-identically, because `n_jobs=-1` lets
+the order of the floating-point reduction across threads vary.
 
 ## Reproduction order
 
@@ -72,21 +93,33 @@ python scripts/make_report.py --require-seeds 10         # -> tables + figures
 python scripts/measure_contamination.py                  # -> table5 (PubChem lookup)
 python scripts/tune_arms.py --arms B1 B2 T1 --trials 32  # -> tuned_metrics/
 python scripts/tune_arms.py --arms T2 --sizes 50 --trials 6
+python scripts/analyse_tuning.py                         # -> table13
 python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold --save-preds
 python scripts/run_arms.py --arms T2 --splits scaffold --sizes 347 --save-preds
 python scripts/analyse_cliffs.py                         # -> tables 6, 7, 8
 
 # In-domain arms T4/T5 (H3), and the decontamination ablation (H4)
 python scripts/fetch_indomain.py                         # -> data/raw/indomain_*
-python scripts/prepare_indomain.py                       # -> indomain_3c.csv
+python scripts/prepare_indomain.py                       # -> indomain_3c.csv, table12
 python scripts/pretrain_indomain.py --arm T4             # random init
 python scripts/pretrain_indomain.py --arm T5             # from ChemBERTa
 python scripts/pretrain_indomain.py --arm T4 --decontaminate
 python scripts/pretrain_indomain.py --arm T5 --decontaminate
-python scripts/run_arms.py --arms T4 T5 T4c T5c --splits scaffold --save-preds
+python scripts/pretrain_indomain.py --arm T4 --drop-random   # size-matched control
+python scripts/pretrain_indomain.py --arm T5 --drop-random   # -- 6.5 turns on it
+# T0r/T4/T5 run on all three splits (5.5, 5.7); the ablation arms on scaffold
+python scripts/run_arms.py --arms T0r T4 T5 --splits scaffold random butina --save-preds
+python scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold --save-preds
+python scripts/analyse_indomain.py                       # -> tables 10, 11
+python scripts/analyse_endpoints.py                      # -> table14
+python scripts/analyse_h2.py                             # -> tables 15, 16
 python scripts/render_manuscript_tables.py               # -> manuscript tables
-python scripts/verify_manuscript.py                      # -> checks every claim
+make verify                                              # -> every check below
 ```
+
+Omitting the two `--drop-random` encoders is not a shortcut: §6.5's conclusion
+is the size-matched control, and without those runs the same ablation reports a
+significant effect with the causal arrow reversed.
 
 ## Excluded from the paper
 

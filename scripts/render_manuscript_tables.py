@@ -40,9 +40,10 @@ ARM_LABEL = {
 ORDER = list(ARM_LABEL)
 
 # Tables in §5 describe the pre-registered five-arm sweep across three splits.
-# The control and in-domain arms were run on the scaffold split only and are
-# reported in §6.4, so including them here would add a row of em-dashes to a
-# table whose entire point is the cross-split comparison.
+# The control and in-domain arms are reported in §6.4 and are held out of these
+# tables to keep §5 to the arms plan.md froze; T2 is the only arm genuinely
+# confined to the scaffold split (§7.9). An earlier version of this comment said
+# the control arms were scaffold-only, which stopped being true on 2026-09-02.
 PREREGISTERED = ["B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
                  "T1_chemberta_linear_probe", "T2_chemberta_full_finetune"]
 
@@ -141,6 +142,44 @@ def table_der(split="scaffold") -> str:
                      "never" if not pd.notna(n) or n == float("inf") else f"{n:.0f}",
                      _fmt(der, 2)])
     return _md(["Arm", "n to reach B1's full-data RMSE", "DER vs B1"], rows)
+
+
+def table_h2_interaction(split="scaffold") -> str:
+    """The pre-registered interaction term (plan.md §6), which DER cannot supply."""
+    df = _read("table15_h2_interaction.csv")
+    df = df[df.split == split]
+    rows = []
+    for arm in ORDER:
+        d = df[df.arm == arm]
+        if d.empty:
+            continue
+        r = d.iloc[0]
+        rows.append([ARM_LABEL[arm], f"{r['median_slope']:+.4f}",
+                     f"[{r['slope_ci_lo']:+.4f}, {r['slope_ci_hi']:+.4f}]",
+                     f"{int(r['slope_positive_in_seeds'])}/{int(r['n_seeds'])}",
+                     f"{r['p_raw']:.4f}", f"{r['p_holm']:.3f}", r["h2_verdict"]])
+    return _md(["Arm", "median slope of ΔRMSE on log₂n", "95% CI",
+                "slope > 0 in", "p raw", "p Holm", "verdict"], rows)
+
+
+def table_der_uncertainty(split="scaffold") -> str:
+    """Per-seed DER, with the censoring table2 collapses into a zero."""
+    df = _read("table16_der_uncertainty.csv")
+    df = df[df.split == split]
+    rows = []
+    for arm in ["B1_ecfp_histgb"] + [a for a in ORDER if a != "B1_ecfp_histgb"]:
+        d = df[df.arm == arm]
+        if d.empty:
+            continue
+        r = d.iloc[0]
+        ci = ("—" if pd.isna(r["der_ci_lo"])
+              else f"[{r['der_ci_lo']:.2f}, {r['der_ci_hi']:.2f}]")
+        rows.append([ARM_LABEL[arm],
+                     f"{int(r['seeds_reaching_target'])}/{int(r['n_seeds'])}",
+                     str(int(r["curves_non_monotonic"])),
+                     _fmt(r["median_der_where_defined"], 2), ci])
+    return _md(["Arm", "seeds reaching B1's full-data RMSE", "non-monotonic curves",
+                "median DER where defined", "95% CI"], rows)
 
 
 def table_contamination() -> str:
@@ -376,6 +415,8 @@ RENDERERS = {
     "splits": table_splits,
     "audit": table_audit,
     "der": table_der,
+    "h2_interaction": table_h2_interaction,
+    "der_uncertainty": table_der_uncertainty,
     "surrogate": table_surrogate,
     "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,

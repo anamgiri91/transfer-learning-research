@@ -56,7 +56,17 @@ def compute_all(y, yhat, names: list[str] | None = None) -> dict[str, float]:
 
 def bootstrap_ci(y, yhat, metric: str = "rmse", n_resamples: int = 10000, seed: int = 0,
                  alpha: float = 0.05) -> tuple[float, float, float]:
-    """Point estimate and percentile bootstrap CI over test-set resamples."""
+    """Point estimate and percentile bootstrap CI over TEST-ROW resamples.
+
+    NOT the interval reported anywhere in the paper, and kept only because a
+    row-level interval is the right tool for a single fixed test fold. Every
+    published CI resamples **seeds** instead -- the seed is the unit of
+    replication, since it draws an independent split and fit, and resampling
+    rows within one fold would understate split variance. That estimator lives
+    in `scripts/make_report.py::_boot_median_ci`; this one has no callers
+    outside tests, and reaching for it by mistake would silently answer a
+    different question, so it says so here.
+    """
     fn = METRICS[metric]
     y, yhat = np.asarray(y), np.asarray(yhat)
     rng = np.random.default_rng(seed)

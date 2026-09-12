@@ -1,5 +1,24 @@
 # Revised Research Plan: Benchmarking Transfer Learning on EV-A71 2A Protease
 
+> ## ⚠ Superseded — kept as history, not as a plan
+>
+> **This document is not the protocol and its checklist is not the live one.**
+> It was written on 2026-09-01 before the data was inspected. The governing
+> documents are [`../plan.md`](../plan.md) (the pre-registration, plus
+> Amendment 1) and its §10 execution checklist; deviations live in
+> [`decision-log.md`](decision-log.md).
+>
+> What it gets wrong, recorded rather than edited out:
+>
+> | This document says | Reality |
+> |---|---|
+> | Splits from an `OpenBind-Consortium/EV-A71_2A_benchmark` repository | No such official splits were available; splits are built here (`scripts/build_splits.py`) and committed |
+> | A temporal split | Dropped — the release carries no per-compound year |
+> | Budgets N ∈ {50, 100, 250, 500, full} | 500 exceeds the 347-compound training fold; the sizes run are {50, 100, 250, 347} |
+> | 3D/geometric arms (EGNN, SchNet, Uni-Mol), GCN/GAT, MolCLR | None were run; the arms actually run are frozen in `plan.md` §4 and reported in `paper/manuscript.md` §4.1 and §6.4 |
+> | RF + ECFP4 as *the* classical baseline | The baseline to beat is `B1`, ECFP4 counts + gradient boosting; RF sits on RDKit descriptors as `B2` |
+> | Phase 4: manuscript to be drafted in `private/manuscript/` | Written and public at [`../paper/manuscript.md`](../paper/manuscript.md) |
+
 **Target Venue:** ICML AI for Science, NeurIPS Datasets & Benchmarks, or J. Chem. Inf. Model.
 **Core Objective:** Systematically evaluate whether large-scale pretraining (sequence, 2D graph, and 3D geometric) improves data efficiency and OOD generalization on a low-N, high-fidelity affinity prediction task (EV-A71 2A protease).
 

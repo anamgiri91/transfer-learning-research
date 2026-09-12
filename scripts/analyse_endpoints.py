@@ -4,7 +4,7 @@
 `plan.md` §6 names RMSE as primary and **Spearman, MAE, R² and precision@10%**
 as secondary. The manuscript reported RMSE, Spearman and R², declared MAE and
 precision@10% in §4.3, and then never mentioned them again -- though both are
-computed and stored in all 800 runs. Selective endpoint reporting is precisely
+computed and stored in all 1,040 runs. Selective endpoint reporting is precisely
 what pre-registration exists to prevent, so this script reports all of them.
 
 It matters here. precision@10% is the enrichment view -- the fraction of the
@@ -36,6 +36,11 @@ ORDER = ["B0_median", "B1_ecfp_histgb", "B2_descriptors_rf",
          "T2_chemberta_full_finetune", "T4_indomain_probe", "T5_chained_probe"]
 
 
+# The family is each endpoint's own arm comparisons: 7 on RMSE, 6 elsewhere
+# (B0 is a constant predictor, so Spearman is undefined for it and it is tested
+# on RMSE only, as the sanity floor rather than a competitor). §5.7 reports the
+# pooled 31-test correction alongside, as a sensitivity analysis rather than as
+# a claim that pooling is the uniquely correct family.
 def holm(p):
     p = np.asarray(p, float); order = np.argsort(p); m = len(p)
     adj = np.empty(m); run = 0.0

@@ -1,8 +1,11 @@
-.PHONY: help setup data splits bench indomain report test lint check-private clean verify verify-online
+.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro
 .DEFAULT_GOAL := help
 
 PY ?= python
-TARGET ?= eva71_3c
+# eva71_3c was the pre-Amendment-1 target and has no dataset. The study runs
+# on eva71_2a; a default that names a file nobody can build is a broken target
+# dressed up as a configurable one.
+TARGET ?= eva71_2a
 
 # No default: look the target up in ChEMBL and pass it explicitly, e.g.
 #   make data TARGET=eva71_3c CHEMBL_ID=CHEMBLxxxxx
@@ -16,18 +19,27 @@ setup:  ## Install the package and dev tooling
 	$(PY) -m pip install -e ".[dev]"
 	nbstripout --install || true
 
-data:  ## Fetch + curate raw sources. Requires CHEMBL_ID=<id>
-	@test -n "$(CHEMBL_ID)" || { echo "Set CHEMBL_ID=<ChEMBL target id>. See data/raw/README.md"; exit 1; }
-	$(PY) scripts/fetch_data.py --target-chembl-id $(CHEMBL_ID) --name $(TARGET)_chembl
-	$(PY) scripts/curate_data.py --target $(TARGET)
+data:  ## Build the evaluation set from the OpenBind release
+	@# Amendment 1 replaced the ChEMBL fetch with the OpenBind Zenodo release.
+	@# fetch_data.py/curate_data.py are the pre-Amendment-1 path and are kept
+	@# for the in-domain corpus, which IS from ChEMBL (see `make indomain`).
+	$(PY) scripts/prepare_openbind.py
 
 splits:  ## Build split files and run leakage assertions
 	$(PY) scripts/build_splits.py --target $(TARGET)
 
-bench:  ## Run every arm in config/ across seeds and training sizes
-	@for cfg in config/arm_*.yaml; do \
-	  echo "== $$cfg"; $(PY) scripts/run_benchmark.py --config $$cfg || exit 1; \
-	done
+bench:  ## Run every arm reported in the paper, across seeds, sizes and splits
+	@# This used to loop over config/*.yaml through run_benchmark.py. That
+	@# harness describes a study that was never executed -- LightGBM, a D-MPNN,
+	@# 500-compound budgets, and the pre-Amendment-2 T1/T2 assignment -- and it
+	@# failed on its first config. It is retired; see plan.md Amendment 3.
+	$(PY) scripts/run_arms.py --arms B0 B1 B2 T1 T0r --splits scaffold random butina
+	$(PY) scripts/run_arms.py --arms T2 --splits scaffold
+	@# T4/T5 need the encoders from `make indomain` and are skipped if absent.
+	@if [ -f models/indomain_T4.pt ]; then \
+	  $(PY) scripts/run_arms.py --arms T4 T5 --splits scaffold random butina; \
+	  $(PY) scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold; \
+	else echo "skipping T4/T5: run \`make indomain\` first"; fi
 
 indomain:  ## Fetch, curate and pretrain the in-domain 3C/3CL corpus (arms T4/T5)
 	$(PY) scripts/fetch_indomain.py
@@ -46,6 +58,13 @@ indomain:  ## Fetch, curate and pretrain the in-domain 3C/3CL corpus (arms T4/T5
 	  echo "FAILED: expected encoders were not written:$$missing"; exit 1; fi; \
 	echo "all four in-domain encoders present."
 
+analysis:  ## Re-derive every analysis table from results/metrics/
+	$(PY) scripts/analyse_cliffs.py
+	$(PY) scripts/analyse_indomain.py
+	$(PY) scripts/analyse_tuning.py
+	$(PY) scripts/analyse_endpoints.py
+	$(PY) scripts/analyse_h2.py
+
 report:  ## Regenerate figures and tables from results/metrics/
 	$(PY) scripts/make_report.py
 
@@ -59,6 +78,11 @@ verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) scripts/verify_manuscript.py
 	$(PY) scripts/verify_citations.py
 	$(PY) scripts/verify_consistency.py
+
+verify-repro:  ## Re-run every offline stage and diff it against the committed artefacts
+	@# Not part of `verify`: it rewrites artefacts in place (restoring them on
+	@# success) and takes ~45 s, where `verify` is meant to be run constantly.
+	$(PY) scripts/verify_reproducibility.py
 
 verify-online:  ## verify, plus check that every cited URL still resolves
 	$(MAKE) verify
