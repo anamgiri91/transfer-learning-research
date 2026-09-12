@@ -1434,7 +1434,84 @@ decontamination to remove, which is itself a consequence of the corpus being
 chemically near-disjoint from the evaluation set (§6.4). A corpus that actually
 overlapped the target chemistry would be a sterner test of H4 than this one.
 
+### 6.6 Amended fine-tuning arms (in progress)
+
+[→ `scripts/run_finetune.py`, `analyse_amended.py` → `table17`, `table18`]
+
+**Specified in [`plan.md`](../plan.md) Amendment 4 before evaluation, executed
+after the earlier results were seen. These are amended experiments: not the
+pre-registered analysis, and not independent confirmation of it.**
+
+Two of this paper's conclusions rest on a fine-tune configuration §6.2 shows to
+be a harness artefact — H2's only significant interaction slope (§5.3) and
+§5.6's retracted reading — and H3's pre-registered comparison had never been
+run at all, because the arm it needs was never built (Amendment 2). Three arms
+address both, sharing one implementation and differing **only** in initial
+encoder weights:
+
+| Arm | Initial encoder | Addresses |
+|---|---|---|
+| `T2v` | ChemBERTa-77M-MTR | H2, and H1 at every size |
+| `T4ft` | in-domain (random init → 3C/3CL multitask pretraining) | H3, the pre-registered form |
+| `T5ft` | chained (ChemBERTa → the same in-domain pretraining) | H3 |
+
+Same RoBERTa backbone, tokenizer, mean-pooled linear readout, optimiser and
+selection rule throughout. Learning rate is chosen per cell from {1e-5, 3e-5,
+1e-4} on an internal validation split carved at 15% from the **training
+subsample**, mirroring `B1`'s `validation_fraction`; the split file's `val`
+fold stays unused, as in the published sweep, so training sets remain identical
+to those every other arm saw and the pairing holds. Checkpoints are restored
+from the best validation epoch, ≤ 60 epochs, patience 10.
+
+**`T4ft` vs `T2v` is the comparison `plan.md` §1 names as the H3 decision rule.**
+It is implementable because the in-domain encoders are the same architecture as
+ChemBERTa-77M-MTR: all **55** of their encoder tensors load into that backbone
+key for key, at the same 384 hidden dimensions and under the same tokenizer.
+(Two of the 55 are a pooler, which loads but is unused — the readout mean-pools
+token states. Against a `<s>`-token classification head, which has no pooler,
+the figure would be 53.) It is still not
+`plan.md`'s `T4`, which was specified for the 3C target Amendment 1 removed.
+
+**Status: incomplete at the time of writing, and no statistics are reported
+until it is not.** 15 of 60 planned cells have run; `analyse_amended.py` exits
+without computing a test statistic while any planned cell is missing, because a
+table summarising whichever seeds happen to have finished is a stopping rule
+introduced by accident. Measured cost is 128 s per cell at n = 50 and 566 s at
+n = 347, so the sweep is ≈ 7 h on the available hardware. No failures have been
+recorded. Every planned cell will be reported, including unfavourable ones.
+
+**One confound is fixed by design and stated now rather than on completion.**
+`T2v` differs from `T2` in both the schedule and the readout — `T2` used a
+`<s>`-token classification head, these use mean pooling. `T2v`-vs-`T2` is
+therefore a comparison of conditions, not an isolation of the schedule. Mean
+pooling was chosen because it is what the in-domain encoders were pretrained
+with and what every frozen probe here uses, so matching it across the three new
+arms protects H3, which is the contrast that needed protecting.
+
 ## 7. Limitations
+
+### 7.0 Where each hypothesis stands
+
+The four hypotheses, the comparison each was pre-registered with, what was
+actually run, and what is still missing. Two rows changed after 2026-09-11,
+both because an analysis this paper had reported as decisive turned out never
+to have been performed.
+
+| | Planned comparison (`plan.md` §1) | Analysis actually performed | Current conclusion | Remaining gap |
+|---|---|---|---|---|
+| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2) and all five endpoints (§5.7) | **Answered negatively** on the primary endpoint: the frozen probe is significantly worse (Holm p = 0.012), the tuned fine-tune indistinguishable. On precision@10% the fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
+| **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term now run (§5.3) | **Unanswered** for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, and the same on both other splits). Contrary to H2 for `T2`, but confounded by the fixed schedule | The corrected fine-tune (`T2v`) at all four sizes — **running, 4 of 40 cells complete**. More seeds would narrow the probe's interval |
+| **H3** | Direct arm contrast `T4` vs `T1` — in-domain **fine-tune** vs generic **fine-tune** | **Not performed.** No in-domain fine-tune existed; the study ran probe-vs-probe instead (§6.4), a substituted form | **Suggestive, in a substituted form only.** The chained probe beats the generic probe in 9 of 10 seeds (raw p = 0.006), clearing Benjamini–Hochberg and not Holm | The pre-registered form itself: `T4ft` vs `T2v` — **queued, 0 of 20 cells complete**. And a corpus that is in-domain chemically, not only by protein family |
+| **H4** | Decontamination ablation: re-pretrain with test overlap removed | Performed for the in-domain arms with a size-matched control the protocol did not ask for (§6.5). Impossible for ChemBERTa | **Bounded, not answered.** No evidence overlap inflated the in-domain arms; the decisive contrast is Holm 0.273. Untestable for ChemBERTa, whose 77M corpus is not distributed | A corpus that genuinely overlaps the target chemistry — ours had 0 exact and 0 near-duplicate overlap, so decontamination had almost nothing to remove |
+
+Two of the four were, at some point in this project's history, reported as
+settled on the strength of an analysis that had not been run. H2 rested on the
+DER alone, which cannot decide it; H3 was reported as tested when the arm its
+decision rule names did not exist. Both were found by auditing this manuscript
+against its own protocol rather than by any reviewer, and §10 describes the
+apparatus that now makes that audit routine.
+
+
 
 Ordered by how much each one constrains the conclusions. Every item here is
 either recorded in [`../docs/decision-log.md`](../docs/decision-log.md) or
@@ -1823,7 +1900,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **414 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **421 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the

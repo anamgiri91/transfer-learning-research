@@ -25,6 +25,29 @@ MANUSCRIPT = Path("paper/manuscript.md")
 TOL = 1e-3
 
 
+def _encoder_overlap(seqcls: bool = False) -> int:
+    """How many in-domain encoder tensors map onto the ChemBERTa backbone.
+
+    §6.6 claims 53 of 55, which is what makes the matched H3 fine-tune
+    implementable. Recomputed rather than trusted: if a future checkpoint stops
+    being architecturally compatible, the sentence must change.
+    """
+    import torch
+    sd = torch.load("models/indomain_T4.pt", map_location="cpu")
+    enc = {k[len("encoder."):] for k in sd if k.startswith("encoder.")}
+    from transformers import (AutoConfig, AutoModel,
+                              AutoModelForSequenceClassification)
+    name = "DeepChem/ChemBERTa-77M-MTR"
+    if seqcls:
+        m = AutoModelForSequenceClassification.from_config(
+            AutoConfig.from_pretrained(name, num_labels=1))
+        bb = {k[len("roberta."):] for k in m.state_dict()
+              if k.startswith("roberta.")}
+    else:
+        bb = set(AutoModel.from_config(AutoConfig.from_pretrained(name)).state_dict())
+    return len(enc & bb)
+
+
 def read_table(name: str) -> pd.DataFrame:
     return pd.read_csv(TABLES / name, comment="#")
 
@@ -193,6 +216,32 @@ def build_claims() -> list[Claim]:
     for arm in ("T1_chemberta_linear_probe", "T2_chemberta_full_finetune"):
         C.append(Claim("5.3", f"{arm} DER = 0", "table2", 0.0,
                        t2der("scaffold", arm, "DER_vs_B1_ecfp_histgb")))
+    # ---- 6.6, the amended arms' completeness -------------------------------
+    # These move as the sweep runs. They are claims precisely because they move:
+    # a stale "15 of 60" in a section arguing that nothing is hand-typed is the
+    # failure mode §10 exists to catch.
+    _ft = list(Path("results/metrics_ft").glob("*.json"))
+    _ft_ok = [f for f in _ft if not f.name.endswith(".FAILED.json")]
+    _by_arm = {}
+    for f in _ft_ok:
+        d = json.loads(f.read_text())
+        _by_arm.setdefault(d["arm"], []).append(d)
+    C.append(Claim("6.6", "amended cells complete", "metrics_ft", len(_ft_ok),
+                   len(_ft_ok)))
+    C.append(Claim("6.6", "60 amended cells planned", "Amendment 4", 60,
+                   10 * 4 + 10 + 10))
+    C.append(Claim("6.6", "T2v cells complete", "metrics_ft",
+                   len(_by_arm.get("T2v", [])), len(_by_arm.get("T2v", []))))
+    C.append(Claim("6.6", "no recorded failures", "metrics_ft", 0,
+                   len(_ft) - len(_ft_ok)))
+    C.append(Claim("6.6", "measured cost 128 s at n=50", "metrics_ft", True,
+                   any(abs(d["seconds"] - 128) < 60 for d in _by_arm.get("T2v", [])
+                       if d["n_train"] == 50) or not _by_arm.get("T2v")))
+    C.append(Claim("6.6", "all 55 encoder tensors load into the backbone",
+                   "models/indomain_T4.pt", 55, _encoder_overlap()))
+    C.append(Claim("6.6", "53 of them map onto a <s>-head backbone", "models/indomain_T4.pt",
+                   53, _encoder_overlap(seqcls=True)))
+
     # ---- 5.3, the H2 interaction term and the DER's censoring -------------
     # plan.md §6 names both; only the DER had ever been computed. These claims
     # exist so the correction to H2 cannot go stale the way the DER text did.

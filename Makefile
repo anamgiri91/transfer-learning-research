@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full
+.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full finetune
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -64,6 +64,12 @@ analysis:  ## Re-derive every analysis table from results/metrics/
 	$(PY) scripts/analyse_tuning.py
 	$(PY) scripts/analyse_endpoints.py
 	$(PY) scripts/analyse_h2.py
+	-$(PY) scripts/analyse_amended.py
+
+finetune:  ## Run the Amendment 4 fine-tuning arms (~7 h; see plan.md Amendment 4)
+	$(PY) scripts/run_finetune.py --arms T2v --splits scaffold
+	$(PY) scripts/run_finetune.py --arms T4ft T5ft --splits scaffold --sizes 347
+	$(PY) scripts/analyse_amended.py
 
 report:  ## Regenerate figures and tables from results/metrics/
 	$(PY) scripts/make_report.py

@@ -41,6 +41,10 @@ belong in the paper.
 | Table 14 — every pre-registered endpoint (§5.7) | `scripts/analyse_endpoints.py` | `results/tables/table14_all_endpoints.csv` |
 | Table 15 — H2's interaction term (§5.3) | `scripts/analyse_h2.py` | `results/tables/table15_h2_interaction.csv` |
 | Table 16 — DER per seed, with censoring (§5.3) | `scripts/analyse_h2.py` | `results/tables/table16_der_uncertainty.csv` |
+| Table 17 — amended fine-tuning arms (§6.6) | `scripts/run_finetune.py` → `analyse_amended.py` | `results/tables/table17_amended_finetune.csv` *(pending: 15 of 60 cells)* |
+| Table 18 — amended contrasts, incl. H3's pre-registered form (§6.6) | `scripts/analyse_amended.py` | `results/tables/table18_amended_contrasts.csv` *(pending)* |
+| Supplied-input checksums | `scripts/verify_reproducibility.py --write-input-manifest` | `docs/input-checksums.json` |
+| Reproduction coverage, written by the passing run | `scripts/verify_reproducibility.py --tier full` | `docs/reproduction-coverage.json`, `docs/reproduction-coverage.md` |
 | Figures 1, 3, 4 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
 | Figure 2 — Spearman ranking curves | `scripts/make_report.py` | `results/figures/fig2_ranking__<split>.png` |
 | Figure 5 — in-domain vs generic (§6.4) | `scripts/make_report.py` | `results/figures/fig_indomain__<split>.png` |
@@ -116,6 +120,9 @@ python scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold --save-preds
 python scripts/analyse_indomain.py                       # -> tables 10, 11
 python scripts/analyse_endpoints.py                      # -> table14
 python scripts/analyse_h2.py                             # -> tables 15, 16
+python scripts/run_finetune.py --arms T2v                # Amendment 4 (~3.7 h)
+python scripts/run_finetune.py --arms T4ft T5ft --sizes 347   # H3 (~3.1 h)
+python scripts/analyse_amended.py                        # -> tables 17, 18
 python scripts/render_manuscript_tables.py               # -> manuscript tables
 make verify                                              # -> every check below
 ```
