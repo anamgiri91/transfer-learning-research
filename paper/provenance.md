@@ -77,7 +77,7 @@ image exists and that the visible numbers run 1..N.
 Bit-reproducibility is verified on every `make verify-repro`, not once by hand:
 `eva71_2a.csv`, `indomain_3c.csv` and all 30 split files are byte-identical,
 the 360 re-fitted baseline metric files match to ~1e-15 relative, and the data
-rows of all 23 tables are byte-identical. The nine figures are
+rows of all 24 tables are byte-identical. The nine figures are
 regenerated but **not verified**: they are gitignored as regenerable, so a
 reconstruction has no committed copy to diff against, and matplotlib PNG output
 is not byte-stable across environments in any case. The transfer arms'

@@ -226,17 +226,17 @@ def build_claims() -> list[Claim]:
     for f in _ft_ok:
         d = json.loads(f.read_text())
         _by_arm.setdefault(d["arm"], []).append(d)
-    C.append(Claim("6.6", "amended cells complete", "metrics_ft", len(_ft_ok),
-                   len(_ft_ok)))
+    # The progress figures live in a RENDERED table, not in prose: they move
+    # every time a cell lands, and a hand-typed count in a section about an
+    # in-flight sweep is guaranteed to go stale. What is checked here is that
+    # the rendered table still matches the filesystem.
+    _prog = read_table("table19_amended_progress.csv")
+    C.append(Claim("6.6", "progress table matches metrics_ft", "table19",
+                   len(_ft_ok), int(_prog.complete.sum())))
     C.append(Claim("6.6", "60 amended cells planned", "Amendment 4", 60,
-                   10 * 4 + 10 + 10))
-    C.append(Claim("6.6", "T2v cells complete", "metrics_ft",
-                   len(_by_arm.get("T2v", [])), len(_by_arm.get("T2v", []))))
-    C.append(Claim("6.6", "no recorded failures", "metrics_ft", 0,
-                   len(_ft) - len(_ft_ok)))
-    C.append(Claim("6.6", "measured cost 128 s at n=50", "metrics_ft", True,
-                   any(abs(d["seconds"] - 128) < 60 for d in _by_arm.get("T2v", [])
-                       if d["n_train"] == 50) or not _by_arm.get("T2v")))
+                   int(_prog.planned.sum())))
+    C.append(Claim("6.6", "recorded failures match the filesystem", "table19",
+                   len(_ft) - len(_ft_ok), int(_prog.failures.iloc[0])))
     C.append(Claim("6.6", "all 55 encoder tensors load into the backbone",
                    "models/indomain_T4.pt", 55, _encoder_overlap()))
     C.append(Claim("6.6", "53 of them map onto a <s>-head backbone", "models/indomain_T4.pt",

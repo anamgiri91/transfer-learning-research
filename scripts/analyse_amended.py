@@ -192,6 +192,13 @@ def main() -> int:
     args = ap.parse_args()
 
     comp = completeness()
+    # Always written, complete or not. §6.6 renders it, so the manuscript's
+    # progress figures update with `make report` instead of being hand-typed
+    # into prose that goes stale every time a cell lands.
+    comp_out = comp.assign(failures=len(failures()))
+    write(comp_out, TABLES / "table19_amended_progress.csv",
+          "Amendment 4 sweep completeness. 10 seeds per cell, no stopping rule; "
+          "every planned cell is reported on completion, favourable or not")
     print("== completeness (Amendment 4 fixes 10 seeds, no stopping rule) ==")
     print(comp.to_string(index=False))
     fails = failures()

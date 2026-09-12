@@ -1473,7 +1473,27 @@ the figure would be 53.) It is still not
 `plan.md`'s `T4`, which was specified for the 3C target Amendment 1 removed.
 
 **Status: incomplete at the time of writing, and no statistics are reported
-until it is not.** 15 of 60 planned cells have run; `analyse_amended.py` exits
+until it is not.**
+
+<!-- TABLE:amended_progress START -->
+| Arm | Size | planned | complete | missing | failures |
+|---|---|---|---|---|---|
+| T2v | n = 50 | 10 | 5 | 5 | 0 |
+| T2v | n = 100 | 10 | 5 | 5 | 0 |
+| T2v | n = 250 | 10 | 5 | 5 | 0 |
+| T2v | n = 347 | 10 | 4 | 6 | 0 |
+| T4ft | n = 347 | 10 | 0 | 10 | 0 |
+| T5ft | n = 347 | 10 | 0 | 10 | 0 |
+| **total** |  | **60** | **19** | **41** | **0** |
+<!-- TABLE:amended_progress END -->
+
+`analyse_amended.py` exits without computing a test statistic while any
+planned cell is missing, because a table summarising whichever seeds happen to
+have finished is a stopping rule introduced by accident. Measured cost is 128 s
+per cell at n = 50 and 566 s at n = 347, so the sweep is ≈ 7 h on the available
+hardware. Every planned cell will be reported, including unfavourable ones.
+
+ `analyse_amended.py` exits
 without computing a test statistic while any planned cell is missing, because a
 table summarising whichever seeds happen to have finished is a stopping rule
 introduced by accident. Measured cost is 128 s per cell at n = 50 and 566 s at
@@ -1900,7 +1920,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **421 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **419 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2019,7 +2039,7 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
 - **Reconstructed — the artefacts a stage rewrites.** Watching **1,787**
   artefacts in total, a full-tier run **reconstructs 1,495** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
-  every arm except the ChemBERTa fine-tune, all 23 tables and 9 figures.
+  every arm except the ChemBERTa fine-tune, all 24 tables and 9 figures.
 - **Compared only — 292 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
@@ -2079,7 +2099,7 @@ The stage table below was the original hand check:
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
-| all 23 tables in `results/tables/` | data rows byte-identical |
+| all 24 tables in `results/tables/` | data rows byte-identical |
 | all 9 figures in `results/figures/` | regenerated; **no committed baseline** (gitignored as regenerable), so not verified |
 
 Determinism comes from seeding Python, NumPy and torch per run

@@ -205,6 +205,19 @@ def table_der_uncertainty(split="scaffold") -> str:
                 "median DER given crossing", "95% CI given crossing"], rows)
 
 
+def table_amended_progress() -> str:
+    """Sweep completeness for the Amendment 4 arms, generated not typed."""
+    df = _read("table19_amended_progress.csv")
+    rows = [[r.arm, f"n = {int(r.n_train)}", str(int(r.planned)),
+             str(int(r.complete)), str(int(r.missing)), str(int(r.failures))]
+            for r in df.itertuples()]
+    tot = df[["planned", "complete", "missing"]].sum()
+    rows.append(["**total**", "", f"**{int(tot.planned)}**",
+                 f"**{int(tot.complete)}**", f"**{int(tot.missing)}**",
+                 f"**{int(df.failures.iloc[0])}**"])
+    return _md(["Arm", "Size", "planned", "complete", "missing", "failures"], rows)
+
+
 def table_contamination() -> str:
     df = _read("table5_contamination.csv")
     rows = [[r.scope, r.split, str(int(r.n)), str(int(r.n_in_pubchem)),
@@ -440,6 +453,7 @@ RENDERERS = {
     "der": table_der,
     "h2_interaction": table_h2_interaction,
     "der_uncertainty": table_der_uncertainty,
+    "amended_progress": table_amended_progress,
     "surrogate": table_surrogate,
     "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,
