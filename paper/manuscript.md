@@ -2236,16 +2236,21 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
   `docs/input-checksums.json` records a SHA-256 for each; the check confirms
   the bytes here are the bytes the results were built from, and can do no more
   than that. Obtaining them is a precondition of reproducing the study.
-- **Reconstructed — the artefacts a stage rewrites.** Watching **1,787**
-  artefacts in total, a full-tier run **reconstructs 1,495** of them: the
+- **Reconstructed — the artefacts a stage rewrites.** Watching **1,912**
+  artefacts in total, a full-tier run **reconstructs 1,500** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
   every arm except the ChemBERTa fine-tune, all 28 tables and 9 figures.
-- **Compared only — 292 files no executed stage rewrote.** Inputs to the check,
+- **Compared only — 412 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
 A further **329 artefacts are regenerated with no committed baseline to diff
 against**: the 9 figures, gitignored as regenerable, and 320 prediction files,
-because predictions were only ever committed for the scaffold split. Until
+because predictions were only ever committed for the scaffold split. The 120
+Amendment 4 artefacts — 60 metric files and 60 prediction bundles — are
+**compared, not regenerated**: re-running those fine-tunes costs ~7 h, so the
+training is declared unexecuted while the five tables derived from them are
+reconstructed by the `analyse_amended` stage. The analysis is verified; the
+training behind it is verified only as committed bytes. Until
 2026-09-12 this section claimed all nine figures reproduce byte-identically;
 that was checked against uncommitted local copies by an in-place run, and
 against a committed baseline there is nothing to check. It is now reported as
@@ -2259,7 +2264,7 @@ repository has now hit five times, this time inside the checker written to
 prevent it. Stages declare the artefacts they own, those are cleared first, and
 a stage that fails to rewrite what it cleared fails as `DISAPPEARED`.
 
-**How the 1,495 reconstructions compare** falls into three categories that are
+**How the 1,500 reconstructions compare** falls into three categories that are
 not interchangeable. Every run reports the split; the counts themselves are
 **not stable between runs** and are deliberately not quoted as a fixed number
 here, because which files land in the second and third categories depends on

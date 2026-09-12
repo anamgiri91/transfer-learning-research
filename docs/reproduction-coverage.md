@@ -25,7 +25,7 @@ study; they are not redistributed here because of size.
 
 ### 2. Reconstructed — rebuilt by a stage and diffed against an immutable baseline
 
-A full-tier run watches **1,787** artefacts and **reconstructs 1,495**: the
+A full-tier run watches **1,912** artefacts and **reconstructs 1,500**: the
 curated datasets, all 30 split files, the metric files and prediction bundles
 of every arm except the ChemBERTa fine-tune, and all 23 tables.
 
@@ -47,7 +47,7 @@ scheduling; the stable claim is the bound in the third row.
 
 ### 3. Compared only, and no baseline
 
-**292** watched files that no executed stage rewrote — inputs to the check, not
+**412** watched files that no executed stage rewrote — inputs to the check, not
 outputs of it.
 
 **329** artefacts are regenerated with **no committed baseline to diff
@@ -83,7 +83,7 @@ tolerance.
 | `pretrain_indomain.py`, six encoders | 796–934 s each, ~1.4 h | encoders covered as supplied inputs by checksum (identity, not derivation) |
 | `tune_arms.py`, 41 tuned cells | 101 min | declared unexecuted |
 | `measure_contamination.py` → `table5` | needs PubChem | the one committed table with no offline reconstruction path |
-| `run_finetune.py` (Amendment 4 arms) | ~3.7 h per arm | outputs live in `results/metrics_ft/`, outside the watched set until the arms are complete |
+| `run_finetune.py`, 60 Amendment 4 cells | ~7 h total | training **not** re-executed; the 60 metric files and 60 prediction bundles are committed and compared, and tables 17–21 derived from them **are** reconstructed by the `analyse_amended` stage |
 
 ## Total cost of the study
 
