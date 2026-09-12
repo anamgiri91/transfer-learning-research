@@ -229,25 +229,47 @@ def table_amended_curve() -> str:
 
 
 def table_amended_contrasts() -> str:
+    """The amended family. delta = arm - reference; POSITIVE means arm worse."""
     df = _read("table18_amended_contrasts.csv")
-    rows = [[f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
-             f"{r.median_delta:+.4f}", f"{int(r.arm_better_in_seeds)}/{int(r.n_seeds)}",
-             f"{r.p_raw:.4f}", f"{r.p_holm:.4f}", r.verdict] for r in df.itertuples()]
-    return _md(["Contrast", "Size", "median ΔRMSE", "arm better in",
-                "p raw", "p Holm", "verdict"], rows)
+    rows = []
+    for r in df.itertuples():
+        if r.status != "complete":
+            rows.append([f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
+                         "—", "—", "—", "—", "—", "*pending*"])
+            continue
+        rows.append([
+            f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
+            f"{r.median_paired_delta:+.4f}",
+            f"[{r.paired_ci_lo:+.4f}, {r.paired_ci_hi:+.4f}]",
+            f"{int(r.arm_worse_in_seeds)}/{int(r.n_seeds)}",
+            f"{r.p_raw:.4f}", f"{r.p_adjusted:.4f}", r.verdict])
+    return _md(["Contrast", "Size", "median paired ΔRMSE (+ = arm worse)",
+                "95% CI", "arm worse in", "p raw", "p adj (m=7)", "verdict"], rows)
+
+
+def table_per_seed() -> str:
+    df = _read("table21_per_seed_finetune.csv")
+    rows = []
+    for r in df.itertuples():
+        seed = "**median**" if str(r.seed) == "median" else str(int(float(r.seed)))
+        rows.append([seed, f"{r.B1:.4f}", f"{r.T2:.4f}", f"{r.T2v:.4f}",
+                     f"{r.delta_T2_minus_B1:+.4f}", f"{r.delta_T2v_minus_B1:+.4f}",
+                     f"{r.delta_T2v_minus_T2:+.4f}"])
+    return _md(["Seed", "B1", "T2", "T2v", "T2−B1", "T2v−B1", "T2v−T2"], rows)
 
 
 def table_amended_h2() -> str:
     df = _read("table20_amended_h2_slope.csv")
     r = df.iloc[0]
     rows = [["T2 (untuned, fixed 40 epochs)", f"{r['untuned_T2_median_slope']:+.4f}",
-             "—", "0/10", "0.0020", "slope < 0: contrary to H2"],
+             "—", "0/10", "0.0020", "—"],
             ["T2v (validation-selected)", f"{r['median_slope']:+.4f}",
              f"[{r['slope_ci_lo']:+.4f}, {r['slope_ci_hi']:+.4f}]",
              f"{int(r['slope_positive_in_seeds'])}/{int(r['n_seeds'])}",
-             f"{r['p_raw']:.4f}", r["h2_verdict"]]]
-    return _md(["Condition", "median slope", "95% CI", "slope > 0 in", "p raw",
-                "verdict"], rows)
+             f"{r['p_raw']:.4f}",
+             f"{r['p_holm_pooled_with_published']:.4f}"]]
+    return _md(["Condition", "median slope", "95% CI", "slope > 0 in",
+                "p raw", "p Holm pooled over all 8 slope tests"], rows)
 
 
 def table_contamination() -> str:
@@ -489,6 +511,7 @@ RENDERERS = {
     "amended_curve": table_amended_curve,
     "amended_contrasts": table_amended_contrasts,
     "amended_h2": table_amended_h2,
+    "per_seed": table_per_seed,
     "surrogate": table_surrogate,
     "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,

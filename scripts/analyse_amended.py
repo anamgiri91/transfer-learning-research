@@ -78,13 +78,23 @@ def completeness() -> pd.DataFrame:
 
 
 def wilcoxon(a: np.ndarray, b: np.ndarray) -> tuple[float, str]:
+    """Paired signed-rank p at full precision, and the method SciPy selected.
+
+    The statistic uses the SIGNS of the paired differences together with the
+    RANKS OF THEIR ABSOLUTE VALUES -- it is not a sign test, and it is not
+    indifferent to magnitude; it is indifferent to the *scale* of the
+    magnitudes, responding only to their rank order.
+    """
     d = a - b
     if not np.any(d != 0):
-        return 1.0, "degenerate"
+        return 1.0, "degenerate (all differences zero)"
     nz = d[d != 0]
-    ties = len(np.unique(np.abs(nz))) < len(nz)
-    method = ("exhaustive permutations" if (ties or len(nz) < len(d))
-              else "exact") if len(nz) <= 13 else "asymptotic"
+    has_ties = len(np.unique(np.abs(nz))) < len(nz)
+    has_zeros = len(nz) < len(d)
+    if has_ties or has_zeros:
+        method = "exhaustive permutations" if len(nz) <= 13 else "asymptotic"
+    else:
+        method = "exact" if len(nz) <= 50 else "asymptotic"
     return float(stats.wilcoxon(a, b).pvalue), method
 
 
@@ -135,45 +145,140 @@ def curve_table(M) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# The amended RMSE family, fixed by plan.md Amendment 4's erratum BEFORE any
+# H3 result was analysed. Seven contrasts. The size is 7 whether or not all
+# seven have finished: correcting over however many happen to be complete would
+# shrink the family as a side effect of scheduling.
+AMENDED_FAMILY = [
+    ("T2v", "B1", 50), ("T2v", "B1", 100), ("T2v", "B1", 250), ("T2v", "B1", 347),
+    ("T4ft", "T2v", 347), ("T5ft", "T2v", 347), ("T2v", "T2", 347),
+]
+FAMILY_M = len(AMENDED_FAMILY)
+
+
+def paired_ci(d: np.ndarray, n_boot: int = 10000, seed: int = 0) -> tuple[float, float]:
+    """Percentile bootstrap over seeds for the median paired difference."""
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(d), size=(n_boot, len(d)))
+    draws = np.median(d[idx], axis=1)
+    return tuple(float(v) for v in np.percentile(draws, [2.5, 97.5]))
+
+
 def contrasts(M) -> pd.DataFrame:
-    """The amended family: paired, Holm-corrected within itself, reported apart
-    from the pre-registered families rather than merged into them."""
+    """The amended family: paired, corrected within itself at m = 7, reported
+    apart from the pre-registered families rather than merged into them.
+
+    SIGN CONVENTION, stated once and used everywhere in this file:
+
+        delta(seed) = RMSE_arm(seed) - RMSE_reference(seed)
+
+    so **positive delta means the arm is WORSE** (RMSE is lower-is-better).
+    `median_delta` is the median of those per-seed differences -- a paired
+    quantity -- and is NOT the difference between the two marginal medians,
+    which is reported separately as `marginal_median_diff` because the two can
+    disagree in sign (§5.4 documents a case where they do).
+
+    P-values are carried at full precision into the correction and rounded
+    only for display: rounding a p to 4 dp before Holm can change which
+    hypothesis is rejected.
+    """
     b1 = load_published("B1_ecfp_histgb")
     t2 = load_published("T2_chemberta_full_finetune")
     rows = []
 
-    def add(arm, ref_name, get_ref, n, what):
-        if not all((s, n) in M.get(arm, {}) for s in SEEDS):
-            return
-        a = np.array([M[arm][(s, n)]["metrics"]["rmse"] for s in SEEDS])
-        try:
-            b = np.array([get_ref(s, n) for s in SEEDS])
-        except KeyError:
-            return
-        p, method = wilcoxon(a, b)
-        rows.append(dict(arm=arm, reference=ref_name, n_train=n, what=what,
-                         n_seeds=len(SEEDS),
-                         median_delta=round(float(np.median(b - a)), 4),
-                         arm_better_in_seeds=int((a < b).sum()),
-                         wilcoxon_method=method, p_raw=round(p, 4)))
+    def series(arm, n):
+        if arm == "B1":
+            return np.array([b1[(s, n)]["metrics"]["rmse"] for s in SEEDS])
+        if arm == "T2":
+            return np.array([t2[(s, n)]["metrics"]["rmse"] for s in SEEDS])
+        if all((s, n) in M.get(arm, {}) for s in SEEDS):
+            return np.array([M[arm][(s, n)]["metrics"]["rmse"] for s in SEEDS])
+        return None
 
-    for n in SIZES:
-        add("T2v", "B1", lambda s, k: b1[(s, k)]["metrics"]["rmse"], n,
-            "corrected generic fine-tune vs the baseline (H2/H1)")
-    add("T4ft", "T2v", lambda s, k: M["T2v"][(s, k)]["metrics"]["rmse"], 347,
-        "in-domain vs generic pretraining, adaptation matched (H3, pre-registered form)")
-    add("T5ft", "T2v", lambda s, k: M["T2v"][(s, k)]["metrics"]["rmse"],
-        347, "chained vs generic pretraining, adaptation matched (H3)")
-    add("T2v", "T2", lambda s, k: t2[(s, k)]["metrics"]["rmse"], 347,
-        "two conditions: schedule AND readout differ, not an isolation")
+    what = {
+        ("T2v", "B1"): "corrected generic fine-tune vs the baseline (H1)",
+        ("T4ft", "T2v"): "in-domain vs generic pretraining, adaptation matched "
+                         "(H3, the pre-registered comparison form)",
+        ("T5ft", "T2v"): "chained vs generic pretraining, adaptation matched (H3)",
+        ("T2v", "T2"): "two conditions: schedule AND readout differ, not an isolation",
+    }
+    for arm, ref, n in AMENDED_FAMILY:
+        a, b = series(arm, n), series(ref, n)
+        if a is None or b is None:
+            rows.append(dict(arm=arm, reference=ref, n_train=n,
+                             what=what[(arm, ref)], n_seeds=0, status="pending"))
+            continue
+        d = a - b                       # positive => arm worse
+        p, method = wilcoxon(a, b)
+        lo, hi = paired_ci(d)
+        rows.append(dict(
+            arm=arm, reference=ref, n_train=n, what=what[(arm, ref)],
+            n_seeds=len(SEEDS), status="complete",
+            median_paired_delta=float(np.median(d)),
+            paired_ci_lo=lo, paired_ci_hi=hi,
+            marginal_median_diff=float(np.median(a) - np.median(b)),
+            arm_better_in_seeds=int((d < 0).sum()),
+            arm_worse_in_seeds=int((d > 0).sum()),
+            ties=int((d == 0).sum()),
+            wilcoxon_method=method, p_raw=float(p)))
 
     df = pd.DataFrame(rows)
-    if not df.empty:
-        df["p_holm"] = holm(df.p_raw.to_numpy(float)).round(4)
-        df["verdict"] = np.where(df.p_holm > 0.05, "inconclusive",
-                                 np.where(df.median_delta > 0, "arm better",
-                                          "arm worse"))
+    done = df.status == "complete"
+    df["family_m"] = FAMILY_M
+    df["family_complete"] = bool(done.all())
+    if done.any():
+        if done.all():
+            adj = np.full(len(df), np.nan)
+            adj[done.to_numpy()] = holm(df.loc[done, "p_raw"].to_numpy(float))
+            df["p_adjusted"] = adj
+            df["adjustment"] = np.where(done, "Holm, m=7 (family complete)", "")
+        else:
+            # Valid upper bound on the Holm adjustment with the family
+            # incomplete: no assignment of the missing p-values can make the
+            # Holm value exceed p_raw * m.
+            df["p_adjusted"] = np.where(
+                done, np.minimum(1.0, df.p_raw.astype(float) * FAMILY_M), np.nan)
+            df["adjustment"] = np.where(
+                done, f"Bonferroni bound, m={FAMILY_M} (family incomplete)", "")
+        df["verdict"] = np.where(
+            ~done, "pending",
+            np.where(df.p_adjusted > 0.05, "no detectable difference",
+                     np.where(df.median_paired_delta < 0, "arm better", "arm worse")))
     return df
+
+
+def per_seed_table(M) -> pd.DataFrame:
+    """Per-seed RMSE for B1, T2 and T2v at full data, with both differences.
+
+    Written because the two "differences" in this paper are different
+    quantities and a reader has to be able to see them side by side:
+
+        delta_T2v_B1(seed) = RMSE_T2v(seed) - RMSE_B1(seed)   -- PAIRED
+        positive => T2v worse on that seed
+
+    The median of that column is the paired effect the Wilcoxon tests. The
+    difference between the two columns' medians is the MARGINAL difference, and
+    the two are not the same number -- §5.4 already documents a case where they
+    disagree in sign.
+    """
+    if not all((s, 347) in M.get("T2v", {}) for s in SEEDS):
+        return pd.DataFrame()
+    b1 = load_published("B1_ecfp_histgb")
+    t2 = load_published("T2_chemberta_full_finetune")
+    rows = []
+    for s in SEEDS:
+        r_b1 = b1[(s, 347)]["metrics"]["rmse"]
+        r_t2 = t2[(s, 347)]["metrics"]["rmse"]
+        r_t2v = M["T2v"][(s, 347)]["metrics"]["rmse"]
+        rows.append(dict(seed=s, B1=r_b1, T2=r_t2, T2v=r_t2v,
+                         delta_T2_minus_B1=r_t2 - r_b1,
+                         delta_T2v_minus_B1=r_t2v - r_b1,
+                         delta_T2v_minus_T2=r_t2v - r_t2))
+    df = pd.DataFrame(rows)
+    summary = {"seed": "median"}
+    for c in df.columns[1:]:
+        summary[c] = float(np.median(df[c]))
+    return pd.concat([df, pd.DataFrame([summary])], ignore_index=True)
 
 
 def h2_slope(M) -> pd.DataFrame:
@@ -203,6 +308,21 @@ def h2_slope(M) -> pd.DataFrame:
     coef, _, _ = h2.pooled_interaction(MM, "T2v", SEEDS)
     p, method, n_zero = h2.wilcoxon_with_method(slopes)
     lo, hi = h2.boot_ci(slopes)
+
+    # Multiplicity, both ways, because neither alone is the whole story.
+    #
+    # Within the amended set this is the ONLY slope test, so there is nothing
+    # to correct for -- plan.md Amendment 4's erratum fixes that. Reporting
+    # only that would be convenient, so the pooled figure is given too: Holm
+    # across this slope and the seven published slope tests of §5.3, as a
+    # sensitivity analysis. It is NOT merged into §5.3's family, because
+    # re-correcting pre-registered results retroactively is the failure
+    # recorded on 2026-09-02.
+    pub = pd.read_csv("results/tables/table15_h2_interaction.csv", comment="#")
+    pub = pub[pub.split == "scaffold"]
+    pooled_in = np.concatenate([pub.p_raw.to_numpy(float), [p]])
+    pooled = h2.holm(pooled_in)[-1]
+
     return pd.DataFrame([dict(
         arm="T2v", split="scaffold", n_seeds=len(SEEDS),
         median_slope=round(float(np.median(slopes)), 4),
@@ -211,8 +331,13 @@ def h2_slope(M) -> pd.DataFrame:
         pooled_interaction_coef=round(coef, 4),
         hodges_lehmann=round(h2.hodges_lehmann(slopes), 4),
         slope_positive_in_seeds=int((slopes > 0).sum()),
-        n_zero_slopes=n_zero, wilcoxon_method=method, p_raw=round(p, 4),
-        h2_verdict=("inconclusive" if p > 0.05 else
+        n_zero_slopes=n_zero, wilcoxon_method=method,
+        p_raw=float(p),
+        amended_family_m=1,
+        p_adjusted_amended=float(p),      # m = 1: adjustment is the identity
+        p_holm_pooled_with_published=float(pooled),
+        pooled_family_m=int(len(pooled_in)),
+        h2_verdict=("inconclusive" if pooled > 0.05 else
                     "slope > 0: consistent with H2" if np.median(slopes) > 0
                     else "slope < 0: contrary to H2"),
         untuned_T2_median_slope=-0.1764,
@@ -265,6 +390,13 @@ def main() -> int:
 
     M = load_ft()
     cur, con, slope = curve_table(M), contrasts(M), h2_slope(M)
+    seeds_tbl = per_seed_table(M)
+    if not seeds_tbl.empty:
+        write(seeds_tbl, TABLES / "table21_per_seed_finetune.csv",
+              "per-seed RMSE at n=347. delta_X_minus_Y = RMSE_X - RMSE_Y on the "
+              "same seed; POSITIVE means X is worse. The median of a delta column "
+              "is the PAIRED effect; the difference of two arms' medians is the "
+              "MARGINAL difference, and they are not the same quantity")
     write(cur, TABLES / "table17_amended_finetune.csv",
           "Amendment 4 arms: validation-selected lr and checkpoint, scaffold split, "
           "seeds 0-9. AMENDED, not pre-registered")

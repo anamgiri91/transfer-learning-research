@@ -250,8 +250,13 @@ def build_claims() -> list[Claim]:
                        f"{_sl.slope_ci_lo}/{_sl.slope_ci_hi}"))
         C.append(Claim("6.6", "T2v slope positive in 1 of 10 seeds", "table20", 1,
                        int(_sl.slope_positive_in_seeds)))
-        C.append(Claim("6.6", "T2v slope p = 0.0059", "table20", 0.0059,
-                       float(_sl.p_raw)))
+        C.append(Claim("6.6", "T2v slope p_raw = 0.0059", "table20", 0.0059,
+                       round(float(_sl.p_raw), 4)))
+        C.append(Claim("6.6", "T2v slope Holm 0.0352 pooled over 8 slope tests",
+                       "table20", 0.0352,
+                       round(float(_sl.p_holm_pooled_with_published), 4)))
+        C.append(Claim("6.6", "pooled slope family is 8", "table20", 8,
+                       int(_sl.pooled_family_m)))
         C.append(Claim("6.6", "untuned T2 slope -0.1764 for comparison", "table20",
                        -0.1764, float(_sl.untuned_T2_median_slope)))
     if Path("results/tables/table17_amended_finetune.csv").exists():
@@ -273,21 +278,43 @@ def build_claims() -> list[Claim]:
                            .median_selected_lr.nunique())))
     if Path("results/tables/table18_amended_contrasts.csv").exists():
         _t = read_table("table18_amended_contrasts.csv")
-        _b1 = _t[(_t.reference == "B1")]
-        C.append(Claim("6.6", "T2v worse than B1 at all four sizes", "table18", 4,
-                       int((_b1.p_holm <= 0.05).sum())))
-        C.append(Claim("6.6", "largest T2v-vs-B1 Holm p is 0.012", "table18", 0.0118,
-                       float(_b1.p_holm.max())))
-        C.append(Claim("6.6", "T2v full-data delta -0.0481", "table18", -0.0481,
-                       float(_b1[_b1.n_train == 347].median_delta.iloc[0])))
-        C.append(Claim("6.6", "T2v loses in 10 of 10 seeds at full data", "table18", 0,
-                       int(_b1[_b1.n_train == 347].arm_better_in_seeds.iloc[0])))
+        _t = _t[_t.status == "complete"]
+        _b1 = _t[_t.reference == "B1"]
+        C.append(Claim("6.6", "amended family size is 7", "table18", 7,
+                       int(read_table("table18_amended_contrasts.csv").family_m.iloc[0])))
+        C.append(Claim("6.6", "T2v worse than B1 at all four sizes under the bound",
+                       "table18", 4, int((_b1.p_adjusted <= 0.05).sum())))
+        C.append(Claim("6.6", "adjusted values 0.014/0.014/0.041/0.014", "table18",
+                       "0.014,0.014,0.041,0.014",
+                       ",".join(f"{v:.3f}" for v in
+                                _b1.sort_values("n_train").p_adjusted)))
+        C.append(Claim("6.6", "T2v full-data paired delta +0.048", "table18", 0.0481,
+                       float(_b1[_b1.n_train == 347].median_paired_delta.iloc[0])))
+        C.append(Claim("6.6", "T2v marginal diff +0.053 differs from paired",
+                       "table18", 0.053,
+                       round(float(_b1[_b1.n_train == 347]
+                                   .marginal_median_diff.iloc[0]), 3)))
+        C.append(Claim("6.6", "T2v worse on 10 of 10 seeds at full data", "table18", 10,
+                       int(_b1[_b1.n_train == 347].arm_worse_in_seeds.iloc[0])))
         _v = _t[_t.reference == "T2"]
         if len(_v):
-            C.append(Claim("6.6", "T2v vs T2 is 5 of 10, p = 0.70", "table18", 5,
-                           int(_v.arm_better_in_seeds.iloc[0])))
-            C.append(Claim("6.6", "T2v vs T2 p = 0.6953", "table18", 0.6953,
-                           float(_v.p_raw.iloc[0])))
+            C.append(Claim("6.6", "T2v vs T2 paired median -0.013", "table18", -0.013,
+                           round(float(_v.median_paired_delta.iloc[0]), 3)))
+            C.append(Claim("6.6", "T2v vs T2 CI [-0.066, +0.053]", "table18",
+                           "-0.066/0.053",
+                           f"{_v.paired_ci_lo.iloc[0]:.3f}/{_v.paired_ci_hi.iloc[0]:.3f}"))
+            C.append(Claim("6.6", "T2v vs T2 p_raw 0.695", "table18", 0.695,
+                           round(float(_v.p_raw.iloc[0]), 3)))
+            C.append(Claim("6.6", "T2v vs T2 adjusted 1.000", "table18", 1.0,
+                           float(_v.p_adjusted.iloc[0])))
+    if Path("results/tables/table21_per_seed_finetune.csv").exists():
+        _ps = read_table("table21_per_seed_finetune.csv")
+        _med = _ps[_ps.seed.astype(str) == "median"].iloc[0]
+        C.append(Claim("6.6", "T2 paired median deficit +0.088", "table21", 0.088,
+                       round(float(_med.delta_T2_minus_B1), 3)))
+        C.append(Claim("6.6", "T2 worse on 7 of 10 seeds", "table21", 7,
+                       int((_ps[_ps.seed.astype(str) != "median"]
+                            .delta_T2_minus_B1 > 0).sum())))
     C.append(Claim("6.6", "recorded failures match the filesystem", "table19",
                    len(_ft) - len(_ft_ok), int(_prog.failures.iloc[0])))
     C.append(Claim("6.6", "all 55 encoder tensors load into the backbone",

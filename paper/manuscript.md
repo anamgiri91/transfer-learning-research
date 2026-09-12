@@ -1482,9 +1482,9 @@ until it is not.**
 | T2v | n = 100 | 10 | 10 | 0 | 0 |
 | T2v | n = 250 | 10 | 10 | 0 | 0 |
 | T2v | n = 347 | 10 | 10 | 0 | 0 |
-| T4ft | n = 347 | 10 | 4 | 6 | 0 |
+| T4ft | n = 347 | 10 | 5 | 5 | 0 |
 | T5ft | n = 347 | 10 | 0 | 10 | 0 |
-| **total** |  | **60** | **44** | **16** | **0** |
+| **total** |  | **60** | **45** | **15** | **0** |
 <!-- TABLE:amended_progress END -->
 
 `analyse_amended.py` withholds any contrast still missing a planned cell —
@@ -1495,6 +1495,18 @@ running and every number they produce will be reported, favourable or not.
 
 #### What the corrected fine-tune shows (H1, and H2 again)
 
+**Sign convention for this subsection**, because two different differences
+appear and they are not the same quantity. Write
+
+> Δ(seed) = RMSE\_arm(seed) − RMSE\_reference(seed), so **positive Δ means the
+> arm is worse** (RMSE is lower-is-better).
+
+The **median paired Δ** is the median of those per-seed differences and is what
+the signed-rank test is applied to. The **marginal difference** is the gap
+between the two arms' own medians. They are different numbers — for `T2v` vs
+`B1` at full data they are +0.048 and +0.053 — and §5.4 records a case in this
+study where they disagree in *sign*.
+
 <!-- TABLE:amended_curve START -->
 | Arm | Size | RMSE | B1 | T2 (untuned) | median lr | median best epoch | fit/val | median cost |
 |---|---|---|---|---|---|---|---|---|
@@ -1504,58 +1516,99 @@ running and every number they produce will be reported, favourable or not.
 | T2v | n = 347 | 0.656 | 0.603 | 0.662 | 0.0001 | 18 | 295/52 | 515 s |
 <!-- TABLE:amended_curve END -->
 
-The schedule was doing real damage at the small end: at n = 50 the untuned `T2`
-scores 1.232 and `T2v` 0.918. At full data the two are indistinguishable
-(0.656 vs 0.662, 5 of 10 seeds, p = 0.70), so §6.2's diagnosis was right about
-where the artefact lived. Validation-selected learning rate is 1e-4 at every
-size, and the selected epoch falls from a median of 37.5 at n = 50 to 17.5 at
-full data — the fixed 40-epoch schedule was roughly twice too long wherever it
-mattered.
+Per seed at full data, so the paired structure is visible rather than asserted:
+
+<!-- TABLE:per_seed START -->
+| Seed | B1 | T2 | T2v | T2−B1 | T2v−B1 | T2v−T2 |
+|---|---|---|---|---|---|---|
+| 0 | 0.6514 | 0.6068 | 0.6601 | -0.0445 | +0.0087 | +0.0533 |
+| 1 | 0.6338 | 0.7816 | 0.6933 | +0.1478 | +0.0595 | -0.0883 |
+| 2 | 0.6353 | 0.6487 | 0.6669 | +0.0134 | +0.0316 | +0.0182 |
+| 3 | 0.6055 | 0.6878 | 0.6231 | +0.0823 | +0.0176 | -0.0647 |
+| 4 | 0.5275 | 0.6781 | 0.5740 | +0.1506 | +0.0465 | -0.1041 |
+| 5 | 0.6007 | 0.5929 | 0.6521 | -0.0078 | +0.0514 | +0.0592 |
+| 6 | 0.5559 | 0.6755 | 0.6313 | +0.1196 | +0.0754 | -0.0443 |
+| 7 | 0.5370 | 0.6895 | 0.7786 | +0.1525 | +0.2416 | +0.0892 |
+| 8 | 0.4836 | 0.5770 | 0.5334 | +0.0934 | +0.0497 | -0.0436 |
+| 9 | 0.6392 | 0.6328 | 0.6726 | -0.0064 | +0.0334 | +0.0398 |
+| **median** | 0.6031 | 0.6621 | 0.6561 | +0.0878 | +0.0481 | -0.0127 |
+<!-- TABLE:per_seed END -->
 
 <!-- TABLE:amended_contrasts START -->
-| Contrast | Size | median ΔRMSE | arm better in | p raw | p Holm | verdict |
-|---|---|---|---|---|---|---|
-| T2v vs B1 | n = 50 | -0.1898 | 0/10 | 0.0020 | 0.0100 | arm worse |
-| T2v vs B1 | n = 100 | -0.1170 | 0/10 | 0.0020 | 0.0100 | arm worse |
-| T2v vs B1 | n = 250 | -0.0849 | 1/10 | 0.0059 | 0.0118 | arm worse |
-| T2v vs B1 | n = 347 | -0.0481 | 0/10 | 0.0020 | 0.0100 | arm worse |
-| T2v vs T2 | n = 347 | +0.0127 | 5/10 | 0.6953 | 0.6953 | inconclusive |
+| Contrast | Size | median paired ΔRMSE (+ = arm worse) | 95% CI | arm worse in | p raw | p adj (m=7) | verdict |
+|---|---|---|---|---|---|---|---|
+| T2v vs B1 | n = 50 | +0.1898 | [+0.1176, +0.2712] | 10/10 | 0.0020 | 0.0137 | arm worse |
+| T2v vs B1 | n = 100 | +0.1170 | [+0.0410, +0.2995] | 10/10 | 0.0020 | 0.0137 | arm worse |
+| T2v vs B1 | n = 250 | +0.0849 | [+0.0430, +0.1433] | 9/10 | 0.0059 | 0.0410 | arm worse |
+| T2v vs B1 | n = 347 | +0.0481 | [+0.0255, +0.0626] | 10/10 | 0.0020 | 0.0137 | arm worse |
+| T4ft vs T2v | n = 347 | — | — | — | — | — | *pending* |
+| T5ft vs T2v | n = 347 | — | — | — | — | — | *pending* |
+| T2v vs T2 | n = 347 | -0.0127 | [-0.0663, +0.0533] | 5/10 | 0.6953 | 1.0000 | no detectable difference |
 <!-- TABLE:amended_contrasts END -->
 
-**`T2v` is significantly worse than `B1` at every training-set size**, Holm
-p ≤ 0.012 within the amended family. That is a *stronger* negative than the
-published `T2`, which was inconclusive at full data (p = 0.074) — and the
-reason is worth stating, because it is the caveat §4.4 raises about this test.
-`T2v`'s median deficit at full data (−0.048) is **smaller** than `T2`'s
-(−0.088); it reaches significance because it is more *consistent*, losing in
-10 of 10 seeds against `T2`'s 7 of 10. Wilcoxon ranks signs, not magnitudes.
-The corrected arm is closer to the baseline and more reliably behind it.
+**`T2v` is worse than `B1` at every training-set size**, and the conclusion
+does not depend on the family being complete: the adjusted values above are a
+**Bonferroni bound at m = 7** — the size `plan.md` Amendment 4's erratum fixes
+for the amended family, held constant while the H3 contrasts are still running
+so that completion cannot silently shrink it — and all four clear 0.05 under
+that bound (0.014, 0.014, 0.041, 0.014). Holm at m = 7 will be no larger.
+
+**What this does not establish.** `T2v` reaches significance at full data where
+the published `T2` did not (p = 0.074), and the temptation is to read that as
+the corrected schedule producing a firmer deficit. The data do not support it.
+The paired median deficit is *smaller* for `T2v` (+0.048) than for `T2`
+(+0.088); what differs is consistency — `T2v` is worse on 10 of 10 seeds,
+`T2` on 7 of 10. The signed-rank statistic combines the signs of the paired
+differences with the ranks of their absolute values, so it responds to the rank
+order of the magnitudes rather than to their scale, and a smaller but more
+consistent effect can carry stronger evidence. **A change in significance
+between two conditions is not itself evidence that the conditions differ**, and
+the direct test says they do not differ detectably: `T2v` vs `T2` gives a
+paired median of −0.013 with 95% CI [−0.066, +0.053], 5 seeds each way,
+p\_raw = 0.695 and 1.000 adjusted — **no statistically detectable difference**,
+which is not a demonstration of equivalence. No equivalence test was performed
+and no bounds were pre-specified, so the two conditions are simply not
+separated by this study at n = 347.
 
 **H2 survives the correction.** §5.3 declined to advance `T2`'s significant
 anti-H2 slope because it was measured under the artefactual schedule. Measured
 again under a validation-selected one:
 
 <!-- TABLE:amended_h2 START -->
-| Condition | median slope | 95% CI | slope > 0 in | p raw | verdict |
+| Condition | median slope | 95% CI | slope > 0 in | p raw | p Holm pooled over all 8 slope tests |
 |---|---|---|---|---|---|
-| T2 (untuned, fixed 40 epochs) | -0.1764 | — | 0/10 | 0.0020 | slope < 0: contrary to H2 |
-| T2v (validation-selected) | -0.0521 | [-0.0944, -0.0218] | 1/10 | 0.0059 | slope < 0: contrary to H2 |
+| T2 (untuned, fixed 40 epochs) | -0.1764 | — | 0/10 | 0.0020 | — |
+| T2v (validation-selected) | -0.0521 | [-0.0944, -0.0218] | 1/10 | 0.0059 | 0.0352 |
 <!-- TABLE:amended_h2 END -->
 
-The magnitude falls by roughly a factor of three and **the sign and the
-significance survive** (median −0.052, CI [−0.094, −0.022], positive in 1 of 10
-seeds, p = 0.0059). So the fine-tune's deficit really does grow as the training
-set shrinks, and that finding was not the harness talking. It remains an
-amended result on one arm, and it does not change H2 for the frozen probe,
-which is inconclusive (§5.3). Measured cost was 128 s per cell at n = 50 and
-566 s at n = 347.
+Median −0.0521, 95% CI [−0.0944, −0.0218], positive in 1 of 10 seeds,
+**p\_raw = 0.0059**. Multiplicity, stated both ways: within the amended set
+this is the only slope test, so there is nothing to correct for there; pooled
+with the seven published slope tests of §5.3 it is **Holm p = 0.0352** over
+m = 8. It is not merged into §5.3's own family, because re-correcting
+pre-registered results retroactively is a failure this project has already
+recorded once. The finding stands under either treatment.
 
- `analyse_amended.py` exits
-without computing a test statistic while any planned cell is missing, because a
-table summarising whichever seeds happen to have finished is a stopping rule
-introduced by accident. Measured cost is 128 s per cell at n = 50 and 566 s at
-n = 347, so the sweep is ≈ 7 h on the available hardware. No failures have been
-recorded. Every planned cell will be reported, including unfavourable ones.
+So the fine-tune's deficit does grow as the training set shrinks, and that was
+not an artefact of the fixed schedule. **Scope, which is narrow.** This is one
+amended fine-tuning procedure — mean-pooled readout, AdamW, learning rate from
+a three-point grid, checkpoint restored on internal validation — on one
+encoder, one dataset, the scaffold split only, and the four sizes 50/100/250/347.
+It is not evidence that transfer learning fails in low-data settings generally,
+and it does not change H2 for the frozen probe, which remains inconclusive
+(§5.3).
+
+**Where the schedule mattered, and what cannot be attributed to it.** The gap
+between conditions is concentrated at the small end: at n = 50 the untuned `T2`
+scores 1.232 and `T2v` 0.918, while at full data the two are not separated
+(above). But `T2v` changed three things at once relative to `T2` — learning-rate
+selection, checkpoint selection on internal validation, and the readout
+(mean-pooled rather than `<s>`-token). **The improvement at n = 50 cannot be
+attributed to epoch count alone**, and the fall in median selected epoch from
+37.5 at n = 50 to 17.5 at full data describes what validation chose *for this
+arm on this data*; it is not evidence of a generally correct training duration.
+Isolating the schedule would need a fourth arm holding readout and learning
+rate fixed, which was not run.
 
 **One confound is fixed by design and stated now rather than on completion.**
 `T2v` differs from `T2` in both the schedule and the readout — `T2` used a
@@ -1576,8 +1629,8 @@ to have been performed.
 
 | | Planned comparison (`plan.md` §1) | Analysis actually performed | Current conclusion | Remaining gap |
 |---|---|---|---|---|
-| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2), all five endpoints (§5.7) and a corrected fine-tune at every size (§6.6) | **Answered negatively**, and more firmly than before: the frozen probe is significantly worse (Holm p = 0.012), and the corrected fine-tune is significantly worse at **all four** sizes (Holm ≤ 0.012). On precision@10% the untuned fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
-| **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term run for every arm (§5.3), then re-run on a corrected fine-tune (§6.6) | **Split by arm.** Unanswered for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, same on both other splits). **Answered negatively for the fine-tune**: the deficit grows as data shrinks, and the effect survives correcting the schedule (−0.176 untuned → −0.052 validation-selected, p = 0.0059) | The probe's interval is wide enough to hide a real crossover; more seeds would narrow it. `T2v` is one arm on one split |
+| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2), all five endpoints (§5.7) and a corrected fine-tune at every size (§6.6) | **Answered negatively.** The frozen probe is significantly worse (Holm p = 0.012); the corrected fine-tune is worse at **all four** sizes (adjusted ≤ 0.041, Bonferroni bound at m = 7). It is *not* established that the corrected arm is a firmer negative than the untuned one — the two conditions are not separated (p = 0.695). On precision@10% the untuned fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
+| **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term run for every arm (§5.3), then re-run on a corrected fine-tune (§6.6) | **Split by arm.** Unanswered for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, same on both other splits). **Answered negatively for the fine-tune**, scoped to the amended procedure, scaffold split and sizes 50–347: the deficit grows as data shrinks, and survives correcting the schedule (−0.176 untuned → −0.052 validation-selected; p_raw 0.0059, Holm 0.0352 pooled over all 8 slope tests) | The probe's interval is wide enough to hide a real crossover; more seeds would narrow it. `T2v` is one arm on one split |
 | **H3** | Direct arm contrast `T4` vs `T1` — in-domain **fine-tune** vs generic **fine-tune** | **Not performed.** No in-domain fine-tune existed; the study ran probe-vs-probe instead (§6.4), a substituted form | **Suggestive, in a substituted form only.** The chained probe beats the generic probe in 9 of 10 seeds (raw p = 0.006), clearing Benjamini–Hochberg and not Holm | The pre-registered form itself: `T4ft` vs `T2v` — **queued, 0 of 20 cells complete**. And a corpus that is in-domain chemically, not only by protein family |
 | **H4** | Decontamination ablation: re-pretrain with test overlap removed | Performed for the in-domain arms with a size-matched control the protocol did not ask for (§6.5). Impossible for ChemBERTa | **Bounded, not answered.** No evidence overlap inflated the in-domain arms; the decisive contrast is Holm 0.273. Untestable for ChemBERTa, whose 77M corpus is not distributed | A corpus that genuinely overlaps the target chemistry — ours had 0 exact and 0 near-duplicate overlap, so decontamination had almost nothing to remove |
 
@@ -1977,7 +2030,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **437 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **445 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2096,7 +2149,7 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
 - **Reconstructed — the artefacts a stage rewrites.** Watching **1,787**
   artefacts in total, a full-tier run **reconstructs 1,495** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
-  every arm except the ChemBERTa fine-tune, all 27 tables and 9 figures.
+  every arm except the ChemBERTa fine-tune, all 28 tables and 9 figures.
 - **Compared only — 292 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
@@ -2156,7 +2209,7 @@ The stage table below was the original hand check:
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
-| all 27 tables in `results/tables/` | data rows byte-identical |
+| all 28 tables in `results/tables/` | data rows byte-identical |
 | all 9 figures in `results/figures/` | regenerated; **no committed baseline** (gitignored as regenerable), so not verified |
 
 Determinism comes from seeding Python, NumPy and torch per run

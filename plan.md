@@ -141,7 +141,38 @@ Written 2026-09-01; see Amendment 1 and the checklist in §10.
 > | **Schedule** | ≤ 60 epochs, AdamW, batch 16, early stopping at patience 10 on internal-validation RMSE, checkpoint restored from the best validation epoch |
 > | **Recorded per cell** | selected lr, selected epoch, optimizer steps, full validation history, internal train/val sizes, wall-clock, and any failure with its traceback |
 > | **Endpoints** | the five of §4.3, unchanged. Primary RMSE |
-> | **Comparisons** | `T2v` vs `B1` (paired Wilcoxon over seeds, at each size); `T2v` interaction slope vs log₂n for H2; `T4ft` vs `T2v` and `T5ft` vs `T2v` at n = 347 for H3, Holm-corrected within the three-contrast amended family and reported beside the pre-registered families rather than merged into them |
+> | **Comparisons** | `T2v` vs `B1` (paired Wilcoxon over seeds, at each size); `T2v` interaction slope vs log₂n for H2; `T4ft` vs `T2v` and `T5ft` vs `T2v` at n = 347 for H3, Holm-corrected within the amended family (see the erratum below) and reported beside the pre-registered families rather than merged into them |
+>
+> ### Erratum, 2026-09-12 — the size of the amended family
+>
+> Recorded **before any `T4ft` or `T5ft` result was analysed**, because a
+> family resolved after seeing the results it governs is not a family.
+>
+> The row above said "the three-contrast amended family" while enumerating
+> more than three contrasts: `T2v` vs `B1` at four sizes, plus `T4ft` vs `T2v`
+> and `T5ft` vs `T2v`. "Three" was an error — it counted arms, not contrasts.
+>
+> The amended RMSE family is **seven contrasts**: those six, plus `T2v` vs
+> `T2`, which the row did not enumerate but which the implementation runs.
+> Including it is the conservative reading, and a test that was run and then
+> left out of its own family is the exact failure this erratum exists to
+> prevent.
+>
+> Two consequences follow and neither is optional:
+>
+> - **The family size is 7 whether or not all seven have finished.** While the
+>   sweep is incomplete, adjusted values are reported as a Bonferroni bound at
+>   m = 7 — a valid upper bound on the Holm adjustment that cannot be beaten by
+>   whatever the missing tests turn out to be. Correcting over however many
+>   contrasts happen to be complete would shrink the family as a side effect of
+>   scheduling.
+> - **The `T2v` interaction-slope test is not in this family.** It is a slope
+>   against zero, not an arm-vs-arm contrast, and it is the only such test in
+>   the amended set, so within that set there is nothing to correct for. §6.6
+>   also reports it pooled with the seven published slope tests of §5.3 as a
+>   sensitivity analysis, and states both. It is **not** merged into §5.3's
+>   family, because that would retroactively re-correct pre-registered results
+>   — the failure recorded on 2026-09-02.
 > | **Stopping rule** | none. Every planned cell runs; nothing is stopped or extended on the basis of a p-value |
 > | **Reporting rule** | every planned cell is reported, including failures and unfavourable results |
 >
