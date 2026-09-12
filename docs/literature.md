@@ -178,11 +178,19 @@ previously cited the figure to §2.5 and §2.6, neither of which is its source.
 
 ## 3. Evaluation and splitting
 
-### 3.1 Guo, Hernandez-Hernandez, Ballester (2024) — [full text of abstract/landing, read twice]
-*Scaffold Splits Overestimate Virtual Screening Performance.* arXiv:2406.00873.
-<https://arxiv.org/abs/2406.00873> · PDF: <https://arxiv.org/pdf/2406.00873>
-Also in ICANN 2024 proceedings:
-<https://link.springer.com/chapter/10.1007/978-3-031-72359-9_5>
+### 3.1 Guo, Hernandez-Hernandez, Ballester (2025) — [full text of abstract/landing, read twice] — **peer-reviewed version**
+*UMAP-based clustering split for rigorous evaluation of AI models for virtual
+screening on cancer cell lines.* Journal of Cheminformatics **17, 94** (2025).
+DOI 10.1186/s13321-025-01039-8, published 10 June 2025.
+<https://jcheminf.biomedcentral.com/articles/10.1186/s13321-025-01039-8> ·
+PMC: <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12153141/>
+
+Earlier preprint/conference form, cited here until 2026-09-12:
+*Scaffold Splits Overestimate Virtual Screening Performance*, arXiv:2406.00873
+<https://arxiv.org/abs/2406.00873>; ICANN 2024, LNCS
+<https://link.springer.com/chapter/10.1007/978-3-031-72359-9_5>. The peer-reviewed
+journal article supersedes it as the citation of record; author initials
+verified as **Qianrong Guo**, consistent with the 2026-09-02 correction.
 
 *First pass — the claim.* Scaffold splits are widely treated as the realistic
 evaluation, but **molecules with different Bemis–Murcko scaffolds are often
@@ -238,3 +246,55 @@ fingerprint advantage on cliffs, and should be presented as such.
    methods above ~50 compounds — our learning curves start at exactly n=50.
 5. **Non-duplication.** §1.2 confirms the official OpenBind benchmark is
    structure-based, so a ligand-only transfer study is complementary.
+
+
+### 3.3 Praski, Adamczyk, Czech (2025, rev. 2026) — [abstract, verified at source] — **⚠ preprint, not peer-reviewed**
+*Benchmarking Pretrained Molecular Embedding Models For Molecular
+Representation Learning.* arXiv:2508.06199 (submitted 8 Aug 2025; v4
+23 Feb 2026). <https://arxiv.org/abs/2508.06199>
+
+**The most directly threatening paper to this study's novelty, and the reason
+§8.5 exists.** Evaluates **25 pretrained embedding models across 25 datasets** —
+described by its authors as the most extensive comparison of its kind — and
+reports that "nearly all neural models show negligible or no improvement over
+the baseline ECFP molecular fingerprint", with only CLAMP (itself
+fingerprint-based) significantly better. It also raises "concerns about the
+evaluation rigor in existing studies".
+
+**Consequence for this work:** our headline negative — a pretrained chemical
+language model failing to beat ECFP + gradient boosting — is **not novel**. It
+is the expected result given this benchmark, at 1/25th of its scale. Any
+framing of "fingerprints are hard to beat" as a finding of ours would be
+unsupportable, and §8.5 says so explicitly. What remains ours is the regime
+(one target, one assay, 494 compounds, fragment chemistry), the
+decontamination and in-domain arms, and the verification apparatus — not the
+direction of the headline result.
+
+Status note: this is a **preprint**. It has not been peer reviewed, and we do
+not cite it for a number we rely on — only for the position of our own claim
+in the literature, which is a use that survives even if its details change.
+
+### 3.4 Li, Fourches (2020) — [full text via PMC] — **the counterweight**
+*Inductive transfer learning for molecular activity prediction: Next-Gen QSAR
+Models with MolPMoFiT.* Journal of Cheminformatics **12, 27** (2020).
+DOI 10.1186/s13321-020-00430-x ·
+<https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7178569/>
+
+Self-supervised pretraining on ~1M unlabelled ChEMBL molecules, then
+fine-tuning. Reports that "MolPMoFiT models achieved comparable or better
+prediction performances compared to the baselines" and that "with different
+numbers of training data, the MolPMoFiT model always outperforms the model
+trained from scratch". Four datasets: Lipophilicity (4,200), FreeSolv (642),
+HIV (41,127), BBBP (2,039). Baselines include random forest on Morgan
+fingerprints and D-MPNN.
+
+**Consequence for this work:** the positive result our negative has to be
+reconciled with, in the same journal. Two differences matter and are stated in
+§8.5 rather than used to dismiss it. Its smallest dataset (642) is the same
+order as ours (494), so scale alone does not separate us — but FreeSolv is a
+physicochemical property with a smooth structure–property relationship, not a
+single-target single-assay binding set on fragment chemistry. And its
+comparison of pretrained-vs-scratch is *within* one architecture, where ours is
+pretrained-transformer-vs-gradient-boosted-fingerprints; "outperforms the model
+trained from scratch" is a claim our `T0r` control also addresses and does not
+contradict.

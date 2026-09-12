@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro
+.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -79,10 +79,14 @@ verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) scripts/verify_citations.py
 	$(PY) scripts/verify_consistency.py
 
-verify-repro:  ## Re-run every offline stage and diff it against the committed artefacts
-	@# Not part of `verify`: it rewrites artefacts in place (restoring them on
-	@# success) and takes ~45 s, where `verify` is meant to be run constantly.
-	$(PY) scripts/verify_reproducibility.py
+verify-repro:  ## Reconstruct the offline stages in an isolated worktree and diff
+	@# Not part of `verify`: it takes minutes, where `verify` runs constantly.
+	@# Runs in a throwaway git worktree at an immutable ref, so it never writes
+	@# to your tree and a failed run cannot become the next run baseline.
+	$(PY) scripts/verify_reproducibility.py --tier fast
+
+verify-repro-full:  ## As above, plus the transfer arms (~25 min)
+	$(PY) scripts/verify_reproducibility.py --tier full
 
 verify-online:  ## verify, plus check that every cited URL still resolves
 	$(MAKE) verify

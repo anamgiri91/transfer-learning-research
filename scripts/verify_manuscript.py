@@ -987,9 +987,9 @@ def build_claims() -> list[Claim]:
     n_runs = len(list(METRICS.glob("*.json")))
     # Parsed from the abstract rather than mirrored here: a hand-copied count
     # in this file drifts the moment a new arm is run, which it did.
-    stated = re.search(r"with \*?\*?([\d,]+)\*?\*? evaluated runs", MANUSCRIPT.read_text())
+    stated = re.search(r"\(([\d,]+) evaluated runs\)", MANUSCRIPT.read_text())
     C.append(Claim("Abstract", "evaluated runs stated in the abstract", "metrics/*.json",
-                   int(stated.group(1).replace(",", "")) if stated else None, n_runs))
+                   int(stated.group(1).replace(",", "")) if stated else -1, n_runs))
     C.append(Claim("4.1", "10 seeds per cell", "table1", 10,
                    int(read_table("table1_learning_curves__scaffold.csv").n_seeds.min())))
     return C

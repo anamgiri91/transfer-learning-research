@@ -9,127 +9,39 @@ script that produced it.
 
 ## Abstract
 
-Self-supervised pretraining is the default opening move in molecular property
-prediction, but its evidence base is large, noisy benchmarks. We test whether
-it helps in the opposite regime — few hundred compounds, one target, one assay
-— using the OpenBind EV-A71 / CVA16 2A protease structure–affinity release
-(494 curated compounds, 272 scaffolds, maximum replicate spread 0.49 log
-units). Twelve arms are compared on identical materialised splits across
-10 seeds and four training-set sizes, with 1,040 evaluated runs: five
-pre-registered (median predictor; ECFP4 + gradient boosting; RDKit descriptors
-+ random forest; ChemBERTa-2 frozen probe; ChemBERTa-2 full fine-tune) and
-seven added as controls, in-domain arms and decontamination
-ablations (§6.4–6.5).
+**Background.** Self-supervised pretraining is the default opening move in
+molecular property prediction, but its evidence base is large, noisy
+benchmarks. We test whether it helps in the opposite regime — a few hundred
+compounds, one target, one assay — using the OpenBind EV-A71 / CVA16 2A
+protease structure–affinity release: 494 curated compounds, 272 scaffolds,
+maximum replicate spread 0.49 log units.
 
-**On this dataset, pretraining did not help on the primary endpoint — and did
-help on one secondary endpoint, which we report because we pre-registered it.**
-On scaffold-split RMSE the frozen probe is significantly worse than the ECFP4
-baseline (paired Wilcoxon, Holm-corrected p = 0.012) and the fine-tune is also
-worse without reaching significance (p = 0.074, inconclusive at 10 seeds). On
-**precision@10%**, the enrichment view a screening campaign actually consumes,
-the ordering roughly inverts: every transfer arm matches or beats the baseline
-and the fine-tune does so at Holm p = 0.023 within that endpoint's own six-arm
-family (0.50 vs 0.40, better in 9 of 10 seeds) — the same arm that is worst on
-RMSE. **We report that as exploratory and sensitive to the choice of testing
-family.** With 98 test compounds the top decile is 10 molecules, so the
-endpoint is coarse; the advantage is specific to the scaffold split and does
-not replicate on random or Butina; and pooled across all 31 arm-by-endpoint
-tests it is p = 0.0975 — under which pooling nothing in the endpoint set
-survives, the negative results included, so the family choice is load-bearing
-in both directions rather than only against the positive. We do not rest the
-paper on it. But a flat "pretraining did not help" is still not supportable
-across the endpoint set as pre-registered, and a non-significant adjusted
-p-value is not evidence that the effect is zero.
+**Results.** Twelve arms were compared on identical materialised splits across
+10 seeds and four training-set sizes (1,040 evaluated runs), plus amended
+fine-tuning arms added after the first analysis. On scaffold-split RMSE the
+frozen ChemBERTa-2 probe is significantly worse than an ECFP4 + gradient
+boosting baseline (paired Wilcoxon, Holm p = 0.012); the fine-tune is not
+distinguishable from it once tuned. Running the pre-registered interaction term
+we had omitted, the probe's deficit neither shrinks nor grows with training-set
+size (slope +0.007, 95% CI −0.017 to +0.019), so data efficiency is
+**unresolved**, not refuted; per seed the data-efficiency ratio is censored
+rather than zero, and no interval excludes 1. On precision@10% the fine-tune
+beats the baseline within that endpoint's family (Holm p = 0.023) but not
+pooled across endpoints (p = 0.0975); we report it as exploratory. Stratifying
+the test fold localises the deficit to compounds with no near training
+neighbour, not to activity cliffs. A decontamination ablation reverses sign
+once a size-matched control is added.
 
-Neither ChemBERTa arm reaches the baseline's full-data RMSE on the median curve
-at any training size. We previously read that as a data-efficiency ratio of
-zero and as H2 answered negatively; running the **interaction term the protocol
-also specified** — the slope of the paired ΔRMSE on log₂ n — does not support
-that reading. For the frozen probe the slope is +0.007, 95% CI
-[−0.017, +0.019], p = 0.77 on the scaffold split and inconclusive on the other
-two: **H2 is unanswered for that arm, not refuted.** The fine-tune's slope is
-significantly negative (−0.176, Holm p = 0.014) — its deficit grows as data
-shrinks — but it is measured under the fixed schedule §6.2 shows to be a
-harness artefact, so it is confounded rather than informative. Per seed the DER
-is censored rather than zero (the probe reaches the target on 1 of 10 seeds,
-the fine-tune on 3), and no DER here is distinguishable from 1 except by
-censoring. The two baselines are statistically indistinguishable from each other
-(p = 0.56); the nominal best is a random forest on RDKit descriptors, but we do
-not claim it beats gradient-boosted fingerprints.
-
-Three secondary observations bear on how such benchmarks should be run. First,
-the transfer arm degrades more than the baselines under a stricter split: from
-scaffold to Butina clustering, the frozen probe retains 13% of its R² against
-the baselines' 40–50%. Second, scaffold splitting was not harder than random
-splitting here — it shares zero Bemis–Murcko scaffolds with training, yet 29%
-of its test compounds still have a training neighbour at Tanimoto ≥ 0.7. Third,
-raw RMSE is not comparable across splitting strategies, because stricter splits
-yield lower-variance test folds; a variance-normalised measure is required, and
-its absence inverts the apparent difficulty ordering.
-
-Four ablations qualify this. Giving every arm an explicit search budget with
-validation-fold model selection leaves the baselines essentially unchanged
-(32 trials move the fingerprint baseline by a median of +0.004 RMSE) but
-transforms the fine-tune at n = 50, from RMSE 1.23 / R² −1.26 to 0.74 / +0.30 —
-so a benchmark that fixes hyperparameters across arms will understate transfer,
-and one earlier claim of ours built on that configuration is withdrawn. Even
-tuned, the fine-tune is not shown to beat the baselines (n = 50: better in 3 of
-10 seeds, p = 0.16; full data: 2 of 5, p = 0.63) — indistinguishable rather than
-worse, at ~70× the compute per fit. Separately, up to 53% of test compounds are present in
-PubChem, an upper bound on pretraining overlap; this cannot explain transfer
-losing, but it caps how much any transfer advantage here should be believed.
-Third, stratifying the test fold by its relationship to training localises the
-deficit: both transfer arms are significantly worse than the baseline only on
-compounds with **no near training neighbour** (p = 0.018 and 0.019), and
-neither is behind on activity cliffs — on cliffs both are nominally ahead. The
-weakness is extrapolation to novel chemistry, not local label roughness, which
-is the same conclusion the scaffold-to-Butina comparison reaches by an
-independent route.
-
-A fourth ablation locates the failure. Against an **untrained encoder of the
-same architecture**, the pretrained one is ahead by a median of only 0.011 RMSE
-over five draws of that control — 0.004 against the draw the paired test was
-run on, where it wins 5 of 10 seeds (p = 0.49) — so generic pretraining's
-contribution here is not separable from zero.
-Multitask pretraining on a 2,743-compound corpus of related 3C/3C-like
-proteases beats that control by three times the margin (7–8 of 10 seeds) and
-beats the generic probe in 9 of 10 (raw p = 0.006). **Under multiplicity
-correction across the 15 full-data contrasts, however, these clear
-Benjamini–Hochberg and not Holm**, so H3 is *suggestive* for the chained arm and
-unsupported in the pre-registered T4-vs-T1 form. Every result that survives Holm
-in that family is a negative one. In-domain pretraining looks like it is doing
-real work; on 10 seeds we cannot establish it, and it does not overtake count
-fingerprints either way.
-
-Because that corpus is ours, **H4 is also testable for those arms**, and the
-result depends entirely on a control. Removing the 61 records overlapping the
-evaluation set makes the in-domain arm worse (9 of 10 seeds, raw p = 0.010),
-which reads as leakage having helped. Removing 61 *random* records costs more
-(10 of 10, raw 0.002, and the only contrast here to survive Holm correction).
-The penalty is corpus size, not leakage — **no evidence that overlap inflated
-these arms** — though the head-to-head contrast that would establish the
-reversal is itself inconclusive after correction. Run as the protocol specifies
-it, without the control, the same ablation would have reported a significant
-effect with the causal arrow reversed.
-
-These are single-target, single-assay results. The generic encoder is a single
-model family, and the in-domain corpus is 95% coronaviral and chemically
-near-disjoint from the evaluation set, so it tests a weaker sense of
-"in-domain" than the phrase suggests. They constrain claims about *this*
-regime; they are not a general verdict on molecular pretraining.
-
-Affinities are measured on CVA16 2A protease as a surrogate for EV-A71. We
-re-derive that substitution from UniProt rather than citing it: the two 2A
-chains differ at 7–8 residues depending on strain — not the five the source
-paper reports for its own constructs — but the catalytic triad is identical and
-no differing residue is catalytic (§3.1).
-
-Decontamination could not be performed for the ChemBERTa arms, whose 77M corpus
-is not distributed, so their reported performance is an upper bound — which
-strengthens rather than weakens the negative result. It **is** performed for the
-in-domain arms, whose corpus we built (§6.4).
-
----
+**Contribution.** That pretrained encoders struggle against fingerprint
+baselines, and that scaffold splits leak, are established elsewhere at larger
+scale; we do not claim them. What this study adds is: a per-stratum
+localisation showing the transfer deficit lives in extrapolation to novel
+chemistry rather than in activity cliffs; a decontamination ablation whose
+size-matched control reverses the conclusion the protocol as written would have
+reached; a documented case in which two pre-registered hypotheses were reported
+as answered on analyses that had never been run, recovered by machine-checked
+verification of every numeric claim; and a fully reconstructable benchmark with
+declared coverage and tolerances.
 
 ## 1. Introduction
 
@@ -1762,6 +1674,57 @@ Concretely, for a project with a few hundred measurements on one target:
    claim about transfer is almost always about the low-data end, and a single
    full-data comparison cannot address it.
 
+### 8.5 What is actually new here, and what is not
+
+Written after checking the claim against the literature rather than before.
+Three of the four things this paper might be read as contributing are already
+established, two of them at far larger scale, and saying so is the only honest
+way to state the fourth.
+
+| Prior work | What it established | What this study adds | Scope of ours |
+|---|---|---|---|
+| Praski, Adamczyk & Czech, arXiv:2508.06199 (**preprint**) | 25 pretrained embedding models × 25 datasets: nearly all show negligible or no improvement over an ECFP baseline | **Nothing on the direction of the result.** Ours is the same finding at 1/25th the scale | One target, one assay, 494 compounds |
+| Li & Fourches, *J. Cheminform.* 12, 27 (2020) (**journal**) | Self-supervised pretraining matches or beats RF-on-Morgan across 642–41,127 compounds; transfer always beats from-scratch *within* one architecture | A regime where it does not: single-target, single-assay, fragment chemistry. Our `T0r` control separates "beats from-scratch" from "beats fingerprints" — the two claims their result and ours are about | Does not contradict them; a different comparison |
+| Guo, Hernandez-Hernandez & Ballester, *J. Cheminform.* 17, 94 (2025) (**journal**) | random < scaffold < Butina < UMAP difficulty over 2,100 models on 60 NCI-60 datasets; scaffold splits still leak | **Nothing on the ordering.** One further dataset consistent with theirs, not a replication | 98-compound test folds |
+| van Tilborg, Alenicheva & Grisoni, *JCIM* 62, 5938 (2022) (**journal**) | Fingerprint models frequently beat deep models on activity cliffs (MoleculeACE) | A three-way stratification (cliff / smooth / distant) that locates the transfer deficit on **distant** compounds and finds transfer *not* behind on cliffs | Median 9 cliff compounds per fold |
+
+**So what is new.** Not that fingerprints are hard to beat; not that scaffold
+splits leak; not that pretraining underperforms on a small set. Those are the
+field's current position, and this study is one more data point consistent with
+it. What we have not found elsewhere, and offer as the contribution:
+
+1. **The deficit is localised rather than global.** Two independent cuts —
+   across splits (§5.5) and within one split (§6.3) — agree that the pretrained
+   representation loses on compounds with no near training neighbour and not on
+   activity cliffs. That is the opposite of where the cliff literature would
+   place a deep model's weakness, and it is a per-stratum result rather than an
+   aggregate score.
+2. **A decontamination ablation whose control reverses it.** Removing the 61
+   overlapping records makes the in-domain arm worse, which reads as leakage
+   having helped; removing 61 *random* records costs more (§6.5). The protocol's
+   own specification — contaminated versus decontaminated, no size-matched
+   control — would have reported a significant effect with the causal arrow
+   backwards. We have not seen that control reported in this literature, and it
+   is cheap.
+3. **An endpoint disagreement inside one study.** The arm worst on RMSE is best
+   on precision@10% (§5.7). Reported because it was pre-registered, discounted
+   because it is exploratory and family-sensitive, and relevant because a
+   screening campaign consumes the ranking rather than the value.
+4. **The verification apparatus, and what it caught.** 414 machine-checked
+   prose claims, tables generated from artefacts, fault injection against every
+   checker, and a reconstruction check run against an immutable baseline in an
+   isolated tree. This is method, not science, and we present it as such — but
+   four audits of our own manuscript found defects that changed reported
+   conclusions, including two hypotheses answered on analyses that had never
+   been run. The apparatus is the contribution most likely to transfer to
+   another group's benchmark.
+
+**What remains limited to this dataset.** Every numeric result in §5 and §6.
+The affinities are CVA16 2A^pro measured by one assay on 494 fragments; the
+pretrained encoder is one model family; the in-domain corpus is 95%
+coronaviral. Nothing here licenses a general claim about molecular pretraining,
+and §7 lists eleven reasons why.
+
 ### 8.4 What we would need to change our minds
 
 Both pre-registered experiments have now been run (§6.4, §6.5) and neither is
@@ -1960,44 +1923,75 @@ strains (7 and 8), while the claim that matters — no catalytic residue differs
 — is independently confirmed. The paper's author list and abstract figures also
 re-verified cleanly via Europe PMC.
 
-**The offline pipeline is bit-reproducible, and that is now checked rather
-than asserted — but it covers less than an earlier draft of this paragraph
-implied.** `make verify-repro` re-runs every stage that does not need the
-network and diffs the result against what is committed, watching **1,106**
-artefacts in total. Of those it **regenerates 424**: the curated datasets, all
-30 split files, the 360 metric files of the three from-scratch baselines, 21
-tables and 9 figures. Of the two tables not in that count,
-`table0_split_audit.csv` **is** covered — `audit_splits.py` recomputes it every
-run and writes only when a data row moves, so it is verified in place — while
-`table5_contamination.csv` is not covered at all, because the script that
-builds it needs PubChem. The remaining **682 — every transfer-arm metric file, and
-the six in-domain encoders in `models/` — are inputs to the check, not outputs
-of it.** Reproducing them would mean re-running the ChemBERTa fine-tune and
-re-pretraining the encoders, which this script does not do, and the summary
-line now says so on every run rather than reporting one number that reads as
-though everything had been rebuilt.
+**The pipeline is reconstructed from its inputs and diffed, in an isolated
+tree against an immutable baseline.** `make verify-repro` creates a throwaway
+`git worktree` at a committed ref, links in the supplied inputs, runs every
+offline stage there and diffs the result. The working tree is never written to.
+The previous in-place design could — and once did — let a failed run's output
+become the baseline that the next run compared against and passed.
 
-That accounting is not cosmetic: adding it revealed that the stage which
-re-fits models **was regenerating nothing at all.** `run_arms.py` skips any cell
-whose metric file already exists, so against a populated `results/metrics/` the
-stage exited in 8 seconds having fitted zero models and reported success — the
-"passes vacuously" failure this repository has hit four times before, this time
-inside the checker written to stop it. Stages now declare the artefacts they
-own, those are deleted before the stage runs, and a stage that fails to rewrite
-what it cleared fails as `DISAPPEARED`. The comparison is by data row for
-tables (each carries a generation timestamp) and byte-for-byte otherwise, with
-a 1e-9 **relative** tolerance: `table2`'s `n_to_reach_target` is a linear
-interpolation along a learning curve, so the ~1e-16 jitter described below
-lands at ~1e-13 there, and demanding bit-identity of a derived interpolation
-across thread scheduling generates false alarms rather than confidence.
+Three questions are answered separately, because an earlier version ran them
+together and so reported 1,104 artefacts "regenerated" when the number was 424:
 
-Two stages cannot be covered and say so instead of passing quietly:
-`measure_contamination.py` needs PubChem and `verify_surrogate.py` needs
-UniProt. `tests/test_reproducibility.py` plants each difference the comparison
-exists to catch — a moved metric, a changed data row, a table moving beyond
-tolerance, a verdict string flipping, a vanished artefact, a newly-written file
-nobody committed, and a stage that regenerates nothing — and asserts that a
-provenance timestamp and a sub-tolerance float wobble are *not* among them.
+- **Supplied inputs — 21 files, verified by checksum, never rebuilt.** The
+  `data/raw/` payloads and the six pretrained encoders in `models/` are not in
+  git (186 MB), and the pipeline consumes rather than produces them.
+  `docs/input-checksums.json` records a SHA-256 for each; the check confirms
+  the bytes here are the bytes the results were built from, and can do no more
+  than that. Obtaining them is a precondition of reproducing the study.
+- **Reconstructed — the artefacts a stage rewrites.** Watching **1,787**
+  artefacts in total, a full-tier run **reconstructs 1,495** of them: the
+  curated datasets, all 30 split files, the metric files and predictions of
+  every arm except the ChemBERTa fine-tune, all 23 tables and 9 figures.
+- **Compared only — 292 files no executed stage rewrote.** Inputs to the check,
+  not outputs of it. Counted separately so the headline cannot overstate.
+
+A further **329 artefacts are regenerated with no committed baseline to diff
+against**: the 9 figures, gitignored as regenerable, and 320 prediction files,
+because predictions were only ever committed for the scaffold split. Until
+2026-09-12 this section claimed all nine figures reproduce byte-identically;
+that was checked against uncommitted local copies by an in-place run, and
+against a committed baseline there is nothing to check. It is now reported as
+unverified rather than as verified.
+
+**Adding this accounting is what revealed that the stage which re-fits models
+was fitting nothing.** `run_arms.py` skips any cell whose metric file already
+exists, so against a populated `results/metrics/` the stage exited in 8 seconds
+having fitted zero models and reported success — the vacuous pass this
+repository has now hit five times, this time inside the checker written to
+prevent it. Stages declare the artefacts they own, those are cleared first, and
+a stage that fails to rewrite what it cleared fails as `DISAPPEARED`.
+
+**How the 1,495 reconstructions compare** falls into three categories that are
+not interchangeable. Every run reports the split; the counts themselves are
+**not stable between runs** and are deliberately not quoted as a fixed number
+here, because which files land in the second and third categories depends on
+thread scheduling. Two consecutive passing runs gave 869 and 1,006
+byte-identical. What is stable, and is the claim:
+
+| Category | Basis | Bound |
+|---|---|---|
+| byte-identical after canonicalisation | provenance timestamps stripped, nothing else | — |
+| bytes differ, every number identical | wall-clock `seconds` in metric JSONs; identity fields and metric names checked exactly | drift exactly 0 |
+| within tolerance, non-zero drift | float reduction order | **< 1e-15** observed against a 1e-9 limit, across every run |
+
+**Tolerances are declared, justified and tested from both sides.** 1e-9
+relative for metrics and derived tables — four orders above the worst observed
+drift (~1e-15 from `n_jobs=-1` reduction order, amplified to ~1e-13 by
+`table2`'s learning-curve interpolation) and six below the third decimal the
+paper reports. 1e-6 for torch fine-tune predictions. **Exact** for structural
+invariants: row identities, split membership, array shapes, missingness, and
+the identity fields of every metric file — a result attached to a different
+`n_train` is a different experiment, not floating-point drift.
+`tests/test_reproducibility.py` plants a perturbation just over each tolerance
+and asserts rejection, and one just under and asserts it passes *and is
+reported*. A tolerance nothing can violate is not a tolerance.
+
+**What is not covered, with reasons rather than silence.** The ChemBERTa
+fine-tune's 40 cells (~2.1 h at ~185 s per fit), the six in-domain encoders
+(796–934 s each), the 41 tuned cells (101 min), and `table5`, whose
+`measure_contamination.py` needs PubChem. The encoders are covered as supplied
+inputs by checksum, which verifies their identity and not their derivation.
 The stage table below was the original hand check:
 
 | Stage | Result |
@@ -2009,7 +2003,7 @@ The stage table below was the original hand check:
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
 | all 23 tables in `results/tables/` | data rows byte-identical |
-| all 9 figures in `results/figures/` | byte-identical |
+| all 9 figures in `results/figures/` | regenerated; **no committed baseline** (gitignored as regenerable), so not verified |
 
 Determinism comes from seeding Python, NumPy and torch per run
 (`evapro.utils.seeding.set_seed`, with `torch.use_deterministic_algorithms`)
@@ -2029,6 +2023,54 @@ make verify   # tests + table freshness + claim verification
 is referenced by DOI rather than vendored, and the ChemBERTa-2 checkpoint is
 fetched from HuggingFace at run time. Both are external dependencies whose
 future availability we do not control.
+
+## Declarations
+
+### Availability of data and materials
+
+All data and code required to reach the conclusions of this paper are openly
+available without registration, login, or licence terms other than those below.
+
+| What | Where | Licence |
+|---|---|---|
+| Source code, protocol, decision log, manuscript | this repository | MIT (OSI-approved) |
+| Curated evaluation set (`data/processed/eva71_2a.csv`, 494 compounds) | this repository | CC0, inherited from the source release |
+| In-domain pretraining corpus (`data/processed/indomain_3c.csv`, 2,974 measurements) | this repository | CC BY-SA 3.0, inherited from ChEMBL |
+| Materialised split files (30 JSON, InChIKey → fold) | this repository | CC0 |
+| All 1,040 per-run metric files and 690 prediction bundles | this repository | CC0 |
+| All 23 result tables | this repository | CC0 |
+| Primary structure–affinity data | OpenBind Zenodo record 20026661 | CC0 |
+| In-domain source records | ChEMBL, 8 targets, manifests in `data/raw/` | CC BY-SA 3.0 |
+| Pretrained encoder | `DeepChem/ChemBERTa-77M-MTR`, HuggingFace | as published |
+
+**Two categories are not redistributed here, and both are stated rather than
+implied.** The 186 MB of raw payloads and the six in-domain encoder checkpoints
+in `models/` are not in version control; `docs/input-checksums.json` gives a
+SHA-256 for each of the 21 files so that a reproduction can confirm it has the
+same bytes, and `docs/reproduction-coverage.md` states which pipeline stages
+that does and does not cover. The ChemBERTa-2 pretraining corpus (77M molecules)
+is not distributed by its authors, which is why H4 is untestable for those arms
+(§6.1, §7 limitation 3).
+
+`docs/data-licences.md` records the per-source terms. Derived files inherit the
+most restrictive licence among their inputs.
+
+### Competing interests
+
+The authors declare no competing interests.
+
+### Funding
+
+No external funding was received for this work.
+
+### Authors' contributions
+
+Not applicable to this preprint draft; to be completed at submission.
+
+### Ethics approval and consent to participate
+
+Not applicable. This study uses only published small-molecule and protein
+sequence data; no human or animal subjects were involved.
 
 ## References
 
@@ -2122,15 +2164,34 @@ they are listed by title rather than given an invented authorship.
 
 ### Evaluation and splitting
 
-10. Guo, Q., Hernandez-Hernandez, S., Ballester, P. J. (2024). *Scaffold splits
-    overestimate virtual screening performance.* arXiv:2406.00873; ICANN 2024,
-    LNCS. <https://arxiv.org/abs/2406.00873> — **[full text of abstract and
-    landing page]**. Source of the random < scaffold < Butina < UMAP difficulty
+10. Guo, Q., Hernandez-Hernandez, S., Ballester, P. J. (2025). *UMAP-based
+    clustering split for rigorous evaluation of AI models for virtual screening
+    on cancer cell lines.* Journal of Cheminformatics 17, 94.
+    DOI 10.1186/s13321-025-01039-8 —
+    **[full text of abstract and landing page]**. Peer-reviewed article; it
+    supersedes the arXiv:2406.00873 / ICANN 2024 preprint form we cited until
+    2026-09-12. Source of the random < scaffold < Butina < UMAP difficulty
     ordering across 2,100 models (700 per splitting algorithm) on 60 NCI-60
     datasets, and the reason Butina clustering is reported here as the stricter
     check. Our §5.5 result is consistent with their argument on one further
     dataset; a single target is not a replication of their 60-dataset study and
     is not claimed as one.
+
+10b. Praski, M., Adamczyk, J., Czech, W. (2025, rev. 2026). *Benchmarking
+    pretrained molecular embedding models for molecular representation
+    learning.* arXiv:2508.06199 — **[abstract]**. **Preprint, not peer
+    reviewed.** 25 pretrained embedding models over 25 datasets; reports that
+    nearly all show negligible or no improvement over an ECFP baseline. Cited
+    in §8.5 for where our headline sits in the literature, not for any number
+    we rely on.
+
+10c. Li, X., Fourches, D. (2020). *Inductive transfer learning for molecular
+    activity prediction: next-gen QSAR models with MolPMoFiT.* Journal of
+    Cheminformatics 12, 27. DOI 10.1186/s13321-020-00430-x — **[full text via
+    PMC]**. Self-supervised pretraining on ~1M ChEMBL molecules; reports
+    transfer matching or beating baselines including random forest on Morgan
+    fingerprints, on datasets from 642 to 41,127 compounds. The positive result
+    §8.5 reconciles ours against.
 
 11. van Tilborg, D., Alenicheva, A., Grisoni, F. (2022). *Exposing the
     limitations of molecular machine learning with activity cliffs.* Journal of

@@ -1,0 +1,22 @@
+{
+  "baseline_ref": "90b87d1",
+  "byte_identical": 1006,
+  "bytes_differ_numbers_identical": 330,
+  "compared_only": 292,
+  "generated_utc": "2026-09-12T06:08:58+00:00",
+  "largest_relative_move": 9.190448345632806e-16,
+  "newly_produced_no_baseline": 329,
+  "reconstructed": 1495,
+  "supplied_inputs": 21,
+  "tier": "full",
+  "tol_default": 1e-09,
+  "tol_torch": 1e-06,
+  "unexecuted": [
+    "run_arms T2 (ChemBERTa fine-tune), 40 cells",
+    "pretrain_indomain.py, six encoders",
+    "tune_arms.py, 41 tuned cells",
+    "measure_contamination.py -> table5"
+  ],
+  "watched": 1787,
+  "within_tolerance_nonzero_drift": 159
+}

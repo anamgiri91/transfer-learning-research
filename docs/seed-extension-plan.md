@@ -138,3 +138,66 @@ value per hour:
    here".
 4. **A chemically in-domain corpus** — ours is 95% coronaviral with median
    nearest-neighbour Tanimoto 0.247 to the evaluation set (§6.4).
+
+---
+
+## Amendment A — 2026-09-12, deprioritised, and why
+
+**The extension specified above is not executed in this iteration, and its
+priority has dropped.** The plan itself stands unchanged; this amendment
+records what the fourth audit and Amendment 4 changed about its value. Written
+before any extension seed was run — no seed above 9 exists.
+
+### What changed
+
+Three findings arrived after the plan was written:
+
+1. **H3's pre-registered comparison was never performed** (`plan.md`
+   Amendment 2). The in-domain arms are frozen probes; the comparison the
+   protocol names needs an in-domain *fine-tune*, which did not exist. Seeds
+   cannot supply a missing arm.
+2. **H2's answer changed** (`manuscript.md` §5.3). With the pre-registered
+   interaction term finally run, the frozen probe is inconclusive rather than
+   negative, and the one significant slope belongs to `T2` — measured under a
+   training schedule §6.2 shows to be a harness artefact. Seeds cannot repair a
+   confounded schedule.
+3. **The DER's zeros were censoring, not measurements.** No DER interval on any
+   split excludes 1. Precision on a statistic that is censored on 6–9 of 10
+   seeds is not what the study lacks.
+
+### The consequence for what more seeds would buy
+
+The extension's own §5 listed four comparisons it might move. Re-reading that
+list against the three findings:
+
+| Comparison | Seeds help? | Why |
+|---|---|---|
+| H3: `T5` vs `T1` | **No longer the right question** | It is a probe-vs-probe contrast. The pre-registered contrast is `T4ft` vs `T2v` (Amendment 4), which needs the arms, not the seeds |
+| H2: `T1` interaction slope | **Yes, narrowly** | CI [−0.017, +0.019] would tighten by ~√3. This is the one place the extension still earns its cost |
+| H4: `T4c` vs `T4r` | **Yes** | raw 0.027 / Holm 0.273 is a power problem, and the arms exist |
+| `T2` vs `B1` | **No** | `T2` is excluded from the extension, and Amendment 4 supersedes it with `T2v` |
+
+Two of four have been overtaken by the missing-arm and confounded-schedule
+problems, which are experiment-design faults rather than sampling noise. **More
+seeds for cheap arms cannot repair either.** That is the reason for
+deprioritising, and it is the reason the ~7 h of local compute this iteration
+had available went to Amendment 4's fine-tuning arms instead.
+
+### What is unchanged
+
+Everything in §1–§5 above. If the extension is run later it runs **as specified
+there**: 20 seeds, ids 10–29, the same eleven arms, `T2` excluded, no stopping
+rule, every affected number reported at 30 seeds beside its 10-seed value
+whether or not significance changes, and the pre-registered 10-seed analysis
+retained as the pre-registered one.
+
+Two conditions are added, and neither loosens anything:
+
+- **Order.** It runs *after* Amendment 4's arms are complete and analysed, so
+  that the seed budget is spent on comparisons that are correctly specified
+  rather than on tightening intervals around a contrast that turns out to be
+  the wrong one.
+- **Scope may narrow, never widen.** If Amendment 4 resolves H3, the extension
+  may be cut to the arms bearing on H2 and H4. It may not gain arms, seeds
+  beyond id 29, or a stopping rule, and no decision about running it may be
+  taken on the basis of a p-value from a partial run.

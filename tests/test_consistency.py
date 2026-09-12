@@ -24,20 +24,20 @@ def test_a_document_with_no_countable_claims_passes(tmp_path):
 
 def test_wrong_evaluated_run_count_is_caught(tmp_path):
     """The abstract said 640 after the count had moved to 720."""
-    fails, _ = check(_doc(tmp_path, "compared with 3 evaluated runs.\n"))
+    fails, _ = check(_doc(tmp_path, "the sweep (3 evaluated runs) covers it.\n"))
     assert any("evaluated runs" in f for f in fails), fails
 
 
 def test_correct_evaluated_run_count_passes(tmp_path):
     import glob
     n = len(glob.glob("results/metrics/*.json"))
-    fails, _ = check(_doc(tmp_path, f"compared with {n} evaluated runs.\n"))
+    fails, _ = check(_doc(tmp_path, f"the sweep ({n} evaluated runs) covers it.\n"))
     assert not any("evaluated runs" in f for f in fails), fails
 
 
 def test_wrong_arm_word_count_is_caught(tmp_path):
-    """'Five arms are compared' survived until ten arms had run."""
-    fails, _ = check(_doc(tmp_path, "Five arms are compared on identical splits.\n"))
+    """'Five arms were compared' survived until ten arms had run."""
+    fails, _ = check(_doc(tmp_path, "Five arms were compared on identical splits.\n"))
     assert any("arms compared" in f for f in fails), fails
 
 
@@ -98,7 +98,7 @@ def test_a_run_count_with_a_thousands_separator_is_checked(tmp_path):
     """The live failure: the abstract writes '1,040 evaluated runs' and the
     pattern required \\d+, so the check silently matched nothing for the whole
     life of the project."""
-    fails, n = check(_doc(tmp_path, "compared with 1,040 evaluated runs.\n"))
+    fails, n = check(_doc(tmp_path, "the sweep (1,040 evaluated runs) covers it.\n"))
     assert n > 0, "a separator-bearing count was not matched at all"
     import glob
     actual = len(glob.glob("results/metrics/*.json"))
@@ -108,8 +108,8 @@ def test_a_run_count_with_a_thousands_separator_is_checked(tmp_path):
 
 def test_an_arm_count_above_ten_is_checked(tmp_path):
     """Same shape: the vocabulary stopped at 'ten' while the abstract had moved
-    to 'Twelve arms are compared'."""
-    fails, n = check(_doc(tmp_path, "Twelve arms are compared on identical splits.\n"))
+    to 'Twelve arms were compared'."""
+    fails, n = check(_doc(tmp_path, "Twelve arms were compared on identical splits.\n"))
     assert n > 0, "'twelve' was not matched at all"
 
 
