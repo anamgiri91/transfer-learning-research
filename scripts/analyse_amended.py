@@ -265,15 +265,23 @@ def per_seed_table(M) -> pd.DataFrame:
         return pd.DataFrame()
     b1 = load_published("B1_ecfp_histgb")
     t2 = load_published("T2_chemberta_full_finetune")
+    have_h3 = all((s, 347) in M.get(a, {}) for a in ("T4ft", "T5ft") for s in SEEDS)
     rows = []
     for s in SEEDS:
         r_b1 = b1[(s, 347)]["metrics"]["rmse"]
         r_t2 = t2[(s, 347)]["metrics"]["rmse"]
         r_t2v = M["T2v"][(s, 347)]["metrics"]["rmse"]
-        rows.append(dict(seed=s, B1=r_b1, T2=r_t2, T2v=r_t2v,
-                         delta_T2_minus_B1=r_t2 - r_b1,
-                         delta_T2v_minus_B1=r_t2v - r_b1,
-                         delta_T2v_minus_T2=r_t2v - r_t2))
+        row = dict(seed=s, B1=r_b1, T2=r_t2, T2v=r_t2v,
+                   delta_T2_minus_B1=r_t2 - r_b1,
+                   delta_T2v_minus_B1=r_t2v - r_b1,
+                   delta_T2v_minus_T2=r_t2v - r_t2)
+        if have_h3:
+            r_t4 = M["T4ft"][(s, 347)]["metrics"]["rmse"]
+            r_t5 = M["T5ft"][(s, 347)]["metrics"]["rmse"]
+            row |= dict(T4ft=r_t4, T5ft=r_t5,
+                        delta_T4ft_minus_T2v=r_t4 - r_t2v,
+                        delta_T5ft_minus_T2v=r_t5 - r_t2v)
+        rows.append(row)
     df = pd.DataFrame(rows)
     summary = {"seed": "median"}
     for c in df.columns[1:]:

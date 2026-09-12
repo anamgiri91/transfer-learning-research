@@ -260,7 +260,8 @@ def build_claims() -> list[Claim]:
         C.append(Claim("6.6", "untuned T2 slope -0.1764 for comparison", "table20",
                        -0.1764, float(_sl.untuned_T2_median_slope)))
     if Path("results/tables/table17_amended_finetune.csv").exists():
-        _c = read_table("table17_amended_finetune.csv").set_index("n_train")
+        _t17 = read_table("table17_amended_finetune.csv")
+        _c = _t17[_t17.arm == "T2v"].set_index("n_train")
         C.append(Claim("6.6", "T2v RMSE 0.918 at n=50", "table17", 0.9183,
                        float(_c.loc[50, "median_rmse"])))
         C.append(Claim("6.6", "untuned T2 RMSE 1.232 at n=50", "table17", 1.2321,
@@ -273,9 +274,51 @@ def build_claims() -> list[Claim]:
                        float(_c.loc[50, "median_selected_epoch"])))
         C.append(Claim("6.6", "selected epoch 17.5 at full data", "table17", 17.5,
                        float(_c.loc[347, "median_selected_epoch"])))
-        C.append(Claim("6.6", "lr 1e-4 selected at every size", "table17", 1,
-                       int(read_table("table17_amended_finetune.csv")
-                           .median_selected_lr.nunique())))
+        C.append(Claim("6.6", "lr 1e-4 selected at every T2v size", "table17", 1,
+                       int(_c.median_selected_lr.nunique())))
+        # --- H3, the pre-registered comparison form -------------------------
+        _h3 = read_table("table18_amended_contrasts.csv")
+        _h3 = _h3[(_h3.reference == "T2v") & (_h3.status == "complete")]
+        if len(_h3) == 2:
+            _t4 = _h3[_h3.arm == "T4ft"].iloc[0]
+            _t5 = _h3[_h3.arm == "T5ft"].iloc[0]
+            C.append(Claim("6.6", "T4ft vs T2v paired median +0.0161", "table18",
+                           0.0161, round(float(_t4.median_paired_delta), 4)))
+            C.append(Claim("6.6", "T4ft vs T2v CI [-0.0332, +0.0572]", "table18",
+                           "-0.0332/0.0572",
+                           f"{_t4.paired_ci_lo:.4f}/{_t4.paired_ci_hi:.4f}"))
+            C.append(Claim("6.6", "T4ft better on 3 of 10 seeds", "table18", 3,
+                           int(_t4.arm_better_in_seeds)))
+            C.append(Claim("6.6", "T4ft vs T2v p_raw 0.5566", "table18", 0.5566,
+                           round(float(_t4.p_raw), 4)))
+            C.append(Claim("6.6", "T4ft vs T2v Holm 1.000", "table18", 1.0,
+                           float(_t4.p_adjusted)))
+            C.append(Claim("6.6", "T5ft vs T2v paired median +0.0108", "table18",
+                           0.0108, round(float(_t5.median_paired_delta), 4)))
+            C.append(Claim("6.6", "T5ft vs T2v CI [-0.0317, +0.0994]", "table18",
+                           "-0.0317/0.0994",
+                           f"{_t5.paired_ci_lo:.4f}/{_t5.paired_ci_hi:.4f}"))
+            C.append(Claim("6.6", "T5ft better on 3 of 10 seeds", "table18", 3,
+                           int(_t5.arm_better_in_seeds)))
+            C.append(Claim("6.6", "T5ft vs T2v p_raw 0.4316", "table18", 0.4316,
+                           round(float(_t5.p_raw), 4)))
+            C.append(Claim("6.6", "T5ft vs T2v Holm 1.000", "table18", 1.0,
+                           float(_t5.p_adjusted)))
+            C.append(Claim("6.6", "the amended family is complete", "table18", True,
+                           bool(read_table("table18_amended_contrasts.csv")
+                                .family_complete.iloc[0])))
+        C.append(Claim("6.6", "T4ft marginal median 0.6294", "table17", 0.6294,
+                       float(_t17[_t17.arm == "T4ft"].median_rmse.iloc[0])))
+        C.append(Claim("6.6", "T4ft marginal looks 0.027 better", "table17", 0.027,
+                       round(float(_c.loc[347, "median_rmse"])
+                             - float(_t17[_t17.arm == "T4ft"].median_rmse.iloc[0]), 3)))
+        C.append(Claim("6.6", "T4ft worse on 7 of 10 seeds", "table21", 7,
+                       int((read_table("table21_per_seed_finetune.csv")
+                            .query("seed != 'median'")
+                            .delta_T4ft_minus_T2v.astype(float) > 0).sum())))
+        C.append(Claim("6.6", "T2v scores 0.7786 on seed 7", "table21", 0.7786,
+                       round(float(read_table("table21_per_seed_finetune.csv")
+                                   .query("seed == '7'").T2v.iloc[0]), 4)))
     if Path("results/tables/table18_amended_contrasts.csv").exists():
         _t = read_table("table18_amended_contrasts.csv")
         _t = _t[_t.status == "complete"]
@@ -284,8 +327,8 @@ def build_claims() -> list[Claim]:
                        int(read_table("table18_amended_contrasts.csv").family_m.iloc[0])))
         C.append(Claim("6.6", "T2v worse than B1 at all four sizes under the bound",
                        "table18", 4, int((_b1.p_adjusted <= 0.05).sum())))
-        C.append(Claim("6.6", "adjusted values 0.014/0.014/0.041/0.014", "table18",
-                       "0.014,0.014,0.041,0.014",
+        C.append(Claim("6.6", "Holm values 0.014/0.014/0.023/0.014", "table18",
+                       "0.014,0.014,0.023,0.014",
                        ",".join(f"{v:.3f}" for v in
                                 _b1.sort_values("n_train").p_adjusted)))
         C.append(Claim("6.6", "T2v full-data paired delta +0.048", "table18", 0.0481,
