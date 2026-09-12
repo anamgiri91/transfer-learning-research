@@ -59,6 +59,13 @@ def _fmt(v, nd=3, dash_if_nan=True):
 
 
 def _md(headers: list[str], rows: list[list[str]]) -> str:
+    # A bare "|" inside a header or cell silently splits it into two columns
+    # and the rendered table then has more headers than separators. Caught
+    # once in table16's "median DER | crossed"; refused rather than escaped,
+    # because a pipe in a column name is nearly always a wording accident.
+    for cell in list(headers) + [c for r in rows for c in r]:
+        if "|" in str(cell):
+            raise ValueError(f"'|' in a table cell would break the markdown: {cell!r}")
     out = ["| " + " | ".join(headers) + " |",
            "|" + "|".join(["---"] * len(headers)) + "|"]
     out += ["| " + " | ".join(r) + " |" for r in rows]
@@ -145,7 +152,13 @@ def table_der(split="scaffold") -> str:
 
 
 def table_h2_interaction(split="scaffold") -> str:
-    """The pre-registered interaction term (plan.md §6), which DER cannot supply."""
+    """The pre-registered interaction term (plan.md §6), which DER cannot supply.
+
+    Three location estimates are shown because they are three different
+    quantities, not three views of one: the pooled OLS interaction coefficient
+    equals the MEAN of the per-seed slopes exactly (balanced design), and the
+    median is a different number -- for T1, by a factor of seven.
+    """
     df = _read("table15_h2_interaction.csv")
     df = df[df.split == split]
     rows = []
@@ -155,15 +168,22 @@ def table_h2_interaction(split="scaffold") -> str:
             continue
         r = d.iloc[0]
         rows.append([ARM_LABEL[arm], f"{r['median_slope']:+.4f}",
+                     f"{r['mean_slope']:+.4f} = {r['pooled_interaction_coef']:+.4f}",
+                     f"{r['hodges_lehmann']:+.4f}",
                      f"[{r['slope_ci_lo']:+.4f}, {r['slope_ci_hi']:+.4f}]",
                      f"{int(r['slope_positive_in_seeds'])}/{int(r['n_seeds'])}",
                      f"{r['p_raw']:.4f}", f"{r['p_holm']:.3f}", r["h2_verdict"]])
-    return _md(["Arm", "median slope of ΔRMSE on log₂n", "95% CI",
-                "slope > 0 in", "p raw", "p Holm", "verdict"], rows)
+    return _md(["Arm", "median slope", "mean slope = pooled OLS coef",
+                "pseudomedian", "95% CI (median)", "slope > 0 in",
+                "p raw", "p Holm", "verdict"], rows)
 
 
 def table_der_uncertainty(split="scaffold") -> str:
-    """Per-seed DER, with the censoring table2 collapses into a zero."""
+    """Per-seed DER, with the three censoring states kept apart.
+
+    `table2` collapses all of this into a single 0.00. The median here is
+    conditional on an interior crossing and is not a summary of all ten seeds.
+    """
     df = _read("table16_der_uncertainty.csv")
     df = df[df.split == split]
     rows = []
@@ -175,11 +195,14 @@ def table_der_uncertainty(split="scaffold") -> str:
         ci = ("—" if pd.isna(r["der_ci_lo"])
               else f"[{r['der_ci_lo']:.2f}, {r['der_ci_hi']:.2f}]")
         rows.append([ARM_LABEL[arm],
-                     f"{int(r['seeds_reaching_target'])}/{int(r['n_seeds'])}",
+                     str(int(r["crossed_interior"])),
+                     str(int(r["left_censored_at_n50"])),
+                     str(int(r["right_censored_never_reached"])),
                      str(int(r["curves_non_monotonic"])),
-                     _fmt(r["median_der_where_defined"], 2), ci])
-    return _md(["Arm", "seeds reaching B1's full-data RMSE", "non-monotonic curves",
-                "median DER where defined", "95% CI"], rows)
+                     _fmt(r["median_der_interior"], 2), ci])
+    return _md(["Arm", "interior crossings", "≤ 50 (left-censored)",
+                "never reached", "non-monotonic curves",
+                "median DER given crossing", "95% CI given crossing"], rows)
 
 
 def table_contamination() -> str:

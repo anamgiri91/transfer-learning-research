@@ -509,30 +509,57 @@ stays paired, several arms cross the threshold on some seeds
 [→ `table16_der_uncertainty.csv`].
 
 <!-- TABLE:der_uncertainty START -->
-| Arm | seeds reaching B1's full-data RMSE | non-monotonic curves | median DER where defined | 95% CI |
-|---|---|---|---|---|
-| B1 ECFP4 + HistGB | 10/10 | 9 | 1.00 | [1.00, 1.00] |
-| B0 median | 0/10 | 9 | — | — |
-| B2 descriptors + RF | 4/10 | 6 | 1.37 | [0.98, 2.93] |
-| T1 ChemBERTa probe | 1/10 | 4 | — | — |
-| T2 ChemBERTa fine-tune | 3/10 | 0 | 0.72 | [0.52, 1.05] |
-| T0r untrained encoder probe | 1/10 | 8 | — | — |
-| T4 in-domain probe | 2/10 | 6 | — | — |
-| T5 chained probe | 2/10 | 4 | — | — |
+| Arm | interior crossings | ≤ 50 (left-censored) | never reached | non-monotonic curves | median DER given crossing | 95% CI given crossing |
+|---|---|---|---|---|---|---|
+| B1 ECFP4 + HistGB | 9 | 1 | 0 | 9 | 1.00 | [1.00, 1.00] |
+| B0 median | 0 | 0 | 10 | 9 | — | — |
+| B2 descriptors + RF | 4 | 0 | 6 | 6 | 1.37 | [0.98, 2.93] |
+| T1 ChemBERTa probe | 1 | 0 | 9 | 4 | — | — |
+| T2 ChemBERTa fine-tune | 3 | 0 | 7 | 0 | 0.72 | [0.52, 1.05] |
+| T0r untrained encoder probe | 1 | 0 | 9 | 8 | — | — |
+| T4 in-domain probe | 2 | 0 | 8 | 6 | — | — |
+| T5 chained probe | 1 | 1 | 8 | 4 | — | — |
 <!-- TABLE:der_uncertainty END -->
 
-`T1` reaches the target on 1 of 10 seeds and `T2` on 3 of 10, so the published
-0.00 is a **censoring convention, not a measured ratio of zero** — and it is
-reported here as censoring. Two further things the aggregate hid. `B1`'s own
-learning curve is non-monotonic on 9 of 10 seeds, so "the size at which the
-curve first reaches a threshold" is being read off curves that mostly wiggle.
-And `B2`'s DER is 0.70 from the median curve but 1.37 per seed, CI [0.98, 2.93]
-— the point estimate crosses 1 depending on the order of aggregation, and the
-interval spans it either way. **On the scaffold split no DER is distinguishable
-from 1 except by censoring.** That is not true on every split — `B2` on the
-random split has a per-seed DER interval of [1.14, 3.78], which excludes 1 —
-but the arm it excludes 1 for is a from-scratch baseline, not a transfer arm.
-We no longer present the DER as the quantity that settles H2.
+The ten seeds partition into three states that must be reported separately,
+because the DER is defined on only one of them:
+
+- **interior crossing** — the curve crosses the target between two evaluated
+  sizes, and the DER is defined by interpolation;
+- **left-censored** — the curve is already at or below the target at n = 50,
+  the smallest size evaluated, so the crossing size is ≤ 50 and unknown. `B1`
+  is in this state on 1 seed and `T5` on 1. Nothing is extrapolated below 50;
+- **never reached** — no crossing by n = 347. The crossing size is > 347 or
+  does not exist. It is **not** a DER of zero.
+
+`T1` has an interior crossing on 1 of 10 seeds and `T2` on 3 of 10, so the
+published 0.00 is a **censoring convention, not a measured ratio** — and it is
+reported here as censoring. The consequence for how the table reads: **the
+median DER is conditional on an interior crossing and describes only those
+seeds.** For `T1`, `T0r`, `T4`, `T5` and `B0` fewer than three seeds cross at
+all, so no median is reported for them rather than one computed from one or two
+values. Where a median is reported it summarises 3–4 seeds out of 10, and the
+other 6–7 are the reason it cannot be read as an arm-level data-efficiency
+ratio.
+
+Two further things the aggregate hid. `B1`'s own learning curve is
+non-monotonic on 9 of 10 seeds, so "the size at which the curve first reaches a
+threshold" is being read off curves that mostly wiggle, and the first crossing
+is not the only crossing. And `B2`'s DER is 0.70 from the median curve but 1.37
+conditional on its 4 interior crossings, CI [0.98, 2.93] — the point estimate
+crosses 1 with the order of aggregation, and the interval spans it either way.
+**Across all three splits, every DER interval that can be computed at all
+contains 1.** An earlier draft of this section reported one exception — `B2` on
+the random split at [1.14, 3.78] — and that exception was an artefact of the
+censoring bug this subsection fixes: the seed driving it was left-censored, and
+scoring it as a crossing at exactly n = 50 rather than at an unknown size ≤ 50
+inflated its ratio. Handled correctly the interval is [0.85, 2.82] and spans 1
+like the rest.
+
+The scope that does bind is which arms have an interval at all: on the scaffold
+split only `B2` and `T2` clear the three-crossing floor, and both of those
+summarise 3–4 seeds. We no longer present the DER as the quantity that settles
+H2.
 
 #### The interaction term, which the protocol asked for and we had not run
 
@@ -557,27 +584,69 @@ The model form, the log₂ scale, the per-seed-slope estimator and the seed-leve
 bootstrap were all **chosen after the results existed** — `plan.md` names an
 interaction term and specifies nothing further. They are recorded as a post-hoc
 specification of a pre-registered intent in
-[`../docs/decision-log.md`](../docs/decision-log.md), and the alternative
-single-model form (RMSE ~ arm × log₂ n with seed blocking) gives the same
-coefficient by construction, so nothing turns on the choice between them.
+[`../docs/decision-log.md`](../docs/decision-log.md) and as limitation 11.
+
+**Two estimators, and what is actually equivalent.** An earlier draft of this
+section claimed the per-seed estimator and the pooled single-model form give
+"the same coefficient by construction". That is wrong, and not harmlessly. What
+holds exactly, and is asserted on every run of the script, is
+
+> pooled OLS interaction coefficient = **mean** of the per-seed slopes,
+
+in both parameterisations — `Δ ~ seed FE + log₂ n` and the protocol's
+`RMSE ~ seed FE + arm × log₂ n` — because the design is balanced: every seed
+contributes the same four log₂ n values to both arms. The **median** per-seed
+slope is a different quantity. For `T1` the median is +0.0073 and the pooled
+coefficient +0.0010, a factor of seven, and the gap exceeds the median itself.
+
+The tests are not interchangeable either, and would not become so if the point
+estimates happened to agree. The OLS t-test on the interaction is a statement
+about the mean and assumes homoscedastic independent residuals across 80
+observations. The Wilcoxon signed-rank on the 10 per-seed slopes tests whether
+their distribution is **symmetric about zero**; read as a location test it
+localises the pseudomedian (Hodges–Lehmann), a third quantity again. All three
+are in the table. The Wilcoxon is primary because §4.4 fixes the seed as the
+unit of replication and prefers non-parametric tests at this sample size —
+**not** because of its p-value: the verdict is the same under all three
+estimators for every arm, and the sign agrees for all seven.
+
+**What the test computes here.** With 10 seeds and no zero slopes,
+`scipy.stats.wilcoxon`'s default `method='auto'` uses the exact null
+distribution (`method='exact'` is selected for n ≤ 50 absent ties and zeros;
+with ties or zeros it switches to exhaustive permutation at n ≤ 13, still not
+the normal approximation). The smallest attainable two-sided p is
+2/2¹⁰ = 0.00195. The method actually selected and the count of zero slopes are
+recorded per row. `zero_method` is left at its default `'wilcox'`, which
+discards zero differences and reduces the effective n; no arm here has one.
+
+**What resampling seeds does and does not measure.** A seed jointly controls
+the split draw, the training subsample at each size, and initialisation and
+fitting order, so the intervals describe variability from those three sources
+**conditional on this fixed set of 494 compounds**. They are not a bootstrap
+over compounds and say nothing about sampling a different 494. The ten test
+folds are ten draws of 98 from the same 494 and therefore overlap — a compound
+appears in about two of them — so the per-seed slopes are not strictly
+independent and the Wilcoxon's iid assumption is approximate. That is equally
+true at 10 seeds and at 30, and no seed count repairs it.
 
 <!-- TABLE:h2_interaction START -->
-| Arm | median slope of ΔRMSE on log₂n | 95% CI | slope > 0 in | p raw | p Holm | verdict |
-|---|---|---|---|---|---|---|
-| B0 median | +0.0306 | [+0.0096, +0.0512] | 9/10 | 0.0039 | 0.023 | slope > 0: consistent with H2 |
-| B2 descriptors + RF | +0.0139 | [-0.0127, +0.0363] | 6/10 | 0.3223 | 1.000 | inconclusive |
-| T1 ChemBERTa probe | +0.0073 | [-0.0174, +0.0189] | 6/10 | 0.7695 | 1.000 | inconclusive |
-| T2 ChemBERTa fine-tune | -0.1764 | [-0.2216, -0.1215] | 0/10 | 0.0020 | 0.014 | slope < 0: contrary to H2 |
-| T0r untrained encoder probe | +0.0149 | [-0.0049, +0.0381] | 7/10 | 0.0840 | 0.420 | inconclusive |
-| T4 in-domain probe | +0.0155 | [-0.0255, +0.0314] | 7/10 | 0.4316 | 1.000 | inconclusive |
-| T5 chained probe | +0.0096 | [-0.0109, +0.0165] | 7/10 | 0.5566 | 1.000 | inconclusive |
+| Arm | median slope | mean slope = pooled OLS coef | pseudomedian | 95% CI (median) | slope > 0 in | p raw | p Holm | verdict |
+|---|---|---|---|---|---|---|---|---|
+| B0 median | +0.0306 | +0.0315 = +0.0315 | +0.0306 | [+0.0096, +0.0512] | 9/10 | 0.0039 | 0.023 | slope > 0: consistent with H2 |
+| B2 descriptors + RF | +0.0139 | +0.0123 = +0.0123 | +0.0139 | [-0.0127, +0.0363] | 6/10 | 0.3223 | 1.000 | inconclusive |
+| T1 ChemBERTa probe | +0.0073 | +0.0010 = +0.0010 | +0.0032 | [-0.0174, +0.0189] | 6/10 | 0.7695 | 1.000 | inconclusive |
+| T2 ChemBERTa fine-tune | -0.1764 | -0.1728 = -0.1728 | -0.1764 | [-0.2216, -0.1215] | 0/10 | 0.0020 | 0.014 | slope < 0: contrary to H2 |
+| T0r untrained encoder probe | +0.0149 | +0.0156 = +0.0156 | +0.0156 | [-0.0049, +0.0381] | 7/10 | 0.0840 | 0.420 | inconclusive |
+| T4 in-domain probe | +0.0155 | +0.0097 = +0.0097 | +0.0128 | [-0.0255, +0.0314] | 7/10 | 0.4316 | 1.000 | inconclusive |
+| T5 chained probe | +0.0096 | +0.0031 = +0.0031 | +0.0085 | [-0.0109, +0.0165] | 7/10 | 0.5566 | 1.000 | inconclusive |
 <!-- TABLE:h2_interaction END -->
 
 `B0` is the sanity check: a constant predictor should lose relatively less
 ground as the real models are starved of data, and its slope is the expected
 sign at +0.0306 (Holm p = 0.023). Against that reference:
 
-- **`T1`, the frozen probe, is inconclusive — not negative.** Slope +0.0073,
+- **`T1`, the frozen probe, is inconclusive — not negative.** Median slope
+  +0.0073 (mean and pooled coefficient +0.0010, pseudomedian +0.0032),
   95% CI [−0.0174, +0.0189], positive in 6 of 10 seeds, p = 0.77. The deficit
   neither shrinks nor grows detectably with training-set size. This replicates
   on the other two splits (random p = 0.85; Butina raw p = 0.037 and positive in
@@ -1791,7 +1860,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **403 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **414 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the

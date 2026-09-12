@@ -241,17 +241,49 @@ def build_claims() -> list[Claim]:
                    int((read_table("table15_h2_interaction.csv")
                         .query("split == 'scaffold'").h2_verdict
                         .str.startswith("slope < 0")).sum())))
-    C.append(Claim("5.3", "T1 reaches the target on 1 of 10 seeds", "table16", 1,
-                   t16("scaffold", "T1_chemberta_linear_probe", "seeds_reaching_target")))
-    C.append(Claim("5.3", "T2 reaches the target on 3 of 10 seeds", "table16", 3,
-                   t16("scaffold", "T2_chemberta_full_finetune", "seeds_reaching_target")))
+    C.append(Claim("5.3", "T1 crosses on 1 of 10 seeds", "table16", 1,
+                   t16("scaffold", "T1_chemberta_linear_probe", "crossed_interior")))
+    C.append(Claim("5.3", "T2 crosses on 3 of 10 seeds", "table16", 3,
+                   t16("scaffold", "T2_chemberta_full_finetune", "crossed_interior")))
+    C.append(Claim("5.3", "B1 is left-censored on 1 seed", "table16", 1,
+                   t16("scaffold", "B1_ecfp_histgb", "left_censored_at_n50")))
+    C.append(Claim("5.3", "T5 is left-censored on 1 seed", "table16", 1,
+                   t16("scaffold", "T5_chained_probe", "left_censored_at_n50")))
     C.append(Claim("5.3", "B1's curve is non-monotonic on 9 of 10 seeds", "table16", 9,
                    t16("scaffold", "B1_ecfp_histgb", "curves_non_monotonic")))
-    C.append(Claim("5.3", "B2 per-seed DER 1.37", "table16", 1.3701,
-                   t16("scaffold", "B2_descriptors_rf", "median_der_where_defined")))
-    C.append(Claim("5.3", "B2 per-seed DER CI [0.98, 2.93]", "table16", "0.98/2.93",
+    C.append(Claim("5.3", "B2 DER given crossing is 1.37", "table16", 1.3701,
+                   t16("scaffold", "B2_descriptors_rf", "median_der_interior")))
+    C.append(Claim("5.3", "B2 crosses on 4 of 10 seeds", "table16", 4,
+                   t16("scaffold", "B2_descriptors_rf", "crossed_interior")))
+    C.append(Claim("5.3", "B2 DER CI given crossing [0.98, 2.93]", "table16", "0.98/2.93",
                    f'{round(float(t16("scaffold", "B2_descriptors_rf", "der_ci_lo")), 2)}/'
                    f'{round(float(t16("scaffold", "B2_descriptors_rf", "der_ci_hi")), 2)}'))
+    C.append(Claim("5.3", "B2 random-split DER CI, corrected, is [0.85, 2.82]", "table16",
+                   "0.85/2.82",
+                   f'{round(float(t16("random", "B2_descriptors_rf", "der_ci_lo")), 2)}/'
+                   f'{round(float(t16("random", "B2_descriptors_rf", "der_ci_hi")), 2)}'))
+    # --- the equivalence §5.3 states, checked rather than asserted ----------
+    C.append(Claim("5.3", "T1 mean slope / pooled coef both +0.0010", "table15",
+                   "0.001/0.001",
+                   f'{t15("scaffold", "T1_chemberta_linear_probe", "mean_slope")}/'
+                   f'{t15("scaffold", "T1_chemberta_linear_probe", "pooled_interaction_coef")}'))
+    C.append(Claim("5.3", "T1 pseudomedian +0.0032", "table15", 0.0032,
+                   t15("scaffold", "T1_chemberta_linear_probe", "hodges_lehmann")))
+    C.append(Claim("5.3", "pooled == mean for every arm", "table15", True,
+                   bool(read_table("table15_h2_interaction.csv").pooled_equals_mean.all())))
+    C.append(Claim("5.3", "median and mean agree in sign for all seven arms", "table15",
+                   7, int(read_table("table15_h2_interaction.csv")
+                          .query("split == 'scaffold'").estimators_agree_in_sign.sum())))
+    C.append(Claim("5.3", "every scaffold test used the exact null distribution",
+                   "table15", True,
+                   bool((read_table("table15_h2_interaction.csv")
+                         .query("split == 'scaffold'").wilcoxon_method == "exact").all())))
+    C.append(Claim("5.3", "smallest attainable two-sided p at n=10 is 0.00195",
+                   "arithmetic", 0.00195, round(2 / 2 ** 10, 5)))
+    C.append(Claim("5.3", "no DER interval on any split excludes 1", "table16", 0,
+                   int(read_table("table16_der_uncertainty.csv")
+                       .query("arm != 'B1_ecfp_histgb'").dropna(subset=["der_ci_lo"])
+                       .eval("der_ci_lo > 1 or der_ci_hi < 1").sum())))
 
     # ---- 5.7, the pooled-family sensitivity analysis ----------------------
     # Recomputed here from table14's own raw p-values rather than copied from

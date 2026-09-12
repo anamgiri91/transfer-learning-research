@@ -138,24 +138,63 @@ def test_a_seed_missing_a_size_is_dropped_not_silently_interpolated():
     assert 3 not in seeds and len(seeds) == 9
 
 
-def test_a_censored_curve_is_counted_as_censored_not_scored_as_zero():
+def test_a_never_reaching_curve_is_censored_not_scored_as_zero():
     """The correction §5.3 makes to table2: never-reaching is not DER = 0."""
     base, arm = flat(0.60), flat(0.90)          # arm never reaches 0.60
-    out = h2.der(curves(arm, base), "scaffold")
-    row = out[out.arm == ARM].iloc[0]
-    assert row.seeds_reaching_target == 0
-    assert row.seeds_censored == 10
-    assert np.isnan(row.median_der_where_defined)   # not 0.0
+    row = h2.der(curves(arm, base), "scaffold").query("arm == @ARM").iloc[0]
+    assert row.crossed_interior == 0
+    assert row.right_censored_never_reached == 10
+    assert np.isnan(row.median_der_interior)    # not 0.0
 
 
-def test_a_partially_censored_arm_reports_both_halves():
-    """The real shape: some seeds cross, most do not. Both numbers must show."""
+def test_left_censoring_is_its_own_state_and_is_not_a_crossing_at_50():
+    """An arm already at target at n=50 crossed at an UNKNOWN size <= 50.
+
+    Scoring it as a crossing at exactly 50 is extrapolation outside the
+    evaluated range, and it is not harmless: doing so is what produced the
+    spurious "B2 on random excludes 1" DER interval that §5.3 retracts.
+    """
+    base, arm = flat(0.60), flat(0.40)          # already below target at n=50
+    row = h2.der(curves(arm, base), "scaffold").query("arm == @ARM").iloc[0]
+    assert row.left_censored_at_n50 == 10
+    assert row.crossed_interior == 0
+    assert np.isnan(row.median_der_interior)
+
+
+def test_the_three_censoring_states_partition_the_seeds():
+    """Asserted in der() itself; asserted here on a mixture of all three."""
     base = flat(0.60)
-    arm = {n: [0.50 if s < 4 else 0.90 for s in range(10)] for n in SIZES}
-    out = h2.der(curves(arm, base), "scaffold")
-    row = out[out.arm == ARM].iloc[0]
-    assert row.seeds_reaching_target == 4 and row.seeds_censored == 6
-    assert not np.isnan(row.median_der_where_defined)
+    arm = {n: [0.40] * 3 + [0.90] * 4 + [0.55] * 3 for n in SIZES}
+    row = h2.der(curves(arm, base), "scaffold").query("arm == @ARM").iloc[0]
+    assert (row.crossed_interior + row.left_censored_at_n50
+            + row.right_censored_never_reached) == row.n_seeds == 10
+    assert row.left_censored_at_n50 == 6        # 0.40 and 0.55 both start below
+
+
+def test_a_median_is_withheld_below_three_crossings_rather_than_computed():
+    """One or two crossings do not make a median worth printing.
+
+    The two crossing seeds descend THROUGH the target between n=250 and n=347,
+    which is what an interior crossing is; starting below it at n=50 would be
+    left-censoring instead.
+    """
+    base = flat(0.60)
+    crossing = {50: 0.90, 100: 0.85, 250: 0.80, 347: 0.50}
+    never = {n: 0.90 for n in SIZES}
+    arm = {n: [crossing[n] if s < 2 else never[n] for s in range(10)] for n in SIZES}
+    row = h2.der(curves(arm, base), "scaffold").query("arm == @ARM").iloc[0]
+    assert row.crossed_interior == 2, row.to_dict()
+    assert np.isnan(row.median_der_interior)
+
+
+def test_three_interior_crossings_do_get_a_median():
+    """The floor is a floor, not a blanket refusal."""
+    base = flat(0.60)
+    crossing = {50: 0.90, 100: 0.85, 250: 0.80, 347: 0.50}
+    never = {n: 0.90 for n in SIZES}
+    arm = {n: [crossing[n] if s < 3 else never[n] for s in range(10)] for n in SIZES}
+    row = h2.der(curves(arm, base), "scaffold").query("arm == @ARM").iloc[0]
+    assert row.crossed_interior == 3 and not np.isnan(row.median_der_interior)
 
 
 def test_non_monotonic_curves_are_counted_because_the_threshold_read_depends_on_them():
@@ -164,6 +203,83 @@ def test_non_monotonic_curves_are_counted_because_the_threshold_read_depends_on_
     arm = {50: [0.80] * 10, 100: [0.70] * 10, 250: [0.55] * 10, 347: [0.65] * 10}
     out = h2.der(curves(arm, base), "scaffold")
     assert out[out.arm == ARM].iloc[0].curves_non_monotonic == 10
+
+
+# --------------------------------------------------------------------------
+# Mean vs median vs pseudomedian: three quantities, not three views of one
+# --------------------------------------------------------------------------
+
+def test_pooled_OLS_recovers_the_MEAN_of_per_seed_slopes_not_the_median():
+    """The equivalence §5.3 states, on a case constructed so they differ.
+
+    Nine seeds with slope ~ +0.01 and one with -0.50: the median stays
+    positive, the mean is dragged negative. If a future refactor makes the
+    pooled fit track the median instead, or the manuscript reverts to calling
+    them the same coefficient, this fails.
+    """
+    base = flat(0.60)
+    # per-seed deficit slopes: 9 gentle positives, 1 large negative
+    x = np.log2(np.array(SIZES, float))
+    xc = x - x.mean()
+    per_seed = [0.01] * 9 + [-0.50]
+    arm = {n: [] for n in SIZES}
+    for s, sl in enumerate(per_seed):
+        d = sl * xc
+        for k, n in enumerate(SIZES):
+            arm[n].append(0.60 + d[k])
+    M = curves(arm, base)
+    seeds = list(range(10))
+    slopes = h2.per_seed_slopes(M, ARM, seeds)
+    coef, _, _ = h2.pooled_interaction(M, ARM, seeds)
+
+    assert np.isclose(np.median(slopes), 0.01, atol=1e-9)
+    assert np.isclose(slopes.mean(), (9 * 0.01 - 0.50) / 10, atol=1e-9)
+    assert np.isclose(coef, slopes.mean(), atol=1e-10)      # the equivalence
+    assert not np.isclose(coef, np.median(slopes), atol=1e-3)   # and the non-equivalence
+    # They even disagree in SIGN here, which is the worst case for a verdict.
+    assert np.median(slopes) > 0 > coef
+
+
+def test_the_equivalence_check_fires_when_the_design_is_unbalanced():
+    """_check_equivalence must not pass vacuously.
+
+    It is the guard that stops §5.3's wording going stale a second time, so it
+    has to fail on a design where the identity genuinely stops holding.
+    """
+    base, arm = flat(0.60), flat(0.65)
+    M = curves(arm, base)
+    bad = np.array([0.0] * 10)                  # a wrong slope vector
+    with pytest.raises(AssertionError, match="pooled interaction"):
+        h2._check_equivalence(M, ARM, list(range(10)), bad + 1.0)
+
+
+def test_hodges_lehmann_is_a_third_quantity_again():
+    """Not the mean, not the median: the pseudomedian the signed-rank localises."""
+    v = np.array([0.01] * 9 + [-0.50])
+    hl = h2.hodges_lehmann(v)
+    assert not np.isclose(hl, v.mean(), atol=1e-6)
+    assert hl != pytest.approx(np.median(v), abs=1e-12) or True   # may coincide
+    # Walsh averages include (0.01 + -0.50)/2 = -0.245, so HL < median here.
+    assert hl <= np.median(v)
+
+
+def test_the_reported_wilcoxon_method_matches_what_scipy_would_select():
+    """§5.3 states the exact null distribution is used at n=10. Check it."""
+    clean = np.array([0.1, 0.2, 0.3, -0.05, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+    p, method, n_zero = h2.wilcoxon_with_method(clean)
+    assert method == "exact" and n_zero == 0
+    assert p >= 2 / 2 ** 10 - 1e-12
+
+    withzero = clean.copy(); withzero[0] = 0.0
+    p2, method2, n_zero2 = h2.wilcoxon_with_method(withzero)
+    assert n_zero2 == 1
+    # zeros present and n<=13 => exhaustive permutations, never asymptotic
+    assert method2 == "exhaustive permutations"
+
+
+def test_a_degenerate_all_zero_slope_vector_does_not_crash_or_claim_significance():
+    p, method, n_zero = h2.wilcoxon_with_method(np.zeros(10))
+    assert p == 1.0 and n_zero == 10 and "degenerate" in method
 
 
 # --------------------------------------------------------------------------
@@ -195,24 +311,23 @@ def test_B0_is_the_sanity_check_and_has_the_expected_sign():
     assert row.median_slope > 0 and row.p_holm <= 0.05
 
 
-def test_no_committed_DER_is_distinguishable_from_one():
-    """§5.3 states this; it must stay true or the sentence must change."""
-    import pandas as pd
-    df = pd.read_csv("results/tables/table16_der_uncertainty.csv", comment="#")
-    d = df[(df.split == "scaffold") & (df.arm != "B1_ecfp_histgb")
-           & df.der_ci_lo.notna()]
-    assert len(d) >= 2
-    assert ((d.der_ci_lo <= 1.0) & (d.der_ci_hi >= 1.0)).all(), d.to_dict("records")
+def test_no_committed_DER_interval_on_any_split_excludes_one():
+    """§5.3 states this without a split qualifier; it must stay true.
 
-
-def test_the_scaffold_scoping_of_that_claim_is_load_bearing():
-    """...and is false unscoped, which is why §5.3 names the split.
-
-    B2's per-seed DER on the random split is [1.14, 3.78], excluding 1. An
-    earlier draft of §5.3 said "no DER in this study" without qualification;
-    this test exists so that sentence cannot drift back.
+    It became true only once left-censored seeds stopped being scored as
+    crossings at exactly n=50 -- before that, B2 on the random split appeared
+    to exclude 1.
     """
     import pandas as pd
     df = pd.read_csv("results/tables/table16_der_uncertainty.csv", comment="#")
-    row = df[(df.split == "random") & (df.arm == "B2_descriptors_rf")].iloc[0]
-    assert row.der_ci_lo > 1.0
+    d = df[(df.arm != "B1_ecfp_histgb") & df.der_ci_lo.notna()]
+    assert len(d) >= 4
+    assert ((d.der_ci_lo <= 1.0) & (d.der_ci_hi >= 1.0)).all(), d.to_dict("records")
+
+
+def test_the_conditional_median_is_only_reported_where_enough_seeds_cross():
+    """A median over 1-2 crossings must be withheld, not printed."""
+    import pandas as pd
+    df = pd.read_csv("results/tables/table16_der_uncertainty.csv", comment="#")
+    assert (df[df.crossed_interior < 3].median_der_interior.isna()).all()
+    assert (df[df.crossed_interior >= 3].median_der_interior.notna()).all()

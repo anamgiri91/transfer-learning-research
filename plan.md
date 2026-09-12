@@ -95,6 +95,79 @@ Written 2026-09-01; see Amendment 1 and the checklist in §10.
 > targets now point at it and `config/` is marked superseded rather than
 > deleted.
 
+> ## ⚠ Amendment 4 — 2026-09-11, the amended fine-tuning experiments
+>
+> **These are amended experiments, designed after the earlier results were
+> observed.** They are not the pre-registered analysis, they are not
+> independent confirmation of it, and no text in the manuscript may describe
+> them as either. This section is written and dated *before* the runs are
+> evaluated; the only results seen beforehand are the two timing cells noted
+> at the end.
+>
+> ### Why
+>
+> Two conclusions rest on numbers produced by a fine-tune configuration §6.2
+> already shows to be a harness artefact — the fixed 40-epoch, single-learning-
+> rate schedule that never reads a validation fold. Those are H2's only
+> significant interaction slope (§5.3) and §5.6's retracted calibration
+> reading. And H3's pre-registered comparison form — in-domain pretraining
+> versus generic pretraining, fine-tuned — has never been run at all
+> (Amendment 2), although the encoders needed for it exist.
+>
+> ### Arms (`scripts/run_finetune.py`)
+>
+> | Arm | Initial encoder weights | Purpose |
+> |---|---|---|
+> | `T2v` | ChemBERTa-77M-MTR | corrected generic fine-tune (H2) |
+> | `T4ft` | `models/indomain_T4.pt` — random init, then 3C/3CL multitask pretraining | H3, in-domain |
+> | `T5ft` | `models/indomain_T5.pt` — ChemBERTa, then the same in-domain pretraining | H3, chained |
+>
+> All three share one implementation and differ **only** in initial encoder
+> weights: same RoBERTa backbone (384 hidden), same tokenizer, same
+> mean-pooled linear readout, same optimiser, same schedule, same selection
+> rule. `T4ft` vs `T2v` is the H3 decision rule of §1 with architecture and
+> downstream adaptation held fixed.
+>
+> ### Fixed before running
+>
+> | | |
+> |---|---|
+> | **Split** | scaffold only (the primary endpoint; keeps this iteration bounded) |
+> | **Seeds** | the existing ten, ids 0–9 — no new seeds |
+> | **Sizes** | `T2v`: 50, 100, 250, 347 (H2 needs the curve). `T4ft`, `T5ft`: 347 only (H3's contrast is defined at full data, and this is what the compute allows) |
+> | **Training subsample** | reconstructed with `run_arms.py`'s exact RNG sequence, so every comparison is paired at the subsample level; asserted, not assumed |
+> | **Validation** | carved from the training subsample at 15%, mirroring `B1`'s `validation_fraction=0.15`. The split file's `val` fold is **not** used, exactly as in the published sweep — using it would hand these arms 49 compounds `B1` never sees |
+> | **Tuning budget** | learning rate from {1e-5, 3e-5, 1e-4}, selected per (seed, size) on internal-validation RMSE. Fixed at three points because the measured cost is 128 s per cell at n = 50 and 566 s at n = 347; a wider grid was not affordable locally, and the budget is therefore disclosed as unequal to `B1`'s 32 trials in the same direction §7 limitation 4 already records |
+> | **Schedule** | ≤ 60 epochs, AdamW, batch 16, early stopping at patience 10 on internal-validation RMSE, checkpoint restored from the best validation epoch |
+> | **Recorded per cell** | selected lr, selected epoch, optimizer steps, full validation history, internal train/val sizes, wall-clock, and any failure with its traceback |
+> | **Endpoints** | the five of §4.3, unchanged. Primary RMSE |
+> | **Comparisons** | `T2v` vs `B1` (paired Wilcoxon over seeds, at each size); `T2v` interaction slope vs log₂n for H2; `T4ft` vs `T2v` and `T5ft` vs `T2v` at n = 347 for H3, Holm-corrected within the three-contrast amended family and reported beside the pre-registered families rather than merged into them |
+> | **Stopping rule** | none. Every planned cell runs; nothing is stopped or extended on the basis of a p-value |
+> | **Reporting rule** | every planned cell is reported, including failures and unfavourable results |
+>
+> ### What these experiments cannot settle
+>
+> `T2v` differs from `T2` in **both** the schedule and the readout — `T2` used
+> the `<s>`-token classification head, these use mean pooling, which is what
+> the in-domain encoders were pretrained with and what every frozen probe here
+> uses. `T2v`-vs-`T2` is therefore a comparison of two conditions, not an
+> isolation of the schedule. The readout was matched across the three new arms
+> because H3 is the contrast that needed protecting.
+>
+> `T4ft` is **not** `plan.md`'s `T4`: that arm was specified for the EV-A71 3C
+> target Amendment 1 removed, and the corpus behind these encoders is 95%
+> coronaviral with median nearest-neighbour Tanimoto 0.247 to the evaluation
+> set. This is the pre-registered comparison *form* on the corpus the study
+> actually has.
+>
+> ### Disclosure
+>
+> Two cells — `T2v` seed 0 at n = 50 and at n = 347 — were run before this
+> amendment was finalised, to measure wall-clock and fix the budget. Their
+> RMSE values were visible when the budget was chosen. The budget was set by
+> measured cost, not by those values, and both cells are retained in the run
+> rather than discarded.
+
 
 This document is pre-registration-shaped on purpose: the analysis plan below is
 fixed *before* results exist, and any deviation gets an entry in
