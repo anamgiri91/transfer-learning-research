@@ -394,6 +394,15 @@ def numeric_delta(a: Path, b: Path) -> tuple[float | None, float]:
         for col in da.columns:
             if not pt.is_numeric_dtype(da[col]):
                 continue
+            # Wall-clock columns are not claims. Metric JSONs already exclude
+            # their `seconds` field for the same reason; a derived table that
+            # aggregates it (table23's median_seconds) must exclude it too, or
+            # a genuine re-fit fails for having taken a different number of
+            # seconds. Excluded by name rather than absorbed by a wider
+            # tolerance -- 0.437 relative is not float drift and must never be
+            # tolerated on a column that means something.
+            if "second" in col.lower() or col.lower().endswith("_time"):
+                continue
             u, v = da[col].to_numpy(float), db[col].to_numpy(float)
             m = ~(np.isnan(u) | np.isnan(v))
             if m.any():

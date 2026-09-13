@@ -341,3 +341,26 @@ def test_a_dropped_metric_is_caught(tmp_path, monkeypatch):
     _watch(monkeypatch, ["*.json"])
     assert any("metric names differ" in x
                for x in vr.compare(base, live, {"m.json"}, tracked={"m.json"})["bad"])
+
+
+def test_a_wall_clock_column_in_a_table_is_excluded(tmp_path, monkeypatch):
+    """A genuine re-fit takes a different number of seconds. That is not drift.
+
+    table23 aggregates per-cell wall-clock into median_seconds; re-fitting B3
+    moved it 0.437 relative and failed the run. Excluded by column name, the
+    same way metric JSONs exclude their `seconds` field.
+    """
+    base, live = _trees(tmp_path, {"t.csv": "# generated\nrmse,median_seconds\n0.5,30.0\n"})
+    (live / "t.csv").write_text("# generated\nrmse,median_seconds\n0.5,17.0\n")
+    _watch(monkeypatch, ["*.csv"])
+    r = vr.compare(base, live, {"t.csv"}, tracked={"t.csv"})
+    assert not r["bad"], r
+
+
+def test_the_exclusion_does_not_leak_to_meaningful_columns(tmp_path, monkeypatch):
+    """Only timing is exempt: a real metric moving by the same amount fails."""
+    base, live = _trees(tmp_path, {"t.csv": "# generated\nrmse,median_seconds\n0.5,30.0\n"})
+    (live / "t.csv").write_text("# generated\nrmse,median_seconds\n0.72,30.0\n")
+    _watch(monkeypatch, ["*.csv"])
+    assert any("over its" in b for b in
+               vr.compare(base, live, {"t.csv"}, tracked={"t.csv"})["bad"])
