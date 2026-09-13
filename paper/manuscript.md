@@ -12,38 +12,36 @@ script that produced it.
 **Background.** Self-supervised pretraining is the default opening move in
 molecular property prediction, but its evidence base is large, noisy
 benchmarks. We test the opposite regime — a few hundred compounds, one target,
-one assay — using the OpenBind EV-A71 / CVA16 2A protease structure–affinity
-release: 494 curated compounds, 272 scaffolds, maximum replicate spread
-0.49 log units.
+one assay — on the OpenBind EV-A71 / CVA16 2A protease release: 494 curated
+compounds, 272 scaffolds, maximum replicate spread 0.49 log units.
 
 **Results.** Twelve arms were compared on identical materialised splits across
-10 seeds and four training-set sizes (1,060 evaluated runs), plus 100 amended
-runs — 60 fine-tuning, 40 D-MPNN. On scaffold-split RMSE the frozen ChemBERTa-2 probe is worse
-than an ECFP4 + gradient boosting baseline (Holm p = 0.012), and a corrected
-fine-tune is worse at all four sizes (Holm ≤ 0.023). Running the pre-registered
-interaction term we had omitted, the probe's deficit neither shrinks nor grows
-with training-set size (slope +0.007, 95% CI −0.017 to +0.019), so data
-efficiency is **unresolved**, not refuted; per seed the data-efficiency ratio is
-censored rather than zero. Executing the in-domain-versus-generic pretraining
+10 seeds and four training-set sizes (1,060 evaluated runs), plus 100 amended runs. On scaffold-split RMSE a frozen ChemBERTa-2 probe is worse than an
+ECFP4 + gradient boosting baseline (Holm p = 0.012), and a corrected fine-tune
+is worse at all four sizes (Holm ≤ 0.023) — as is a from-scratch D-MPNN
+(Holm ≤ 0.020), which the two deep arms match but do not beat. Running the
+pre-registered interaction term we had omitted, the probe's deficit neither
+shrinks nor grows with training-set size (slope +0.007, 95% CI −0.017 to
++0.019), so data efficiency is **unresolved**, not refuted. The in-domain-versus-generic
 comparison the protocol specified — matched architecture, readout and
 adaptation — returns **no detectable difference** (paired median +0.016 RMSE,
 95% CI −0.033 to +0.057, Holm p = 1.000), while a marginal reading of the same
-runs points the opposite way. On precision@10% the fine-tune beats the baseline
-within that endpoint's family (Holm p = 0.023) but not pooled across endpoints
-(p = 0.0975); we report it as exploratory. Stratifying the test fold localises
-the deficit to compounds with no near training neighbour, not activity cliffs.
+runs points the opposite way.
+On precision@10% two arms beat the baseline within their own families; neither
+survives pooling across endpoints, and both are exploratory.
+Stratifying the test fold localises the deficit to compounds with no near
+training neighbour, not activity cliffs. No arm here isolates pretraining.
 
-**Contribution.** That pretrained encoders struggle against fingerprint
-baselines, and that scaffold splits leak, are established elsewhere at larger
-scale; we do not claim them. This study adds: a per-stratum localisation
-placing the transfer deficit in extrapolation to novel chemistry rather than
-activity cliffs; a decontamination ablation whose size-matched control reverses
-the conclusion the protocol as written would have reached; a matched
-in-domain-versus-generic contrast in which paired and marginal readings
-disagree in sign; a documented case of two pre-registered hypotheses reported
-as answered on analyses never run, recovered by machine-checked verification of
-every numeric claim; and a reconstructable benchmark with declared inputs,
-coverage and tolerances.
+**Scientific Contribution.** That pretrained encoders struggle against
+fingerprint baselines, and that scaffold splits leak, are established elsewhere
+at larger scale and are not claimed here. This study contributes a per-stratum
+localisation placing the transfer deficit in extrapolation to novel chemistry
+rather than activity cliffs, a decontamination ablation whose size-matched
+control reverses the conclusion the protocol as written would have reached, and
+a matched in-domain-versus-generic contrast in which paired and marginal
+summaries disagree in sign. It also documents two pre-registered hypotheses
+reported as answered on analyses never run, recovered by machine-checked
+verification of every numeric claim.
 
 ## 1. Introduction
 
@@ -2256,26 +2254,34 @@ efficiency the honest verdict is weaker than the one we previously printed
 here: the pre-registered interaction test leaves H2 **unanswered** for the
 frozen probe, and the DER, computed per seed with its censoring made explicit,
 is nowhere distinguishable from 1 (§5.3). The frozen probe was significantly worse; the
-fine-tune, properly tuned, was merely indistinguishable, at ~70× the compute
-per fit. For projects in this regime the classical
+fine-tune was worse at every size once given a documented validation-based
+schedule (§6.6), at ~70× the compute per fit. For projects in this regime the classical
 baseline remains the right default, and the burden of proof sits with the
 pretrained model.
 
-**But the failure looks specific rather than general, and two controls locate
-it.** Measured against an untrained encoder of the same architecture, the
-pretrained one is ahead by a median of 0.011 RMSE over five draws of that
-control, and by 0.004 against the draw the paired test was run on — where it
-wins 5 of 10 seeds and cannot be separated from zero. Multitask pretraining on
-2,743 compounds from related 3C/3C-like proteases is ahead of that same
-control by 0.030 and beats
-the generic probe in 9 of 10 seeds. We report that as suggestive and not
-established: corrected for multiplicity across the full-data contrasts, those
-comparisons clear Benjamini–Hochberg but not Holm, and **every result that does
-survive Holm is a negative one.** What the data support is that *generic*
-pretraining fails here; that in-domain pretraining rescues it is a hypothesis
-this study makes plausible and does not confirm. Where the generic arms'
-deficit concentrated was not on activity cliffs but on compounds unlike
-anything in the training fold — a distinction a single aggregate score hides.
+**The deep arms land together, behind fingerprints.** A from-scratch D-MPNN —
+the baseline the protocol froze and this study had not run — is also worse than
+the fingerprint baseline at every training-set size (Holm ≤ 0.020), and is not
+separated from the corrected fine-tune (§6.7). So the arm transfer fails to
+beat is not merely a fingerprint model; a maintained graph network given the
+same data does not beat it either.
+
+**And in-domain pretraining does not rescue it, in the form the protocol
+specified.** §6.4's probe-versus-probe contrast was suggestive; run as
+`plan.md` names it — in-domain against generic pretraining with architecture,
+readout and adaptation matched — the difference is not detectable in either
+direction (paired median +0.016 RMSE, 95% CI −0.033 to +0.057, Holm 1.000;
+§6.6). On the enrichment endpoint the chained in-domain arm *does* beat the
+baseline at 9 of 10 seeds, and carries the same caveats as the one other
+positive in this paper: coarse metric, family-sensitive, exploratory (§6.8).
+
+**What none of this establishes is that pretraining confers no benefit.** This
+study has no fully trainable randomly-initialised encoder matched to its
+fine-tuned one — `T0r` is a frozen random-feature probe — so every result here
+is a statement about particular arms against particular baselines (§7,
+limitation 12). Where the generic arms' deficit concentrated was not on
+activity cliffs but on compounds unlike anything in the training fold — a
+distinction a single aggregate score hides.
 
 Three methodological points generalise further than the headline. Transfer arms
 are far more sensitive to their training schedule than the baselines are, so
@@ -2312,7 +2318,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **499 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **506 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2469,6 +2475,26 @@ byte-identical. What is stable, and is the claim:
 | bytes differ, every number identical | wall-clock `seconds` in metric JSONs; identity fields and metric names checked exactly | drift exactly 0 |
 | within tolerance, non-zero drift | float reduction order | **< 1e-15** observed against a 1e-9 limit, across every run |
 
+**The amended arms' training path is verified on a predetermined subset.**
+Placing 200 artefacts in *compared only* leaves the training itself unshown:
+committed bytes are self-consistent, but that is not evidence they can be
+produced again. `make verify-retrain` retrains five cells fixed in the source
+rather than chosen afterwards — `T2v` at n = 50 and n = 347, `T4ft` and `T5ft`
+at n = 347, `B3` at n = 347, all seed 0 — in a throwaway worktree with the
+supplied inputs symlinked read-only, and diffs them against the worktree's own
+pristine checkout. The committed outputs are the reference and are never
+written to.
+
+**All five reproduce bit-identically**: metric drift 0.00e+00, prediction drift
+0.00e+00, with test-row identities, labels, selected learning rate and
+train/validation sizes compared **exactly** rather than within tolerance —
+numbers agreeing while the selection landed elsewhere would be coincidence, not
+a rerun. The torch fine-tuning path on this hardware is fully deterministic
+under the study's seeding, so the 1e-6 tolerance declared for it was never
+approached. Results in `docs/retrain-verification.json`; the remaining 195
+cells stay *compared only*, with commands and costs in
+[`../docs/reproduction-coverage.md`](../docs/reproduction-coverage.md).
+
 **Tolerances are declared, justified and tested from both sides.** 1e-9
 relative for metrics and derived tables — four orders above the worst observed
 drift (~1e-15 from `n_jobs=-1` reduction order, amplified to ~1e-13 by
@@ -2559,7 +2585,14 @@ No external funding was received for this work.
 
 ### Authors' contributions
 
-Not applicable to this preprint draft; to be completed at submission.
+**Requires the corresponding author's input before submission — deliberately
+left blank rather than drafted.** Journal of Cheminformatics requires a
+statement of what each author contributed; that is a factual matter about
+people, and inventing it would be a fabrication of exactly the kind the rest of
+this manuscript's verification apparatus exists to prevent. The same applies to
+the author list, affiliations, ORCIDs, corresponding-author designation, and to
+the Funding and Competing-interests declarations above if either is inaccurate
+as stated.
 
 ### Ethics approval and consent to participate
 

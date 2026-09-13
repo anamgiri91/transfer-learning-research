@@ -1,0 +1,57 @@
+{
+  "baseline_ref": "de7354c",
+  "cells": [
+    {
+      "labels_identical": true,
+      "metric_drift": 0.0,
+      "passed": true,
+      "pred_drift": 0.0,
+      "rows_identical": true,
+      "seconds": 142.5,
+      "selection_identical": true,
+      "tag": "T2v__scaffold__seed0__n50"
+    },
+    {
+      "labels_identical": true,
+      "metric_drift": 0.0,
+      "passed": true,
+      "pred_drift": 0.0,
+      "rows_identical": true,
+      "seconds": 601.1,
+      "selection_identical": true,
+      "tag": "T2v__scaffold__seed0__n347"
+    },
+    {
+      "labels_identical": true,
+      "metric_drift": 0.0,
+      "passed": true,
+      "pred_drift": 0.0,
+      "rows_identical": true,
+      "seconds": 313.9,
+      "selection_identical": true,
+      "tag": "T4ft__scaffold__seed0__n347"
+    },
+    {
+      "labels_identical": true,
+      "metric_drift": 0.0,
+      "passed": true,
+      "pred_drift": 0.0,
+      "rows_identical": true,
+      "seconds": 327.7,
+      "selection_identical": true,
+      "tag": "T5ft__scaffold__seed0__n347"
+    },
+    {
+      "labels_identical": true,
+      "metric_drift": 0.0,
+      "passed": true,
+      "pred_drift": 0.0,
+      "rows_identical": true,
+      "seconds": 29.5,
+      "selection_identical": true,
+      "tag": "B3__scaffold__seed0__n347"
+    }
+  ],
+  "note": "Predetermined subset retrained from supplied inputs in an isolated worktree. Committed outputs were the reference and were not modified.",
+  "tolerance_relative": 1e-06
+}

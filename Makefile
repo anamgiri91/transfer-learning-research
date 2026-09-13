@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full finetune
+.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full verify-retrain finetune
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -93,6 +93,9 @@ verify-repro:  ## Reconstruct the offline stages in an isolated worktree and dif
 
 verify-repro-full:  ## As above, plus the transfer arms (~25 min)
 	$(PY) scripts/verify_reproducibility.py --tier full
+
+verify-retrain:  ## Retrain five predetermined amended cells in isolation (~30 min)
+	$(PY) scripts/verify_retrain.py
 
 verify-online:  ## verify, plus check that every cited URL still resolves
 	$(MAKE) verify

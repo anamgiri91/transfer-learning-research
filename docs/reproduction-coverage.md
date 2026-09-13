@@ -85,6 +85,65 @@ tolerance.
 | `measure_contamination.py` → `table5` | needs PubChem | the one committed table with no offline reconstruction path |
 | `run_finetune.py`, 60 Amendment 4 cells | ~7 h total | training **not** re-executed; the 60 metric files and 60 prediction bundles are committed and compared, and tables 17–21 derived from them **are** reconstructed by the `analyse_amended` stage |
 
+## Retraining the amended arms
+
+`verify_reproducibility.py` places the 120 Amendment 4 artefacts and the 80
+Amendment 5 ones in **compared only** — committed and diffed, but their
+training not re-executed, because all 100 cells cost ~7.3 h. That leaves the
+training *path* unverified: the bytes are self-consistent, but nothing had
+shown they can be produced again.
+
+`make verify-retrain` closes that for a **predetermined** subset, fixed in the
+source rather than chosen after seeing which cells reproduce:
+
+| Cell | Why this one |
+|---|---|
+| `T2v` seed 0, n = 50 | cheapest fine-tune cell |
+| `T2v` seed 0, n = 347 | most expensive |
+| `T4ft` seed 0, n = 347 | in-domain encoder path |
+| `T5ft` seed 0, n = 347 | chained encoder path |
+| `B3` seed 0, n = 347 | chemprop path |
+
+It runs in a throwaway `git worktree` at an immutable ref with the supplied
+inputs symlinked read-only, clears only those five cells, refits them, and
+diffs against the worktree's own pristine checkout. **The committed outputs are
+the reference and are never written to.** Compared: every metric, every
+prediction, and — exactly, not within tolerance — test-row identities, labels,
+the selected learning rate and the train/validation sizes, because numbers
+agreeing while the selection landed elsewhere would be a coincidence rather
+than a rerun. Results are written to `docs/retrain-verification.json`.
+
+## Reproducing the rest
+
+```bash
+# 1. Obtain the supplied inputs (not redistributed here; 186 MB)
+#    - data/raw/: OpenBind Zenodo record 20026661, plus the 8 ChEMBL exports
+#      whose manifests are in data/raw/*.manifest.json
+#    - models/: six in-domain encoders, rebuilt by `make indomain` (~1.4 h)
+python scripts/verify_reproducibility.py --write-input-manifest   # then diff
+
+# 2. Everything cheap and offline (~25 min)
+make verify-repro-full
+
+# 3. The amended arms, in full (~7.3 h)
+make finetune            # Amendment 4: T2v, T4ft, T5ft  (~7 h)
+python scripts/run_dmpnn.py --splits scaffold          # Amendment 5: B3 (~17 min)
+python scripts/run_arms.py --arms T2 --splits random butina --sizes 347 --save-preds
+
+# 4. The original ChemBERTa fine-tune and the tuning sweep (~3.8 h)
+python scripts/run_arms.py --arms T2 --splits scaffold --save-preds
+python scripts/tune_arms.py
+```
+
+**Dependencies and access.** Python 3.14, `pip install -e ".[dev]"`, plus
+`chemprop==2.3.1` for `B3` (installing it upgrades `rdkit` to 2026.3.6; the
+full reconstruction was re-run under that version and every artefact still
+matches). `DeepChem/ChemBERTa-77M-MTR` is pulled from HuggingFace on first use
+and needs network access once. `measure_contamination.py` needs PubChem and
+`verify_surrogate.py` needs UniProt; both are marked network stages and skip
+cleanly when unreachable. No credentials, licences or registrations are
+required for any of it.
+
 ## Total cost of the study
 
 ~5.3 CPU-hours on one laptop: 125 min of evaluation runs (of which 118 min is

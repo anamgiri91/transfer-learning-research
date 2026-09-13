@@ -391,6 +391,28 @@ def build_claims() -> list[Claim]:
     C.append(Claim("6.6", "53 of them map onto a <s>-head backbone", "models/indomain_T4.pt",
                    53, _encoder_overlap(seqcls=True)))
 
+    # ---- 10, the retraining verification -------------------------------------
+    if Path("docs/retrain-verification.json").exists():
+        _rt = json.loads(Path("docs/retrain-verification.json").read_text())
+        C.append(Claim("10", "five cells retrained", "retrain-verification", 5,
+                       len(_rt["cells"])))
+        C.append(Claim("10", "all five pass", "retrain-verification", 5,
+                       sum(1 for c in _rt["cells"] if c["passed"])))
+        C.append(Claim("10", "metric drift is exactly zero", "retrain-verification",
+                       0.0, max(c["metric_drift"] for c in _rt["cells"])))
+        C.append(Claim("10", "prediction drift is exactly zero",
+                       "retrain-verification", 0.0,
+                       max(c["pred_drift"] for c in _rt["cells"])))
+        C.append(Claim("10", "row identities match on all five",
+                       "retrain-verification", 5,
+                       sum(1 for c in _rt["cells"] if c["rows_identical"])))
+        C.append(Claim("10", "selection provenance matches on all five",
+                       "retrain-verification", 5,
+                       sum(1 for c in _rt["cells"] if c["selection_identical"])))
+        C.append(Claim("10", "torch tolerance declared at 1e-6",
+                       "retrain-verification", 1e-6,
+                       float(_rt["tolerance_relative"])))
+
     # ---- 6.8, the enrichment robustness check --------------------------------
     if Path("results/tables/table25_enrichment_robustness.csv").exists():
         _e = read_table("table25_enrichment_robustness.csv")
