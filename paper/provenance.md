@@ -46,6 +46,10 @@ belong in the paper.
 | Table 19 — amended sweep completeness (§6.6) | `scripts/analyse_amended.py` | `results/tables/table19_amended_progress.csv` |
 | Table 20 — corrected fine-tune's H2 slope (§6.6) | `scripts/analyse_amended.py` | `results/tables/table20_amended_h2_slope.csv` |
 | Table 21 — per-seed RMSE for B1/T2/T2v/T4ft/T5ft (§6.6) | `scripts/analyse_amended.py` | `results/tables/table21_per_seed_finetune.csv` |
+| Table 22 — leave-one-pair-out sensitivity of the H3 median reversal (§6.6) | `scripts/analyse_amended.py` | `results/tables/table22_median_reversal.csv` |
+| Table 23 — B3 D-MPNN learning curve (§6.7) | `scripts/run_dmpnn.py` → `analyse_b3.py` | `results/tables/table23_b3_curve.csv` |
+| Table 24 — Amendment 5's five B3 contrasts (§6.7) | `scripts/analyse_b3.py` | `results/tables/table24_b3_contrasts.csv` |
+| Table 25 — enrichment robustness, Amendment 6's five tests (§6.8) | `scripts/run_arms.py` → `analyse_enrichment.py` | `results/tables/table25_enrichment_robustness.csv` |
 | Supplied-input checksums | `scripts/verify_reproducibility.py --write-input-manifest` | `docs/input-checksums.json` |
 | Reproduction coverage, written by the passing run | `scripts/verify_reproducibility.py --tier full` | `docs/reproduction-coverage.json`, `docs/reproduction-coverage.md` |
 | Figures 1, 3, 4 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
@@ -80,7 +84,7 @@ image exists and that the visible numbers run 1..N.
 Bit-reproducibility is verified on every `make verify-repro`, not once by hand:
 `eva71_2a.csv`, `indomain_3c.csv` and all 30 split files are byte-identical,
 the 360 re-fitted baseline metric files match to ~1e-15 relative, and the data
-rows of all 28 tables are byte-identical. The nine figures are
+rows of all 32 tables are byte-identical. The nine figures are
 regenerated but **not verified**: they are gitignored as regenerable, so a
 reconstruction has no committed copy to diff against, and matplotlib PNG output
 is not byte-stable across environments in any case. The transfer arms'
@@ -125,7 +129,11 @@ python scripts/analyse_endpoints.py                      # -> table14
 python scripts/analyse_h2.py                             # -> tables 15, 16
 python scripts/run_finetune.py --arms T2v                # Amendment 4 (~3.7 h)
 python scripts/run_finetune.py --arms T4ft T5ft --sizes 347   # H3 (~3.1 h)
-python scripts/analyse_amended.py                        # -> tables 17, 18
+python scripts/analyse_amended.py                        # -> tables 17-22
+python scripts/run_dmpnn.py --splits scaffold            # B3, Amendment 5 (~17 min)
+python scripts/analyse_b3.py                             # -> tables 23, 24
+python scripts/run_arms.py --arms T2 --splits random butina --sizes 347 --save-preds
+python scripts/analyse_enrichment.py                     # -> table25
 python scripts/render_manuscript_tables.py               # -> manuscript tables
 make verify                                              # -> every check below
 ```

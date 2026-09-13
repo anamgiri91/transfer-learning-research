@@ -289,6 +289,48 @@ def per_seed_table(M) -> pd.DataFrame:
     return pd.concat([df, pd.DataFrame([summary])], ignore_index=True)
 
 
+def median_reversal(M) -> pd.DataFrame:
+    """Why median(T4ft) - median(T2v) and median(T4ft - T2v) disagree in sign.
+
+    An earlier draft attributed the disagreement to one seed "carrying" the
+    marginal advantage. Leave-one-pair-out refutes that: dropping any single
+    seed leaves both summaries with their original signs. The real reason is
+    arithmetic and long known -- the median is not a linear operator, so
+    median(X - Y) need not equal median(X) - median(Y) -- and it bites here
+    because the two arms rank the seeds differently, so the observations
+    sitting at each arm's median are not the same seeds.
+
+    Reported as an empirical illustration of a known issue, not a discovery.
+    All ten seeds stay in the primary analysis; this is descriptive only.
+    """
+    if not all((s, 347) in M.get(a, {}) for a in ("T2v", "T4ft") for s in SEEDS):
+        return pd.DataFrame()
+    a = np.array([M["T4ft"][(s, 347)]["metrics"]["rmse"] for s in SEEDS])
+    b = np.array([M["T2v"][(s, 347)]["metrics"]["rmse"] for s in SEEDS])
+    d = a - b
+    rows = [dict(dropped_seed=-1,
+                 marginal_diff=float(np.median(a) - np.median(b)),
+                 paired_median=float(np.median(d)),
+                 signs_agree=bool(np.sign(np.median(a) - np.median(b))
+                                  == np.sign(np.median(d))))]
+    for i in range(len(SEEDS)):
+        m = np.ones(len(SEEDS), bool); m[i] = False
+        md, pm = float(np.median(a[m]) - np.median(b[m])), float(np.median(d[m]))
+        rows.append(dict(dropped_seed=SEEDS[i], marginal_diff=md, paired_median=pm,
+                         signs_agree=bool(np.sign(md) == np.sign(pm))))
+    df = pd.DataFrame(rows)
+    loo = df[df.dropped_seed >= 0]
+    df["n_loo_marginal_favours_T4ft"] = int((loo.marginal_diff < 0).sum())
+    df["n_loo_paired_favours_T2v"] = int((loo.paired_median > 0).sum())
+    df["n_loo_signs_disagree"] = int((~loo.signs_agree).sum())
+    # Which seeds sit at each arm's median, and how differently the arms rank them.
+    oa, ob = np.argsort(a), np.argsort(b)
+    df["T4ft_median_seeds"] = f"{SEEDS[oa[4]]},{SEEDS[oa[5]]}"
+    df["T2v_median_seeds"] = f"{SEEDS[ob[4]]},{SEEDS[ob[5]]}"
+    df["seed_rank_spearman"] = round(float(stats.spearmanr(a, b).statistic), 4)
+    return df
+
+
 def h2_slope(M) -> pd.DataFrame:
     """T2v's interaction slope, by the same estimator as §5.3.
 
@@ -399,6 +441,12 @@ def main() -> int:
     M = load_ft()
     cur, con, slope = curve_table(M), contrasts(M), h2_slope(M)
     seeds_tbl = per_seed_table(M)
+    rev = median_reversal(M)
+    if not rev.empty:
+        write(rev, TABLES / "table22_median_reversal.csv",
+              "leave-one-pair-out sensitivity of the two H3 summaries. dropped_seed "
+              "= -1 is the full sample. Descriptive only; all ten seeds remain in "
+              "the primary analysis")
     if not seeds_tbl.empty:
         write(seeds_tbl, TABLES / "table21_per_seed_finetune.csv",
               "per-seed RMSE at n=347. delta_X_minus_Y = RMSE_X - RMSE_Y on the "

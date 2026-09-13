@@ -199,6 +199,128 @@ Written 2026-09-01; see Amendment 1 and the checklist in §10.
 > measured cost, not by those values, and both cells are retained in the run
 > rather than discarded.
 
+> ## ⚠ Amendment 5 — 2026-09-12, the D-MPNN baseline `B3`
+>
+> **Written and dated before any `B3` test-set result was computed.** `B3` is
+> a **pre-registered arm** (§4) that was never run; the *implementation*
+> choices below were made in 2026-09-12 with the rest of the study already in
+> front of us, and the two are distinguished throughout.
+>
+> ### From the pre-registration, unchanged
+>
+> `plan.md` §4 specifies `B3` as "D-MPNN (Chemprop-style) trained from
+> scratch", a from-scratch baseline, capacity matched where architecture
+> permits. Its role in H1 is to be part of "the best from-scratch baseline"
+> that transfer must beat. Without it, this study has compared pretrained
+> transformers against fingerprint and descriptor models only.
+>
+> ### Decided now (post-hoc implementation choices)
+>
+> | | |
+> |---|---|
+> | **Implementation** | `chemprop` 2.3.1 from PyPI — the reference D-MPNN implementation (Yang et al. 2019), maintained, rather than a re-implementation |
+> | **Environment note** | installing it upgraded `rdkit` 2026.3.5 → 2026.3.6. The full reconstruction was re-run and every committed artefact still matches, so the upgrade does not disturb the existing results |
+> | **Representation** | chemprop's default `SimpleMoleculeMolGraphFeaturizer` on the same `canonical_smiles` every other arm reads |
+> | **Architecture** | `BondMessagePassing` (the D-MPNN proper) + mean aggregation + `RegressionFFN`; chemprop 2.x defaults for depth and hidden size, reported with the run |
+> | **Split** | scaffold only — the primary endpoint, matching Amendment 4's scope |
+> | **Seeds / sizes** | the existing ten (0–9) and all four sizes (50, 100, 250, 347), using the committed split files and the same training subsamples every other arm received, reconstructed with `run_arms.py`'s RNG sequence and asserted |
+> | **Validation** | 15% carved from the **training subsample**, exactly as Amendment 4's fine-tune arms do and mirroring `B1`'s `validation_fraction=0.15`. The split file's `val` fold stays unused. Both the labelled budget (`n_train`) and the number actually fitted (`n_train_fitted`) are recorded per cell |
+> | **Tuning budget** | learning rate from {1e-4, 3e-4, 1e-3} on internal-validation RMSE — three trials, matching Amendment 4's grid size so the two amended arms receive equal search. This is **less** than `B1`'s 32 trials, in the direction §7 limitation 4 already records |
+> | **Schedule** | ≤ 60 epochs, batch 16, early stopping patience 10 on internal-validation RMSE, checkpoint restored from the best validation epoch — identical rule to Amendment 4 |
+> | **Endpoints** | the five of §4.3, unchanged. Primary RMSE |
+> | **Stopping rule** | none. All 40 cells run |
+> | **Reporting rule** | every planned cell reported, including failures and unfavourable results |
+>
+> ### Comparisons, and the complete family, fixed now
+>
+> Four contrasts, all paired over the ten seeds:
+>
+> 1. `B3` vs `B1` at n = 50 2. at n = 100 3. at n = 250 4. at n = 347
+>
+> plus **`B3` vs `T2v` at n = 347**, the one that bears on H1: whether a
+> from-scratch deep model changes what "the best from-scratch baseline" is.
+>
+> **The `B3` family is these five contrasts, m = 5**, Holm-corrected within
+> itself and reported separately from the pre-registered families and from
+> Amendment 4's seven-contrast family. As in Amendment 4, the family size is 5
+> whether or not all five have finished; while incomplete, adjusted values are
+> a Bonferroni bound at m = 5.
+>
+> ### What `B3` does and does not establish
+>
+> It broadens architecture coverage: H1 currently compares pretrained
+> transformers against fingerprint and descriptor baselines only. It does
+> **not** isolate the effect of pretraining, because `B3` differs from every
+> transfer arm in architecture *and* molecular representation simultaneously.
+> The control that would isolate pretraining is a fully trainable,
+> randomly-initialised ChemBERTa matched to `T2v`; §7 records that this study
+> does not have one.
+
+> ## ⚠ Amendment 6 — 2026-09-12, the enrichment robustness check
+>
+> **Written and dated before any of these cells was run.** The tests and their
+> correction family are enumerated below, in advance.
+>
+> ### Why
+>
+> §5.7 reports the paper's only positive result: on precision@10% the original
+> fine-tune `T2` beats `B1` within that endpoint's six-arm family (Holm
+> p = 0.023). The manuscript has been saying this "does not replicate" on the
+> random and Butina splits. **That wording is wrong and is corrected here**:
+> `T2` was never run on those splits, so the result has **not been evaluated**
+> there. The probe arms were, and did not show the advantage — which is
+> evidence about the probes, not about `T2`.
+>
+> ### What is run
+>
+> The **original `T2` recipe, unchanged**: `run_arms.py`'s
+> `finetune_chemberta` — 40 fixed epochs, lr 3e-5, batch 16, `<s>`-token
+> classification head. Not `T2v`. Substituting the corrected arm here would
+> answer a different question, and §5.7's claim is about the arm that produced
+> it.
+>
+> | | |
+> |---|---|
+> | **Arm** | `T2`, the original recipe, byte-identical code path |
+> | **Splits** | random and Butina — the two never evaluated |
+> | **Size** | n = 347 (full training fold) only; §5.7's claim is at full data |
+> | **Seeds** | the existing ten, 0–9 |
+> | **Endpoint** | precision@10% **exactly as defined in §4.3 and implemented in `evapro.evaluation.metrics.precision_at_k_frac`** — same top-decile definition, same k = round(0.10 × n_test) = 10, same `np.argsort(-y)` tie handling. No re-definition |
+> | **Comparator** | the committed `B1` results on the same split, seed and test rows |
+> | **Stopping rule** | none; all 20 cells run regardless of intermediate significance |
+>
+> ### Additional analysis of existing results
+>
+> precision@10% is **already computed and stored** for every completed `T2v`,
+> `T4ft` and `T5ft` cell — it is in `METRIC_NAMES`. Reporting it is an
+> additional analysis of runs that already exist, not a new experiment, and is
+> labelled as such. It does **not** substitute for `T2`.
+>
+> ### The tests, enumerated before computation
+>
+> | # | Test | Split |
+> |---|---|---|
+> | 1 | `T2` vs `B1`, precision@10% | random |
+> | 2 | `T2` vs `B1`, precision@10% | Butina |
+> | 3 | `T2v` vs `B1`, precision@10% | scaffold (existing runs) |
+> | 4 | `T4ft` vs `B1`, precision@10% | scaffold (existing runs) |
+> | 5 | `T5ft` vs `B1`, precision@10% | scaffold (existing runs) |
+>
+> **Family: these five, m = 5**, Holm-corrected within themselves, reported
+> separately from §5.7's six-arm scaffold family and from the amended families
+> of Amendments 4 and 5. Bonferroni bound at m = 5 while incomplete. §5.7's
+> pooled 31-test sensitivity analysis is retained, and a pooled figure over
+> those 31 plus these 5 is reported alongside.
+>
+> ### What this is not
+>
+> A **robustness check on the same 494 compounds**, re-partitioned. Every split
+> draws from one dataset, one target and one assay, so no result here is an
+> independent or external replication and none may be described as one.
+> §5.7's original caveat stands unchanged: precision@10% was reported partly
+> because it inverted, k = 10 makes it coarse, and it is one endpoint of five.
+
+
 
 This document is pre-registration-shaped on purpose: the analysis plan below is
 fixed *before* results exist, and any deviation gets an entry in

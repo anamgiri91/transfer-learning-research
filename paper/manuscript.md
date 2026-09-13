@@ -17,8 +17,8 @@ release: 494 curated compounds, 272 scaffolds, maximum replicate spread
 0.49 log units.
 
 **Results.** Twelve arms were compared on identical materialised splits across
-10 seeds and four training-set sizes (1,040 evaluated runs), plus 60 amended
-fine-tuning runs. On scaffold-split RMSE the frozen ChemBERTa-2 probe is worse
+10 seeds and four training-set sizes (1,060 evaluated runs), plus 100 amended
+runs — 60 fine-tuning, 40 D-MPNN. On scaffold-split RMSE the frozen ChemBERTa-2 probe is worse
 than an ECFP4 + gradient boosting baseline (Holm p = 0.012), and a corrected
 fine-tune is worse at all four sizes (Holm ≤ 0.023). Running the pre-registered
 interaction term we had omitted, the probe's deficit neither shrinks nor grows
@@ -755,7 +755,7 @@ gives ρ = 0.614; the three seeds seen first happened to include T2's single bes
 `plan.md` §6 names RMSE as primary and **Spearman ρ, MAE, R² and
 precision@10%** as secondary. §4.3 of this paper repeats all four. Earlier
 drafts then reported three of them and never mentioned MAE or precision@10%
-again — although both are computed and stored for all 1,040 runs. That is
+again — although both are computed and stored for all 1,060 runs. That is
 selective endpoint reporting, which is the specific failure pre-registration
 exists to prevent, and it is corrected here rather than quietly.
 
@@ -838,14 +838,15 @@ true and the predicted ranking — leaves the medians unmoved (0.50 vs 0.40) and
 identical under Wilcoxon's default, `zsplit` and `pratt` handling, and under a
 plain sign test (all p = 0.0039). The result is not an artefact of the test.
 
-**It does not replicate across splits.** The probe arms run on all three
-splits, and the enrichment advantage is **specific to the scaffold split**. On
-scaffold, `T1` (p = 0.031) and `T5` (p = 0.016) beat `B1`; on the random and
-Butina splits no transfer arm does, and several point the other way (`T4` 2 of
-10 on random, `T1` 4 of 10 on Butina). `T2` — the arm carrying the
-Holm-significant result — was never run on those splits, so its own replication
-is untested. A single-split finding on a coarse endpoint is exactly the shape
-of result that fails to reproduce, and we flag it as such.
+**Where else it had, and had not, been evaluated.** Earlier drafts of this
+section said the advantage "does not replicate" on the other splits. That was
+wrong, and the correction matters: **`T2` had never been evaluated on them.**
+What had been evaluated there were the frozen probe arms, and they do not show
+the advantage — on scaffold `T1` (p = 0.031) and `T5` (p = 0.016) beat `B1`,
+while on random and Butina no probe does and several point the other way (`T4`
+2 of 10 on random, `T1` 4 of 10 on Butina). That is evidence about the probes.
+It is not evidence about `T2`, which is the arm carrying the Holm-significant
+result. §6.8 runs `T2` on those two splits and reports what it finds.
 
 **What it does mean.** A single conclusion of the form "pretraining did not
 help" is not supportable across the endpoint set as pre-registered. What is
@@ -922,9 +923,9 @@ should not be read without it.**
     p = 0.023), robustly to adversarial tie-breaking and to every zero-handling
     rule tested (§5.7). Three things cap what it carries: the top decile is
     **k = 10 compounds**, so one molecule moves the metric by 0.1; the
-    advantage is **specific to the scaffold split** and does not replicate on
-    random or Butina; and `T2` was never run on those splits, so its own
-    replication is untested. It appears here because it was pre-registered, and
+    advantage was measured on the scaffold split, and until §6.8 `T2` **had not
+    been evaluated** on random or Butina — the frozen probes had, and did not
+    show it there. It appears here because it was pre-registered, and
     because a summary that listed only points 1–9 would read as a flat verdict
     the endpoint set does not support.
 
@@ -1635,14 +1636,56 @@ Both contrasts are in the table above. Neither separates:
   95% CI [−0.0317, +0.0994], better on 3 of 10 seeds, p_raw = 0.4316,
   **Holm p = 1.000**.
 
-**A marginal reading of the same numbers points the other way, and is wrong.**
-`T4ft`'s median RMSE is 0.6294 against `T2v`'s 0.6561 — marginally the
-in-domain arm looks **0.027 better**, which is the number a table of per-arm
-medians would show. The paired median is **+0.0161 in the opposite direction**,
-because `T4ft` is worse on 7 of the 10 seeds and the marginal gap is carried by
-a single seed (7) on which `T2v` scores 0.7786, far outside its own spread. The
-two summaries disagree in sign. The paired statistic governs — the arms are run
-on matched splits and matched subsamples precisely so that it can — and §5.4
+**Two summaries of the same runs disagree in sign.** `T4ft`'s median RMSE is
+0.6294 against `T2v`'s 0.6561 — marginally the in-domain arm looks **0.027
+better**, which is the number a table of per-arm medians would show. The median
+of the paired differences is **+0.0161, in the opposite direction**, and `T4ft`
+is worse on 7 of the 10 seeds.
+
+An earlier draft of this section attributed the disagreement to one seed
+"carrying" the marginal advantage. **That is not what the data show**, and the
+check is worth reporting because it is the obvious explanation and it is wrong.
+Recomputing both summaries with each seed dropped in turn
+[→ `table22_median_reversal.csv`]:
+
+- the marginal difference favours `T4ft` in **10 of 10** leave-one-out fits,
+  range [−0.0329, −0.0205];
+- the paired median favours `T2v` in **10 of 10**, range [+0.0057, +0.0265];
+- the two disagree in sign in **10 of 10**.
+
+<!-- TABLE:median_reversal START -->
+| Sample | marginal median diff (T4ft − T2v) | median of paired differences | signs |
+|---|---|---|---|
+| all ten seeds | -0.0267 | +0.0161 | **disagree** |
+| drop seed 0 | -0.0205 | +0.0265 | disagree |
+| drop seed 1 | -0.0249 | +0.0057 | disagree |
+| drop seed 2 | -0.0249 | +0.0057 | disagree |
+| drop seed 3 | -0.0329 | +0.0057 | disagree |
+| drop seed 4 | -0.0285 | +0.0057 | disagree |
+| drop seed 5 | -0.0285 | +0.0265 | disagree |
+| drop seed 6 | -0.0329 | +0.0265 | disagree |
+| drop seed 7 | -0.0205 | +0.0265 | disagree |
+| drop seed 8 | -0.0285 | +0.0057 | disagree |
+| drop seed 9 | -0.0249 | +0.0265 | disagree |
+<!-- TABLE:median_reversal END -->
+
+No single seed produces the reversal, seed 7 included — dropping it leaves the
+marginal difference at −0.0205 and the paired median at +0.0265. All ten seeds
+remain in the primary analysis; the leave-one-out fits are descriptive only.
+
+The reason is arithmetic and long established: **the median is not a linear
+operator**, so median(X − Y) need not equal median(X) − median(Y), and the two
+quantities are not estimates of the same thing. It bites here because the arms
+rank the seeds differently — the seed-wise rank correlation between them is
+ρ = 0.50 — so the observations sitting at each arm's median are **different
+seeds**: `T4ft`'s median is set by seeds 7 and 6, `T2v`'s by seeds 5 and 0. A
+marginal comparison pairs the middle of one ordering against the middle of
+another; nothing makes those two middles correspond to the same experimental
+conditions. We report this as an empirical illustration of a known issue, not
+as a methodological finding.
+
+The paired statistic governs, because the arms are run on matched splits,
+matched subsamples and identical test rows precisely so that it can. §5.4
 records the same disagreement between `B1` and `B2`, where reporting marginal
 medians alone would also have produced the wrong headline.
 
@@ -1695,6 +1738,126 @@ pooling was chosen because it is what the in-domain encoders were pretrained
 with and what every frozen probe here uses, so matching it across the three new
 arms protects H3, which is the contrast that needed protecting.
 
+### 6.7 `B3`, the from-scratch D-MPNN the protocol froze and we had not run
+
+[→ `scripts/run_dmpnn.py` → `analyse_b3.py` → `table23`, `table24`]
+
+`plan.md` §4 freezes `B3` as a from-scratch D-MPNN and names it part of "the
+best from-scratch baseline" H1 must be measured against. It was never run, so
+every H1 comparison in this paper had pitted pretrained transformers against
+fingerprint and descriptor models only. **The arm is pre-registered; the
+implementation is not** — chemprop 2.3.1, its default featuriser, bond-message
+passing, mean aggregation, a regression FFN, and the same validation-based
+learning-rate and checkpoint selection Amendment 4 uses, all fixed in
+`plan.md` Amendment 5 before any test number existed. All 40 cells completed;
+no failures.
+
+Training subsamples are `run_arms.py`'s, reconstructed and asserted, so `B3`
+sees the same molecules as every other arm. Validation is carved from the
+subsample at 15%, as for the fine-tune arms, and both budgets are reported —
+at n = 347 the labelled budget is 347 and 295 are actually fitted, with 52 held
+out internally. `B1` carves its own 15% internally too
+(`validation_fraction=0.15`) but does not expose the split, so the fitted
+counts are matched by construction rather than merely by intent.
+
+<!-- TABLE:b3_curve START -->
+| Size | B3 D-MPNN | B1 | B2 | T2v | fitted/val | median lr | median best epoch | median cost |
+|---|---|---|---|---|---|---|---|---|
+| n = 50 | 0.760 | 0.704 | 0.670 | 0.918 | 42/8 | 0.001 | 41 | 11 s |
+| n = 100 | 0.791 | 0.649 | 0.635 | 0.781 | 85/15 | 0.001 | 26 | 12 s |
+| n = 250 | 0.684 | 0.584 | 0.618 | 0.678 | 212/38 | 0.0003 | 26 | 32 s |
+| n = 347 | 0.667 | 0.603 | 0.586 | 0.656 | 295/52 | 0.00065 | 30 | 34 s |
+<!-- TABLE:b3_curve END -->
+
+<!-- TABLE:b3_contrasts START -->
+| Contrast | Size | median paired ΔRMSE (+ = arm worse) | 95% CI | arm worse in | p raw | p Holm (m=5) | verdict |
+|---|---|---|---|---|---|---|---|
+| B3 vs B1 | n = 50 | +0.0927 | [+0.0299, +0.1831] | 9/10 | 0.0098 | 0.0195 | arm worse |
+| B3 vs B1 | n = 100 | +0.0903 | [+0.0435, +0.1810] | 9/10 | 0.0039 | 0.0156 | arm worse |
+| B3 vs B1 | n = 250 | +0.0734 | [+0.0479, +0.1362] | 10/10 | 0.0020 | 0.0098 | arm worse |
+| B3 vs B1 | n = 347 | +0.0486 | [+0.0231, +0.0943] | 9/10 | 0.0039 | 0.0156 | arm worse |
+| B3 vs T2v | n = 347 | +0.0088 | [-0.0263, +0.0592] | 5/10 | 0.6953 | 0.6953 | no detectable difference |
+<!-- TABLE:b3_contrasts END -->
+
+Two results, both within Amendment 5's five-contrast family:
+
+- **`B3` is worse than `B1` at every training-set size** — paired median +0.093,
+  +0.090, +0.073, +0.049, Holm p = 0.020, 0.016, 0.010, 0.016. The
+  pre-registered "best from-scratch baseline" is therefore still `B1`, and
+  adding the deep from-scratch arm does not change any H1 verdict. The gap
+  narrows with n, as `T2v`'s does.
+- **`B3` and `T2v` are not separated at full data** — paired median +0.009,
+  95% CI [−0.026, +0.059], 5 seeds each way, p_raw = 0.695, Holm 0.695.
+
+**What that second result does and does not license.** The two deep arms land
+in the same place and both sit behind count fingerprints, which is consistent
+with the deficit belonging to the model class rather than to whether the
+encoder was pretrained. It is **not evidence for that reading**. `B3` differs
+from `T2v` in architecture *and* in molecular representation — a bond-message
+graph network over a molecular graph against a transformer over SMILES tokens —
+as well as in pretraining, so a null between them has at least three candidate
+explanations and this design separates none of them. What `B3` establishes is
+narrower and is what H1 needed: **the from-scratch baseline that transfer fails
+to beat is not merely a fingerprint model; a maintained D-MPNN, given the same
+data and an equivalent selection rule, does not beat it either.**
+
+### 6.8 Does the enrichment result hold on the other splits? (robustness check)
+
+[→ `scripts/analyse_enrichment.py` → `table25_enrichment_robustness.csv`]
+
+§5.7 carries the only positive result in this paper, and until now the
+manuscript said it "does not replicate" on the random and Butina splits. **`T2`
+had never been run on them.** What had been run there were the frozen probes,
+which is evidence about the probes. `plan.md` Amendment 6 fixes five tests and
+their family before computation; all five are complete.
+
+The **original `T2` recipe** is used, unchanged — 40 fixed epochs, lr 3e-5,
+`<s>`-token head — because §5.7's claim is about that arm. Substituting `T2v`
+would answer a different question. The endpoint is used exactly as §4.3 defines
+it: same top decile, same k = 10, same tie handling, no re-definition.
+
+<!-- TABLE:enrichment_robustness START -->
+| Contrast | Split | arm | B1 | median paired Δ (+ = arm better) | better/worse/tied | p raw | p Holm (m=5) |
+|---|---|---|---|---|---|---|---|
+| T2 vs B1 | random | 0.45 | 0.45 | +0.05 | 5/4/1 | 0.2539 | 0.7617 |
+| T2 vs B1 | butina | 0.60 | 0.50 | +0.00 | 4/2/4 | 0.2812 | 0.7617 |
+| T2v vs B1 | scaffold | 0.50 | 0.40 | +0.05 | 5/1/4 | 0.1562 | 0.6250 |
+| T4ft vs B1 | scaffold | 0.40 | 0.40 | +0.05 | 5/4/1 | 0.9922 | 0.9922 |
+| T5ft vs B1 | scaffold | 0.50 | 0.40 | +0.15 | 9/0/1 | 0.0039 | 0.0195 |
+<!-- TABLE:enrichment_robustness END -->
+
+**`T2`'s enrichment advantage is not detected on either other split.** On
+random the paired median is +0.05 with 5 seeds better, 4 worse and 1 tied
+(p_raw = 0.254); on Butina it is +0.00 with 4 better, 2 worse and 4 tied
+(p_raw = 0.281). Neither survives correction within Amendment 6's five-test
+family.
+
+**That is a non-detection, not a refutation, and the distinction is load
+bearing here.** Both point estimates lean in the same direction as the scaffold
+result rather than against it; what changes is consistency — 9 of 10 seeds on
+scaffold against 5 of 9 and 4 of 6 non-tied seeds here. With k = 10 the metric
+moves in steps of 0.1 and ties are frequent (1 and 4 of 10), so this comparison
+has little power to resolve an advantage of the size §5.7 reports. The
+supportable statement is that **the advantage is demonstrated only on the
+scaffold split**, and that the other two splits neither confirm nor exclude it.
+
+**A second positive result appears, and carries the same caveat as the first.**
+`T5ft`, the chained in-domain fine-tune, beats `B1` on precision@10% at
+9 of 10 seeds with 0 losses, paired median +0.15, p_raw = 0.0039, **Holm
+p = 0.0195** within Amendment 6's family. Pooled with §5.7's 31 endpoint tests
+— 36 in total — it is **p = 0.117**, exactly as §5.7's own result behaves. It
+is reported as **exploratory** for the same three reasons: k = 10 is coarse,
+the endpoint was originally surfaced because it inverted, and the family choice
+drives the verdict. `T2v` and `T4ft` show no detectable difference on the same
+endpoint (Holm 0.625 and 0.992).
+
+**What this is.** A robustness check on the same 494 compounds, re-partitioned.
+Every split draws from one dataset, one target and one assay, so nothing here
+is an independent or external replication and we do not describe it as one.
+Tests 3–5 are an **additional analysis of runs that already existed** —
+precision@10% is stored for every cell — not new experiments, and they do not
+substitute for `T2`.
+
 ## 7. Limitations
 
 ### 7.0 Where each hypothesis stands
@@ -1706,9 +1869,9 @@ to have been performed.
 
 | | Planned comparison (`plan.md` §1) | Analysis actually performed | Current conclusion | Remaining gap |
 |---|---|---|---|---|
-| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned, on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2), all five endpoints (§5.7) and a corrected fine-tune at every size (§6.6) | **Answered negatively.** The frozen probe is significantly worse (Holm p = 0.012); the corrected fine-tune is worse at **all four** sizes (adjusted ≤ 0.041, Bonferroni bound at m = 7). It is *not* established that the corrected arm is a firmer negative than the untuned one — the two conditions are not separated (p = 0.695). On precision@10% the untuned fine-tune wins within that endpoint's family (exploratory) | `B3` (D-MPNN) never run, so "the best from-scratch baseline" was never the deep one. `T3`, `T6` not run |
+| **H1** | Transfer arms beat the best from-scratch baseline on scaffold-split RMSE; paired Wilcoxon, Holm | As planned on `T1`/`T2` vs `B1` (§5.4), plus the tuned comparison (§6.2), all five endpoints (§5.7), a corrected fine-tune at every size (§6.6), and the pre-registered D-MPNN baseline (§6.7) | **Answered negatively, and the baseline is no longer only a fingerprint model.** The frozen probe is worse (Holm p = 0.012) and the corrected fine-tune is worse at all four sizes (Holm ≤ 0.023). `B3` is *also* worse than `B1` at all four sizes (Holm ≤ 0.020), so `B1` remains the best from-scratch arm; `B3` and `T2v` are not separated (p = 0.695). It is not established that the corrected fine-tune is a firmer negative than the untuned one (p = 0.695) | `T3`, `T6` not run. And no trainable random-init ChemBERTa exists, so none of this isolates pretraining (limitation 12) |
 | **H2** | Interaction term in the learning-curve model **and** DER | DER only, until 2026-09-11. Interaction term run for every arm (§5.3), then re-run on a corrected fine-tune (§6.6) | **Split by arm.** Unanswered for the frozen probe (slope +0.007, CI −0.017 to +0.019, p = 0.77, same on both other splits). **Answered negatively for the fine-tune**, scoped to the amended procedure, scaffold split and sizes 50–347: the deficit grows as data shrinks, and survives correcting the schedule (−0.176 untuned → −0.052 validation-selected; p_raw 0.0059, Holm 0.0352 pooled over all 8 slope tests) | The probe's interval is wide enough to hide a real crossover; more seeds would narrow it. `T2v` is one arm on one split |
-| **H3** | Direct arm contrast `T4` vs `T1` — in-domain **fine-tune** vs generic **fine-tune** | Probe-vs-probe as a substitute (§6.4), then the specified form executed as an amendment: `T4ft` vs `T2v`, architecture and adaptation matched (§6.6) | **Answered: no detectable difference**, either direction, at n = 347 on the scaffold split. `T4ft` vs `T2v` paired median +0.016, CI [−0.033, +0.057], Holm 1.000; `T5ft` vs `T2v` +0.011, CI [−0.032, +0.099], Holm 1.000. §6.4's *suggestive* probe result does not carry to the specified form | A null on 10 seeds with intervals admitting ±0.03–0.10 RMSE is not equivalence. And the corpus is 95% coronaviral, median NN Tanimoto 0.247 — a weaker "in-domain" than the protocol intended |
+| **H3** | Direct arm contrast `T4` vs `T1` — in-domain **fine-tune** vs generic **fine-tune** | Probe-vs-probe as a substitute (§6.4), then the specified form executed as an amendment: `T4ft` vs `T2v`, architecture and adaptation matched (§6.6) | **On RMSE, no detectable difference** either direction at n = 347: `T4ft` +0.016, CI [−0.033, +0.057], Holm 1.000; `T5ft` +0.011, CI [−0.032, +0.099], Holm 1.000. §6.4's *suggestive* probe result does not carry. **On precision@10%, `T5ft` beats `B1`** at 9 of 10 seeds (Holm 0.0195 in its own family, 0.117 pooled over 36) — exploratory, §6.8 | A null on 10 seeds with intervals admitting ±0.03–0.10 RMSE is not equivalence. The corpus is 95% coronaviral, NN Tanimoto 0.247. And `T5ft` vs `T2v` tests an *added pretraining stage*, not domain composition: no control gets comparable extra generic pretraining (limitation 12) |
 | **H4** | Decontamination ablation: re-pretrain with test overlap removed | Performed for the in-domain arms with a size-matched control the protocol did not ask for (§6.5). Impossible for ChemBERTa | **Bounded, not answered.** No evidence overlap inflated the in-domain arms; the decisive contrast is Holm 0.273. Untestable for ChemBERTa, whose 77M corpus is not distributed | A corpus that genuinely overlaps the target chemistry — ours had 0 exact and 0 near-duplicate overlap, so decontamination had almost nothing to remove |
 
 Two of the four were, at some point in this project's history, reported as
@@ -1848,7 +2011,34 @@ the fixed training schedule (§6.2) and cannot be cleaned up without re-running
 that arm tuned at every training size — the most expensive experiment this
 study has left.
 
-**12. The cliff strata are small.** §6.3 rests on a median of 9 cliff compounds
+**12. No experiment here isolates the effect of pretraining, and three
+comparisons that look as though they might, do not.** The study has one
+randomly-initialised ChemBERTa, `T0r`, and it is a **frozen** random-feature
+probe — the encoder is never trained. The control that would isolate
+pretraining is a *fully trainable* randomly-initialised ChemBERTa matched to
+`T2v` in architecture, readout, optimiser and selection rule, differing only in
+whether the weights began pretrained. **That arm does not exist in this study,
+and we did not add it in this pass.** The consequence is a scoping rule applied
+throughout §6.6, §6.7 and §9:
+
+- **`T2v` vs `B1`, `B3` and `B2`** establishes performance against the
+  evaluated baselines. It does not show that pretraining confers no benefit —
+  a randomly-initialised trainable transformer might do worse still, and
+  nothing here measures that.
+- **`B3` vs `T2v`** (§6.7) is null, but `B3` differs in architecture *and*
+  molecular representation as well as pretraining. A null between them has at
+  least three candidate explanations and this design separates none.
+- **`T5ft` vs `T2v`** (§6.6) tests the effect of *adding an in-domain
+  pretraining stage*. It does not isolate the domain composition of that
+  corpus, because there is no control receiving a comparable amount of
+  **additional generic** pretraining. Extra training on any corpus is
+  confounded with extra training on *this* corpus.
+
+Wherever this paper reports a transfer arm failing to beat a baseline, the
+supportable claim is about that arm against those baselines. "Pretraining does
+not help" is a stronger statement, and this design cannot make it.
+
+**13. The cliff strata are small.** §6.3 rests on a median of 9 cliff compounds
 per test fold at the primary threshold, against 20 smooth and 70 distant. Ten
 seeds of 9 compounds is a thin basis for the claim that transfer is *not*
 behind on cliffs, and at Tanimoto ≥ 0.8 only 3 of 10 seeds clear the
@@ -1995,14 +2185,16 @@ it. What we have not found elsewhere, and offer as the contribution:
    control — would have reported a significant effect with the causal arrow
    backwards. We have not seen that control reported in this literature, and it
    is cheap.
-3. **A matched in-domain-versus-generic contrast where the paired and marginal
-   readings disagree in sign.** §6.6: the in-domain arm's median RMSE is 0.027
-   *better* than the generic arm's, while the paired median is 0.016 *worse*
-   and it loses on 7 of 10 seeds. A conventional per-arm median table — the
-   format most benchmark papers report — would have shown an in-domain gain
-   this study does not support. The disagreement is visible only because the
-   arms share splits, subsamples and test rows by construction, and §5.4
-   records the same reversal between two baselines.
+3. **A matched in-domain-versus-generic contrast, and a worked example of a
+   reporting hazard.** §6.6: the in-domain arm's median RMSE is 0.027 *better*
+   than the generic arm's, while the paired median is 0.016 *worse* and it
+   loses on 7 of 10 seeds. That median(X − Y) ≠ median(X) − median(Y) is
+   elementary and not our finding; what we contribute is a case where the two
+   disagree in **sign** on a real benchmark, survive every leave-one-out
+   perturbation, and would have produced an in-domain gain in the per-arm
+   median table most benchmark papers report. The disagreement is visible only
+   because the arms share splits, subsamples and test rows by construction, and
+   §5.4 records a second instance between two baselines.
 4. **An endpoint disagreement inside one study.** The arm worst on RMSE is best
    on precision@10% (§5.7). Reported because it was pre-registered, discounted
    because it is exploratory and family-sensitive, and relevant because a
@@ -2120,7 +2312,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **460 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **499 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2239,7 +2431,7 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
 - **Reconstructed — the artefacts a stage rewrites.** Watching **1,912**
   artefacts in total, a full-tier run **reconstructs 1,500** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
-  every arm except the ChemBERTa fine-tune, all 28 tables and 9 figures.
+  every arm except the ChemBERTa fine-tune, all 32 tables and 9 figures.
 - **Compared only — 412 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
@@ -2304,7 +2496,7 @@ The stage table below was the original hand check:
 | `run_arms.py` B1 / B2 / T1 re-runs | metrics identical to < 1e-12 |
 | `run_arms.py` T2 (torch fine-tune) | metrics identical to < 1e-9 |
 | `run_arms.py` T0r / T4 / T5 re-runs (120 cells) | metrics identical to < 1e-9 |
-| all 28 tables in `results/tables/` | data rows byte-identical |
+| all 32 tables in `results/tables/` | data rows byte-identical |
 | all 9 figures in `results/figures/` | regenerated; **no committed baseline** (gitignored as regenerable), so not verified |
 
 Determinism comes from seeding Python, NumPy and torch per run

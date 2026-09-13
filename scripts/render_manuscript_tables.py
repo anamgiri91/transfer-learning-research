@@ -272,6 +272,65 @@ def table_amended_h2() -> str:
                 "p raw", "p Holm pooled over all 8 slope tests"], rows)
 
 
+def table_b3_curve() -> str:
+    df = _read("table23_b3_curve.csv")
+    rows = [[f"n = {int(r.n_train)}", _fmt(r.median_rmse), _fmt(r.b1_median_rmse),
+             _fmt(r.b2_median_rmse), _fmt(r.t2v_median_rmse),
+             f"{int(r.n_train_fitted)}/{int(r.n_internal_val)}",
+             f"{r.median_selected_lr:g}", f"{r.median_selected_epoch:.0f}",
+             f"{r.median_seconds:.0f} s"] for r in df.itertuples()]
+    return _md(["Size", "B3 D-MPNN", "B1", "B2", "T2v", "fitted/val",
+                "median lr", "median best epoch", "median cost"], rows)
+
+
+def table_b3_contrasts() -> str:
+    df = _read("table24_b3_contrasts.csv")
+    rows = []
+    for r in df.itertuples():
+        if r.status != "complete":
+            rows.append([f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
+                         "—", "—", "—", "—", "—", "*pending*"])
+            continue
+        rows.append([f"{r.arm} vs {r.reference}", f"n = {int(r.n_train)}",
+                     f"{r.median_paired_delta:+.4f}",
+                     f"[{r.paired_ci_lo:+.4f}, {r.paired_ci_hi:+.4f}]",
+                     f"{int(r.arm_worse_in_seeds)}/{int(r.n_seeds)}",
+                     f"{r.p_raw:.4f}", f"{r.p_adjusted:.4f}", r.verdict])
+    return _md(["Contrast", "Size", "median paired ΔRMSE (+ = arm worse)", "95% CI",
+                "arm worse in", "p raw", "p Holm (m=5)", "verdict"], rows)
+
+
+def table_median_reversal() -> str:
+    df = _read("table22_median_reversal.csv")
+    full = df[df.dropped_seed == -1].iloc[0]
+    loo = df[df.dropped_seed >= 0]
+    rows = [["all ten seeds", f"{full.marginal_diff:+.4f}",
+             f"{full.paired_median:+.4f}", "**disagree**"]]
+    for r in loo.itertuples():
+        rows.append([f"drop seed {int(r.dropped_seed)}", f"{r.marginal_diff:+.4f}",
+                     f"{r.paired_median:+.4f}",
+                     "agree" if r.signs_agree else "disagree"])
+    return _md(["Sample", "marginal median diff (T4ft − T2v)",
+                "median of paired differences", "signs"], rows)
+
+
+def table_enrichment_robustness() -> str:
+    df = _read("table25_enrichment_robustness.csv")
+    rows = []
+    for r in df.itertuples():
+        if r.status != "complete":
+            rows.append([f"{r.arm} vs B1", r.split, "—", "—", "—", "—", "—",
+                         "*pending*"])
+            continue
+        rows.append([f"{r.arm} vs B1", r.split,
+                     f"{r.arm_median:.2f}", f"{r.b1_median:.2f}",
+                     f"{r.median_paired_delta:+.2f}",
+                     f"{int(r.arm_better_in_seeds)}/{int(r.arm_worse_in_seeds)}/{int(r.ties)}",
+                     f"{r.p_raw:.4f}", f"{r.p_adjusted:.4f}"])
+    return _md(["Contrast", "Split", "arm", "B1", "median paired Δ (+ = arm better)",
+                "better/worse/tied", "p raw", "p Holm (m=5)"], rows)
+
+
 def table_contamination() -> str:
     df = _read("table5_contamination.csv")
     rows = [[r.scope, r.split, str(int(r.n)), str(int(r.n_in_pubchem)),
@@ -512,6 +571,10 @@ RENDERERS = {
     "amended_contrasts": table_amended_contrasts,
     "amended_h2": table_amended_h2,
     "per_seed": table_per_seed,
+    "b3_curve": table_b3_curve,
+    "b3_contrasts": table_b3_contrasts,
+    "enrichment_robustness": table_enrichment_robustness,
+    "median_reversal": table_median_reversal,
     "surrogate": table_surrogate,
     "splits_extended": table_splits_extended,
     "all_endpoints": table_all_endpoints,

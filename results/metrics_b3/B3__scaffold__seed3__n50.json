@@ -1,0 +1,55 @@
+{
+  "amendment": "plan.md Amendment 5 (2026-09-12); pre-registered arm, post-hoc implementation",
+  "arm": "B3",
+  "batch_size": 16,
+  "implementation": "chemprop 2.3.1 BondMessagePassing",
+  "internal_val_frac": 0.15,
+  "lr_grid": [
+    0.0001,
+    0.0003,
+    0.001
+  ],
+  "max_epochs": 60,
+  "metrics": {
+    "mae": 0.7195568438938685,
+    "pearson": 0.2955649524831029,
+    "precision_at_10pct": 0.4,
+    "r2": 0.02242675282195905,
+    "rmse": 0.9060926952168856,
+    "spearman": 0.22208904220566486
+  },
+  "n_internal_val": 8,
+  "n_test": 98,
+  "n_train": 50,
+  "n_train_fitted": 42,
+  "optimizer_steps": 111,
+  "patience": 10,
+  "seconds": 6.42,
+  "seed": 3,
+  "selected_epoch": 37,
+  "selected_lr": 0.001,
+  "selected_val_loss": 2.4627,
+  "source_script": "scripts/run_dmpnn.py",
+  "split": "scaffold",
+  "target": "eva71_2a",
+  "trials": [
+    {
+      "best_epoch": 11,
+      "global_step": 33,
+      "lr": 0.0001,
+      "val_loss": 2.945
+    },
+    {
+      "best_epoch": 33,
+      "global_step": 99,
+      "lr": 0.0003,
+      "val_loss": 2.6935
+    },
+    {
+      "best_epoch": 37,
+      "global_step": 111,
+      "lr": 0.001,
+      "val_loss": 2.4627
+    }
+  ]
+}

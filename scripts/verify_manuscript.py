@@ -319,6 +319,32 @@ def build_claims() -> list[Claim]:
         C.append(Claim("6.6", "T2v scores 0.7786 on seed 7", "table21", 0.7786,
                        round(float(read_table("table21_per_seed_finetune.csv")
                                    .query("seed == '7'").T2v.iloc[0]), 4)))
+    if Path("results/tables/table22_median_reversal.csv").exists():
+        _r = read_table("table22_median_reversal.csv")
+        _f, _loo = _r.iloc[0], _r[_r.dropped_seed >= 0]
+        C.append(Claim("6.6", "marginal favours T4ft in 10 of 10 LOO fits", "table22",
+                       10, int(_f.n_loo_marginal_favours_T4ft)))
+        C.append(Claim("6.6", "paired favours T2v in 10 of 10 LOO fits", "table22",
+                       10, int(_f.n_loo_paired_favours_T2v)))
+        C.append(Claim("6.6", "signs disagree in 10 of 10 LOO fits", "table22",
+                       10, int(_f.n_loo_signs_disagree)))
+        C.append(Claim("6.6", "LOO marginal range [-0.0329, -0.0205]", "table22",
+                       "-0.0329/-0.0205",
+                       f"{_loo.marginal_diff.min():.4f}/{_loo.marginal_diff.max():.4f}"))
+        C.append(Claim("6.6", "LOO paired range [+0.0057, +0.0265]", "table22",
+                       "0.0057/0.0265",
+                       f"{_loo.paired_median.min():.4f}/{_loo.paired_median.max():.4f}"))
+        _d7 = _loo[_loo.dropped_seed == 7].iloc[0]
+        C.append(Claim("6.6", "dropping seed 7 leaves marginal -0.0205", "table22",
+                       -0.0205, round(float(_d7.marginal_diff), 4)))
+        C.append(Claim("6.6", "dropping seed 7 leaves paired +0.0265", "table22",
+                       0.0265, round(float(_d7.paired_median), 4)))
+        C.append(Claim("6.6", "seed-rank Spearman between arms 0.50", "table22",
+                       0.50, round(float(_f.seed_rank_spearman), 2)))
+        C.append(Claim("6.6", "T4ft median set by seeds 7 and 6", "table22", "7,6",
+                       str(_f.T4ft_median_seeds)))
+        C.append(Claim("6.6", "T2v median set by seeds 5 and 0", "table22", "5,0",
+                       str(_f.T2v_median_seeds)))
     if Path("results/tables/table18_amended_contrasts.csv").exists():
         _t = read_table("table18_amended_contrasts.csv")
         _t = _t[_t.status == "complete"]
@@ -364,6 +390,89 @@ def build_claims() -> list[Claim]:
                    "models/indomain_T4.pt", 55, _encoder_overlap()))
     C.append(Claim("6.6", "53 of them map onto a <s>-head backbone", "models/indomain_T4.pt",
                    53, _encoder_overlap(seqcls=True)))
+
+    # ---- 6.8, the enrichment robustness check --------------------------------
+    if Path("results/tables/table25_enrichment_robustness.csv").exists():
+        _e = read_table("table25_enrichment_robustness.csv")
+        _ec = _e[_e.status == "complete"]
+        C.append(Claim("6.8", "Amendment 6 family is five tests", "table25", 5,
+                       int(_e.family_m.iloc[0])))
+        C.append(Claim("6.8", "all five complete", "table25", True,
+                       bool(_e.family_complete.iloc[0])))
+        _r = _ec[(_ec.arm == "T2") & (_ec.split == "random")].iloc[0]
+        _b = _ec[(_ec.arm == "T2") & (_ec.split == "butina")].iloc[0]
+        C.append(Claim("6.8", "T2 random paired median +0.05", "table25", 0.05,
+                       round(float(_r.median_paired_delta), 2)))
+        C.append(Claim("6.8", "T2 random 5 better 4 worse 1 tied", "table25", "5/4/1",
+                       f"{int(_r.arm_better_in_seeds)}/{int(_r.arm_worse_in_seeds)}/{int(_r.ties)}"))
+        C.append(Claim("6.8", "T2 random p_raw 0.254", "table25", 0.254,
+                       round(float(_r.p_raw), 3)))
+        C.append(Claim("6.8", "T2 butina paired median +0.00", "table25", 0.0,
+                       round(float(_b.median_paired_delta), 2)))
+        C.append(Claim("6.8", "T2 butina 4 better 2 worse 4 tied", "table25", "4/2/4",
+                       f"{int(_b.arm_better_in_seeds)}/{int(_b.arm_worse_in_seeds)}/{int(_b.ties)}"))
+        C.append(Claim("6.8", "T2 butina p_raw 0.281", "table25", 0.281,
+                       round(float(_b.p_raw), 3)))
+        C.append(Claim("6.8", "neither T2 split contrast survives correction", "table25",
+                       0, int((_ec[_ec.arm == "T2"].p_adjusted <= 0.05).sum())))
+        _t5 = _ec[_ec.arm == "T5ft"].iloc[0]
+        C.append(Claim("6.8", "T5ft enrichment 9 better 0 worse 1 tied", "table25",
+                       "9/0/1",
+                       f"{int(_t5.arm_better_in_seeds)}/{int(_t5.arm_worse_in_seeds)}/{int(_t5.ties)}"))
+        C.append(Claim("6.8", "T5ft paired median +0.15", "table25", 0.15,
+                       round(float(_t5.median_paired_delta), 2)))
+        C.append(Claim("6.8", "T5ft p_raw 0.0039", "table25", 0.0039,
+                       round(float(_t5.p_raw), 4)))
+        C.append(Claim("6.8", "T5ft Holm 0.0195 within m=5", "table25", 0.0195,
+                       round(float(_t5.p_adjusted), 4)))
+        C.append(Claim("6.8", "T5ft pooled over 36 is 0.117", "table25", 0.117,
+                       round(float(_t5.p_holm_pooled_36), 3)))
+        C.append(Claim("6.8", "pooled family is 36", "table25", 36,
+                       int(_t5.pooled_family_m)))
+        C.append(Claim("6.8", "T2v enrichment Holm 0.625", "table25", 0.625,
+                       round(float(_ec[_ec.arm == "T2v"].p_adjusted.iloc[0]), 3)))
+        C.append(Claim("6.8", "T4ft enrichment Holm 0.992", "table25", 0.992,
+                       round(float(_ec[_ec.arm == "T4ft"].p_adjusted.iloc[0]), 3)))
+
+    # ---- 6.7, the D-MPNN baseline ------------------------------------------
+    if Path("results/tables/table24_b3_contrasts.csv").exists():
+        _b3c = read_table("table24_b3_contrasts.csv")
+        _b3d = _b3c[_b3c.status == "complete"]
+        _vb1 = _b3d[_b3d.reference == "B1"].sort_values("n_train")
+        C.append(Claim("6.7", "B3 family is five contrasts", "table24", 5,
+                       int(_b3c.family_m.iloc[0])))
+        C.append(Claim("6.7", "B3 worse than B1 at all four sizes", "table24", 4,
+                       int((_vb1.p_adjusted <= 0.05).sum())))
+        C.append(Claim("6.7", "B3 paired deltas +0.093/+0.090/+0.073/+0.049",
+                       "table24", "0.093,0.090,0.073,0.049",
+                       ",".join(f"{v:.3f}" for v in _vb1.median_paired_delta)))
+        C.append(Claim("6.7", "B3 Holm 0.020/0.016/0.010/0.016", "table24",
+                       "0.020,0.016,0.010,0.016",
+                       ",".join(f"{v:.3f}" for v in _vb1.p_adjusted)))
+        _vt = _b3d[_b3d.reference == "T2v"]
+        if len(_vt):
+            C.append(Claim("6.7", "B3 vs T2v paired median +0.009", "table24", 0.009,
+                           round(float(_vt.median_paired_delta.iloc[0]), 3)))
+            C.append(Claim("6.7", "B3 vs T2v CI [-0.026, +0.059]", "table24",
+                           "-0.026/0.059",
+                           f"{_vt.paired_ci_lo.iloc[0]:.3f}/{_vt.paired_ci_hi.iloc[0]:.3f}"))
+            C.append(Claim("6.7", "B3 vs T2v 5 seeds each way", "table24", 5,
+                           int(_vt.arm_worse_in_seeds.iloc[0])))
+            C.append(Claim("6.7", "B3 vs T2v p_raw 0.695", "table24", 0.695,
+                           round(float(_vt.p_raw.iloc[0]), 3)))
+            C.append(Claim("6.7", "B3 vs T2v Holm 0.695", "table24", 0.695,
+                           round(float(_vt.p_adjusted.iloc[0]), 3)))
+    if Path("results/tables/table23_b3_curve.csv").exists():
+        _b3 = read_table("table23_b3_curve.csv").set_index("n_train")
+        C.append(Claim("6.7", "B3 fits 295 of 347 with 52 held out", "table23",
+                       "295/52",
+                       f"{int(_b3.loc[347,'n_train_fitted'])}/"
+                       f"{int(_b3.loc[347,'n_internal_val'])}"))
+        C.append(Claim("6.7", "all 40 B3 cells complete", "metrics_b3", 40,
+                       len([f for f in Path("results/metrics_b3").glob("*.json")
+                            if not f.name.endswith(".FAILED.json")])))
+        C.append(Claim("6.7", "no B3 failures", "metrics_b3", 0,
+                       len(list(Path("results/metrics_b3").glob("*.FAILED.json")))))
 
     # ---- 5.3, the H2 interaction term and the DER's censoring -------------
     # plan.md §6 names both; only the DER had ever been computed. These claims
