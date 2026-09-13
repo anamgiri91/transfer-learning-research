@@ -413,6 +413,23 @@ def build_claims() -> list[Claim]:
                        "retrain-verification", 1e-6,
                        float(_rt["tolerance_relative"])))
 
+    # ---- 6.8, the RMSE rows the same runs completed --------------------------
+    for _sp, _d, _h in (("butina", -0.0556, 0.03906), ("random", -0.0893, 0.16797)):
+        _t3 = read_table(f"table3_paired_tests__{_sp}.csv")
+        _r = _t3[_t3.arm == "T2_chemberta_full_finetune"]
+        if len(_r):
+            C.append(Claim("6.8", f"T2 vs B1 delta on {_sp}", f"table3_{_sp}", _d,
+                           round(float(_r.median_rmse_delta_vs_baseline.iloc[0]), 4)))
+            C.append(Claim("6.8", f"T2 vs B1 Holm on {_sp}", f"table3_{_sp}", _h,
+                           round(float(_r.p_holm.iloc[0]), 5)))
+    for _sp, _b0, _t1 in (("random", 0.00781, 0.08203), ("butina", 0.00781, 0.01172)):
+        _t3 = read_table(f"table3_paired_tests__{_sp}.csv").set_index("arm")
+        C.append(Claim("6.8", f"B0 Holm on {_sp} after widening", f"table3_{_sp}",
+                       _b0, round(float(_t3.loc["B0_median", "p_holm"]), 5)))
+        C.append(Claim("6.8", f"T1 Holm on {_sp} after widening", f"table3_{_sp}",
+                       _t1, round(float(_t3.loc["T1_chemberta_linear_probe",
+                                                "p_holm"]), 5)))
+
     # ---- 6.8, the enrichment robustness check --------------------------------
     if Path("results/tables/table25_enrichment_robustness.csv").exists():
         _e = read_table("table25_enrichment_robustness.csv")

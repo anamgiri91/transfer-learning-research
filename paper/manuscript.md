@@ -632,7 +632,7 @@ R² at full training data (variance-normalised, therefore comparable):
 | B1 ECFP4 + HistGB | 0.492 | 0.507 | 0.204 |
 | B2 descriptors + RF | 0.461 | 0.513 | 0.257 |
 | T1 ChemBERTa probe | 0.422 | 0.421 | 0.056 |
-| T2 ChemBERTa fine-tune | — | 0.405 | — |
+| T2 ChemBERTa fine-tune | 0.451 | 0.405 | 0.049 |
 <!-- TABLE:splits END -->
 
 and the corresponding train/test similarity audit:
@@ -1849,6 +1849,18 @@ the endpoint was originally surfaced because it inverted, and the family choice
 drives the verdict. `T2v` and `T4ft` show no detectable difference on the same
 endpoint (Holm 0.625 and 0.992).
 
+**The same runs also complete `T2`'s RMSE row on those splits**, which
+Amendment 6 did not ask for and which is reported here as an additional
+analysis of them. `T2` is **significantly worse than `B1` on Butina**
+(median ΔRMSE −0.056, Holm p = 0.039) and inconclusive on random (−0.089, Holm
+p = 0.168), corrected within §5.4's per-split family. Those families grow from
+three arms to four as a result. That is **not** a retroactive re-correction of
+the kind §4.4 forbids: §5.4's family is the pre-registered five arms, `T2`
+was always one of them, and it was absent from those two tables only because
+it had no data there. Filling it in moves `B0` from Holm 0.0059 to 0.0078 and
+`T1` from 0.0055 to 0.0082 on random and 0.0078 to 0.0117 on Butina; no verdict
+changes, and no number the manuscript quotes moves.
+
 **What this is.** A robustness check on the same 494 compounds, re-partitioned.
 Every split draws from one dataset, one target and one assay, so nothing here
 is an independent or external replication and we do not describe it as one.
@@ -2318,7 +2330,7 @@ stale relative to the CSVs.
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
 every numeric claim made in the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **506 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **514 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
