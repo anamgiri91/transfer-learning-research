@@ -2446,11 +2446,11 @@ together and so reported 1,104 artefacts "regenerated" when the number was 424:
   `docs/input-checksums.json` records a SHA-256 for each; the check confirms
   the bytes here are the bytes the results were built from, and can do no more
   than that. Obtaining them is a precondition of reproducing the study.
-- **Reconstructed — the artefacts a stage rewrites.** Watching **1,912**
-  artefacts in total, a full-tier run **reconstructs 1,500** of them: the
+- **Reconstructed — the artefacts a stage rewrites.** Watching **2,036**
+  artefacts in total, a full-tier run **reconstructs 1,584** of them: the
   curated datasets, all 30 split files, the metric files and predictions of
   every arm except the ChemBERTa fine-tune, all 32 tables and 9 figures.
-- **Compared only — 412 files no executed stage rewrote.** Inputs to the check,
+- **Compared only — 452 files no executed stage rewrote.** Inputs to the check,
   not outputs of it. Counted separately so the headline cannot overstate.
 
 A further **329 artefacts are regenerated with no committed baseline to diff
@@ -2474,7 +2474,7 @@ repository has now hit five times, this time inside the checker written to
 prevent it. Stages declare the artefacts they own, those are cleared first, and
 a stage that fails to rewrite what it cleared fails as `DISAPPEARED`.
 
-**How the 1,500 reconstructions compare** falls into three categories that are
+**How the 1,584 reconstructions compare** falls into three categories that are
 not interchangeable. Every run reports the split; the counts themselves are
 **not stable between runs** and are deliberately not quoted as a fixed number
 here, because which files land in the second and third categories depends on

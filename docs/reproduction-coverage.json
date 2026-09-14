@@ -1,12 +1,12 @@
 {
-  "baseline_ref": "ba0a8b3",
-  "byte_identical": 1089,
-  "bytes_differ_numbers_identical": 255,
-  "compared_only": 455,
-  "generated_utc": "2026-09-13T06:10:40+00:00",
-  "largest_relative_move": 1.1559107983457233e-15,
+  "baseline_ref": "077ee86",
+  "byte_identical": 1098,
+  "bytes_differ_numbers_identical": 326,
+  "compared_only": 452,
+  "generated_utc": "2026-09-14T01:24:59+00:00",
+  "largest_relative_move": 1.3322676295501878e-15,
   "newly_produced_no_baseline": 329,
-  "reconstructed": 1501,
+  "reconstructed": 1584,
   "supplied_inputs": 21,
   "tier": "full",
   "tol_default": 1e-09,
@@ -18,6 +18,6 @@
     "run_finetune.py, the 60 Amendment 4 cells",
     "measure_contamination.py -> table5"
   ],
-  "watched": 1956,
-  "within_tolerance_nonzero_drift": 157
+  "watched": 2036,
+  "within_tolerance_nonzero_drift": 160
 }

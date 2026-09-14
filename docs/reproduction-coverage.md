@@ -25,7 +25,7 @@ study; they are not redistributed here because of size.
 
 ### 2. Reconstructed — rebuilt by a stage and diffed against an immutable baseline
 
-A full-tier run watches **1,912** artefacts and **reconstructs 1,500**: the
+A full-tier run watches **2,036** artefacts and **reconstructs 1,584**: the
 curated datasets, all 30 split files, the metric files and prediction bundles
 of every arm except the ChemBERTa fine-tune, and all 23 tables.
 
@@ -47,7 +47,7 @@ scheduling; the stable claim is the bound in the third row.
 
 ### 3. Compared only, and no baseline
 
-**412** watched files that no executed stage rewrote — inputs to the check, not
+**452** watched files that no executed stage rewrote — inputs to the check, not
 outputs of it.
 
 **329** artefacts are regenerated with **no committed baseline to diff
