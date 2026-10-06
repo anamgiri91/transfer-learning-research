@@ -13,7 +13,7 @@ the refactor rather than by anything wrong with them:
 | `run_benchmarks.py` | imports `get_morgan_fingerprint` and `RandomForestBaseline`; the refactor renamed these to `ecfp()` and `build_random_forest()` |
 | `generate_reports.py` | reads `{rf_ecfp4,chemberta,schnet}__scaffold__seed42.json`; the first two moved to `results/legacy_prior_run/`, and the SchNet file was never produced |
 | `generate_splits.py` | splits at **crystal-complex** level (649 rows); superseded by `scripts/build_splits.py`, which splits at compound level (494) because complex-level random splits leak 22 compounds between train and test |
-| `fetch_and_prepare_data.py` | still valid — this is how `data/raw/` and `data/processed/master.csv` were obtained from Zenodo |
+| `fetch_and_prepare_data.py` | historical acquisition path; now superseded by `scripts/fetch_openbind.py` and `scripts/prepare_openbind.py` (the original path calculation no longer applies after moving into `prototype/`) |
 
 Current equivalents: `prepare_openbind.py`, `build_splits.py`, `run_arms.py`,
 `make_report.py`.

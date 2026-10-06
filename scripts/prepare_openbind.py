@@ -4,7 +4,9 @@
 The raw master.csv is one row per *crystal complex* (649), not per compound
 (499): the same ligand appears in several structures. Modelling on complexes
 would leak duplicate compounds across folds, so we collapse to compounds here
-and record the replicate spread as evidence for the 'high-fidelity' claim.
+and record within-compound label consistency. These rows do not identify
+independent assay replicates. Legacy 'replicate_spread' column names are retained
+for compatibility with the committed datasets, not as a biological assertion.
 """
 from __future__ import annotations
 
@@ -17,6 +19,8 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import Descriptors
 from rdkit.Chem.Scaffolds import MurckoScaffold
 
+from evapro.data.openbind import label_audit, make_master, read_release
+
 RDLogger.DisableLog("rdApp.*")
 
 SRC = Path("data/processed/master.csv")
@@ -26,10 +30,15 @@ MAX_SPREAD_LOG = 1.0
 
 
 def main() -> int:
-    df = pd.read_csv(SRC)
+    raw = read_release()
+    df = make_master(raw)
+    SRC.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(SRC, index=False)
+    OUT.with_suffix(".label_audit.json").write_text(
+        json.dumps(label_audit(raw, df), indent=2) + "\n")
     n_complexes = len(df)
 
-    # Fidelity gate: drop structurally unreliable complexes before collapsing.
+    # Structural-quality filter; this does not estimate affinity measurement error.
     quality = ~df["suspected_artefact"] & df["pb_valid_prepared"]
     n_dropped_quality = int((~quality).sum())
     df = df[quality]

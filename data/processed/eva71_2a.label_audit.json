@@ -1,0 +1,29 @@
+{
+  "source_record": "20026661",
+  "source_sha256": "551d247e1e2d6cd541b97ce00e00eeae596ef6b37647c7d2b63b2a9c41a24056",
+  "raw_columns": [
+    "complex_name",
+    "compound_group",
+    "smiles",
+    "experimental_pKD",
+    "covalent",
+    "fragment_screen",
+    "pb_valid_prepared",
+    "pb_valid_ref",
+    "suspected_artefact",
+    "sucos_shape",
+    "pocket_qcov",
+    "sucos_shape_pocket_qcov"
+  ],
+  "raw_complexes": 925,
+  "labelled_complexes": 649,
+  "quality_filtered_complexes": 639,
+  "compound_groups": 494,
+  "single_complex_groups": 361,
+  "multiple_complex_groups": 133,
+  "multiple_complex_identical_labels": 128,
+  "multiple_complex_distinct_labels": 5,
+  "max_within_compound_label_spread": 0.4875000000000007,
+  "independent_assay_replicates_identifiable": false,
+  "interpretation": "Rows identify crystal complexes. No measurement identifiers or replicate counts are supplied; repeated labels cannot establish independent assay replication."
+}
