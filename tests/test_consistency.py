@@ -22,6 +22,35 @@ def test_a_document_with_no_countable_claims_passes(tmp_path):
     assert fails == [] and n == 0
 
 
+@pytest.mark.parametrize("stale", [
+    "### 6.6 Amended fine-tuning arms (in progress)",
+    "**Status: incomplete at the time of writing, and no statistics are reported.**",
+    "The H3 arms are still\nrunning.",
+    "**B3** (D-MPNN) not run.",
+    "T2 was not run on this split.",
+    "T2's replication elsewhere is untested.",
+    "Of 494 compounds, 133 carry more than one measurement.",
+    "Wilcoxon ranks signs, not magnitudes.",
+])
+def test_completed_work_and_label_provenance_cannot_regress(tmp_path, stale):
+    fails, _ = check(_doc(tmp_path, stale))
+    assert any("stale claim" in failure for failure in fails), fails
+
+
+def test_dated_protocol_history_is_not_a_current_status(tmp_path):
+    docs = _doc(tmp_path, "Amendment 2: B3 (D-MPNN) not run.\n\n"
+                "## 10. Execution checklist\nB3 is complete.\n", name="plan.md")
+    fails, _ = check(docs)
+    assert fails == []
+
+
+def test_one_cell_is_not_sweep_completion(tmp_path):
+    from scripts.verify_consistency import complete_cells
+    import json
+    (tmp_path / "B3__scaffold__seed0__n50.json").write_text(json.dumps({"metrics": {"rmse": 1}}))
+    assert not complete_cells(str(tmp_path), {"B3": [50]})
+
+
 def test_wrong_evaluated_run_count_is_caught(tmp_path):
     """The abstract said 640 after the count had moved to 720."""
     fails, _ = check(_doc(tmp_path, "the sweep (3 evaluated runs) covers it.\n"))

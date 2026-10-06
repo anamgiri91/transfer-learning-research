@@ -84,8 +84,10 @@ COVERAGE_DOC = Path("docs/reproduction-coverage.md")
 WATCHED = [
     "results/tables/*.csv",
     "results/figures/*.png",
+    "data/processed/master.csv",
     "data/processed/eva71_2a.csv",
     "data/processed/eva71_2a.curation.json",
+    "data/processed/eva71_2a.label_audit.json",
     "data/processed/indomain_3c.csv",
     "data/processed/indomain_3c.curation.json",
     "data/processed/splits/eva71_2a/*.json",

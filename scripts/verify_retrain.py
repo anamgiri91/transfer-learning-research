@@ -8,8 +8,8 @@ interchangeable:
   compared only   a committed artefact no executed stage rewrote
   supplied input  a file verified by checksum and never rebuilt
 
-The 120 Amendment 4 artefacts and the 80 Amendment 5 ones sit in *compared
-only*, because retraining all of them costs ~7 h. That leaves the training
+The 120 Amendment 4 artefacts sit in *compared only* in the full pipeline,
+while B3 is re-fitted in its full tier. That leaves the training
 path itself unverified: the committed bytes are self-consistent, but nothing
 had shown they can be produced again from the documented inputs.
 

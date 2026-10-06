@@ -47,15 +47,72 @@ from pathlib import Path
 # Summary surfaces. The decision log and literature review are deliberately
 # excluded: they are append-only histories whose job is to record what was true
 # at the time, including counts that have since moved.
+# `reproduction-coverage.md` is a live summary, not a history -- it was missing
+# from this list and carried "all 23 tables" unchallenged for three tables'
+# worth of drift, which is precisely the failure the `all (\d+) tables` pattern
+# below exists to catch.
 DOCS = ["paper/manuscript.md", "paper/provenance.md", "plan.md", "README.md",
         "results/tables/README.md", "results/figures/README.md",
-        "data/processed/README.md", "docs/revised_plan.md"]
+        "data/processed/README.md", "docs/revised_plan.md",
+        "docs/reproduction-coverage.md"]
 
 TABLES = Path("results/tables")
 
 
 def n_metric_runs() -> int:
     return len(glob.glob("results/metrics/*.json"))
+
+
+def complete_cells(folder: str, arms: dict[str, list[int]], split="scaffold") -> bool:
+    """A single artifact cannot establish that a whole sweep finished."""
+    for arm, sizes in arms.items():
+        for size in sizes:
+            for seed in range(10):
+                path = Path(folder) / f"{arm}__{split}__seed{seed}__n{size}.json"
+                if not path.exists():
+                    return False
+                record = json.loads(path.read_text())
+                if not record.get("metrics") or record.get("error"):
+                    return False
+    return True
+
+
+def check_current_status(text: str, doc: str) -> list[str]:
+    """Check current assertions while retaining dated protocol amendments."""
+    if Path(doc).name == "plan.md":
+        text = text.split("## 10. Execution checklist", 1)[-1]
+    if Path(doc).name == "revised_plan.md":
+        return []  # explicitly superseded history
+    text = re.sub(r"[*`]", "", text)
+    text = re.sub(r"\s+", " ", text)
+    rules = [
+        ("amended-complete", complete_cells("results/metrics_ft", {
+            "T2v": [50, 100, 250, 347], "T4ft": [347], "T5ft": [347]}), [
+                r"Amended fine-tuning arms \(in progress\)",
+                r"Status: incomplete at the time of writing",
+                r"H3 arms are still running",
+                r"no in-domain fine-tune exists",
+                r"H3 is tested in a substituted form only",
+            ]),
+        ("b3-complete", complete_cells("results/metrics_b3", {"B3": [50, 100, 250, 347]}), [
+            r"B3\s*(?:\([^)]*\))?\s*(?:was |is |has )?(?:not run|never run|not been run)",
+            r"B3 \(D-MPNN from scratch\), T3 .{0,150}T6 .{0,80}were not run",
+        ]),
+        ("t2-cross-split-complete", all(complete_cells("results/metrics", {
+            "T2_chemberta_full_finetune": [347]}, split) for split in ("random", "butina")), [
+                r"T2 was not run on this split",
+                r"T2's replication elsewhere is untested",
+                r"fine-tune T2 was run on the scaffold split only",
+        ]),
+        ("structure-rows-not-assay-replicates", Path("data/processed/master.csv").exists(), [
+            r"133 carry more than one measurement",
+            r"The fidelity claim is supported",
+            r"Wilcoxon ranks signs, not magnitudes",
+        ]),
+    ]
+    return [f"{doc}: stale claim {label!r}: {match.group(0)!r}"
+            for label, active, patterns in rules if active
+            for pattern in patterns for match in re.finditer(pattern, text, re.I)]
 
 
 def n_arms() -> int:
@@ -195,7 +252,11 @@ COUNTS = [
      n_claims, False),
     ("tables regenerated", re.compile(r"data rows of all (\d+)\s*\n?tables"),
      n_tables, True),
-    ("tables regenerated", re.compile(r"all (\d+) tables"), n_tables, True),
+    # `[Aa]ll 23 result tables` sat in the Declarations table for three tables'
+    # worth of drift because this pattern required "tables" to follow the digit
+    # immediately. One optional qualifier closes that.
+    ("tables regenerated",
+     re.compile(r"all (\d+) (?:result )?tables", re.I), n_tables, True),
     ("figures", re.compile(r"all (\d+) figures"), n_figures, True),
     ("split files", re.compile(r"(\d+) split files"), n_split_files, True),
     ("artefacts diffed by verify-repro",
@@ -327,6 +388,10 @@ def check(docs: list[str] | None = None) -> tuple[list[str], int]:
     DOCS = docs if docs is not None else globals()["DOCS"]
     fails: list[str] = []
     checked = 0
+
+    for doc in DOCS:
+        if Path(doc).exists():
+            fails.extend(check_current_status(Path(doc).read_text(), doc))
 
     for label, pat, truth, required in COUNTS:
         want = None
