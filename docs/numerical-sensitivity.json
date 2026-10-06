@@ -89,6 +89,8 @@
         }
       ]
     },
+    "bounded_sides": "predictions and labels; both top-k cutoffs are resolved by np.argsort in the metric itself",
+    "eps_label_pkd": 1e-05,
     "eps_pkd": 1e-05,
     "exhaustive_validation": {
       "all_configurations_robust": true,
@@ -357,6 +359,10 @@
         "files": 40,
         "tie_sensitive": 3
       },
+      "B3": {
+        "files": 40,
+        "tie_sensitive": 2
+      },
       "T0r_untrained_encoder_probe": {
         "files": 120,
         "tie_sensitive": 9
@@ -402,7 +408,7 @@
         "tie_sensitive": 1
       }
     },
-    "tie_sensitive_files": 101
+    "tie_sensitive_files": 103
   },
   "thread_pinned_b3": {
     "all_numerically_robust": false,

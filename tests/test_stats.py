@@ -87,3 +87,28 @@ def test_precision_bounds_span_a_tie_at_the_cutoff():
     # A gap wider than eps is not a tie.
     yhat[2] = 3.0 + 1e-3
     assert precision_at_k_frac_bounds(y, yhat) == (0.5, 0.5)
+
+
+def test_precision_bounds_span_a_tie_in_the_true_top_set():
+    """The true top-k set is also chosen by argsort, so label ties matter too."""
+    from evapro.evaluation.metrics import precision_at_k_frac_bounds
+
+    # k = 1. One prediction is clearly top; two labels tie for the best and
+    # only one of them is the predicted winner, so precision is 0 or 1. An
+    # exact label tie is resolved both ways whatever eps_y is.
+    y = np.array([5.0, 5.0] + [1.0] * 8)
+    yhat = np.array([9.0, 2.0] + [1.0] * 8)
+    assert precision_at_k_frac_bounds(y, yhat, frac=0.1) == (0.0, 1.0)
+    assert precision_at_k_frac_bounds(y, yhat, frac=0.1, eps_y=1e-5) == (0.0, 1.0)
+
+    # A label gap narrower than eps_y is a tie only once eps_y covers it.
+    y[1] = 5.0 - 4e-7
+    assert precision_at_k_frac_bounds(y, yhat, frac=0.1) == (1.0, 1.0)
+    assert precision_at_k_frac_bounds(y, yhat, frac=0.1, eps_y=1e-5) == (0.0, 1.0)
+
+
+def test_precision_bounds_reject_a_negative_label_tolerance():
+    from evapro.evaluation.metrics import precision_at_k_frac_bounds
+
+    with pytest.raises(ValueError):
+        precision_at_k_frac_bounds([1.0, 2.0], [1.0, 2.0], eps_y=-1.0)

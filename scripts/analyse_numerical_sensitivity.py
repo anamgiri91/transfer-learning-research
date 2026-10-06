@@ -40,6 +40,10 @@ PINNED = Path("results/sensitivity/b3_threads1")
 SEEDS = list(range(10))
 SIZES = [50, 100, 250, 347]
 EPS = 1e-5          # fixed in Amendment 8
+# The true top-k set is also chosen by np.argsort, so labels tied at the k-th
+# largest are admitted arbitrarily too. Amendment 8 bounded only the prediction
+# side; both sides are bounded here, at the same tolerance.
+EPS_Y = 1e-5
 ALPHA = 0.05
 METRIC = "precision_at_10pct"
 
@@ -157,7 +161,7 @@ def analysis_a() -> dict:
 def bounds(path: str) -> tuple[float, float, float]:
     z = np.load(path, allow_pickle=True)
     y, yhat = z["y_true"], z["y_pred"]
-    lo, hi = precision_at_k_frac_bounds(y, yhat, eps=EPS)
+    lo, hi = precision_at_k_frac_bounds(y, yhat, eps=EPS, eps_y=EPS_Y)
     point = precision_at_k_frac(y, yhat)
     assert lo <= point <= hi, path
     return point, lo, hi
@@ -316,6 +320,9 @@ def analysis_b() -> dict:
     s57, a6 = summarise(scaffold), summarise(am6)
     return {
         "eps_pkd": EPS,
+        "eps_label_pkd": EPS_Y,
+        "bounded_sides": "predictions and labels; both top-k cutoffs are "
+                         "resolved by np.argsort in the metric itself",
         "prediction_files": len(files),
         "tie_sensitive_files": int(sum(r["tie_sensitive"] for r in per_arm.values())),
         "tie_sensitive_by_arm": {k: v for k, v in sorted(per_arm.items())
