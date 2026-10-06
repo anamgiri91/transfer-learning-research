@@ -1,0 +1,567 @@
+{
+  "amendment": "plan.md Amendment 8 (2026-10-05)",
+  "note": "Saved outputs remain the primary results and are not overwritten. These analyses bound the dependence of the reported conclusions on floating-point arithmetic; they do not restore bitwise regeneration of the saved files.",
+  "precision_tie_bounds": {
+    "all_tie_robust": true,
+    "amendment_6": {
+      "b1_bounded": "scaffold only; B1 predictions were not saved on the random and Butina splits, so B1 is held at its stored value",
+      "family": "Holm m=5",
+      "tests": [
+        {
+          "median_paired_delta_against_arm": 0.04999999999999999,
+          "median_paired_delta_for_arm": 0.04999999999999999,
+          "median_paired_delta_saved": 0.04999999999999999,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 0.76171875,
+          "p_holm_saved": 0.76171875,
+          "p_raw_against_arm": 0.25390625,
+          "p_raw_for_arm": 0.25390625,
+          "p_raw_saved": 0.25390625,
+          "test": "T2 (random)",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.0,
+          "median_paired_delta_for_arm": 0.0,
+          "median_paired_delta_saved": 0.0,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 0.76171875,
+          "p_holm_saved": 0.76171875,
+          "p_raw_against_arm": 0.25,
+          "p_raw_for_arm": 0.28125,
+          "p_raw_saved": 0.28125,
+          "test": "T2 (butina)",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.04999999999999999,
+          "median_paired_delta_for_arm": 0.04999999999999999,
+          "median_paired_delta_saved": 0.04999999999999999,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 0.625,
+          "p_holm_saved": 0.625,
+          "p_raw_against_arm": 0.28125,
+          "p_raw_for_arm": 0.15625,
+          "p_raw_saved": 0.15625,
+          "test": "T2v (scaffold)",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.04999999999999999,
+          "median_paired_delta_for_arm": 0.04999999999999999,
+          "median_paired_delta_saved": 0.04999999999999999,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 1.0,
+          "p_holm_saved": 0.9921875,
+          "p_raw_against_arm": 0.73828125,
+          "p_raw_for_arm": 1.0,
+          "p_raw_saved": 0.9921875,
+          "test": "T4ft (scaffold)",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.10000000000000003,
+          "median_paired_delta_for_arm": 0.15000000000000002,
+          "median_paired_delta_saved": 0.15000000000000002,
+          "p_holm_against_arm": 0.01953125,
+          "p_holm_for_arm": 0.01953125,
+          "p_holm_saved": 0.01953125,
+          "p_raw_against_arm": 0.00390625,
+          "p_raw_for_arm": 0.00390625,
+          "p_raw_saved": 0.00390625,
+          "test": "T5ft (scaffold)",
+          "tie_robust": true,
+          "verdict_against_arm": "arm better",
+          "verdict_for_arm": "arm better",
+          "verdict_saved": "arm better"
+        }
+      ]
+    },
+    "eps_pkd": 1e-05,
+    "exhaustive_validation": {
+      "all_configurations_robust": true,
+      "amendment_6": [
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 1,
+          "median_paired_delta_max": 0.04999999999999999,
+          "median_paired_delta_min": 0.04999999999999999,
+          "p_holm_lower_bound": 0.65625,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 0.25390625,
+          "p_raw_min": 0.25390625,
+          "test": "T2 (random)"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 4,
+          "median_paired_delta_max": 0.0,
+          "median_paired_delta_min": 0.0,
+          "p_holm_lower_bound": 0.65625,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 0.28125,
+          "p_raw_min": 0.21875,
+          "test": "T2 (butina)"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 2,
+          "median_paired_delta_max": 0.04999999999999999,
+          "median_paired_delta_min": 0.04999999999999999,
+          "p_holm_lower_bound": 0.625,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 0.28125,
+          "p_raw_min": 0.15625,
+          "test": "T2v (scaffold)"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 4,
+          "median_paired_delta_max": 0.04999999999999999,
+          "median_paired_delta_min": 0.04999999999999999,
+          "p_holm_lower_bound": 0.73828125,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 1.0,
+          "p_raw_min": 0.73828125,
+          "test": "T4ft (scaffold)"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "arm better",
+          "configurations": 4,
+          "median_paired_delta_max": 0.15000000000000002,
+          "median_paired_delta_min": 0.10000000000000003,
+          "p_holm_lower_bound": 0.01953125,
+          "p_holm_upper_bound": 0.01953125,
+          "p_raw_max": 0.00390625,
+          "p_raw_min": 0.00390625,
+          "test": "T5ft (scaffold)"
+        }
+      ],
+      "method": "All per-seed attainable hit counts; conservative Holm bounds from marginal raw-p extrema, with historical SciPy defaults. B1 held fixed on random/Butina; not a bound on arbitrary retraining.",
+      "scaffold_family_5_7": [
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 4,
+          "median_paired_delta_max": 0.04999999999999999,
+          "median_paired_delta_min": 0.04999999999999999,
+          "p_holm_lower_bound": 0.28125,
+          "p_holm_upper_bound": 0.75,
+          "p_raw_max": 0.25,
+          "p_raw_min": 0.09375,
+          "test": "B2_descriptors_rf"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 2,
+          "median_paired_delta_max": 0.0,
+          "median_paired_delta_min": 0.0,
+          "p_holm_lower_bound": 0.953125,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 1.0,
+          "p_raw_min": 0.875,
+          "test": "T0r_untrained_encoder_probe"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 4,
+          "median_paired_delta_max": 0.10000000000000003,
+          "median_paired_delta_min": 0.09999999999999998,
+          "p_holm_lower_bound": 0.078125,
+          "p_holm_upper_bound": 0.3125,
+          "p_raw_max": 0.078125,
+          "p_raw_min": 0.015625,
+          "test": "T1_chemberta_linear_probe"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "arm better",
+          "configurations": 16,
+          "median_paired_delta_max": 0.15000000000000002,
+          "median_paired_delta_min": 0.1,
+          "p_holm_lower_bound": 0.0234375,
+          "p_holm_upper_bound": 0.046875,
+          "p_raw_max": 0.0078125,
+          "p_raw_min": 0.00390625,
+          "test": "T2_chemberta_full_finetune"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 8,
+          "median_paired_delta_max": 0.09999999999999998,
+          "median_paired_delta_min": 0.04999999999999999,
+          "p_holm_lower_bound": 0.953125,
+          "p_holm_upper_bound": 1.0,
+          "p_raw_max": 0.984375,
+          "p_raw_min": 0.4765625,
+          "test": "T4_indomain_probe"
+        },
+        {
+          "all_configurations_robust": true,
+          "bounded_verdict": "no detectable difference",
+          "configurations": 8,
+          "median_paired_delta_max": 0.15,
+          "median_paired_delta_min": 0.09999999999999998,
+          "p_holm_lower_bound": 0.078125,
+          "p_holm_upper_bound": 0.3125,
+          "p_raw_max": 0.0625,
+          "p_raw_min": 0.015625,
+          "test": "T5_chained_probe"
+        }
+      ]
+    },
+    "prediction_files": 810,
+    "retrain_cell_T2v_seed0_n50": {
+      "fresh": 0.1,
+      "fresh_within_saved_bounds": true,
+      "lower": 0.1,
+      "saved": 0.2,
+      "upper": 0.2
+    },
+    "scaffold_family_5_7": {
+      "family": "Holm m=6",
+      "tests": [
+        {
+          "median_paired_delta_against_arm": 0.04999999999999999,
+          "median_paired_delta_for_arm": 0.04999999999999999,
+          "median_paired_delta_saved": 0.04999999999999999,
+          "p_holm_against_arm": 0.75,
+          "p_holm_for_arm": 0.28125,
+          "p_holm_saved": 0.28125,
+          "p_raw_against_arm": 0.25,
+          "p_raw_for_arm": 0.09375,
+          "p_raw_saved": 0.09375,
+          "test": "B2_descriptors_rf",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.0,
+          "median_paired_delta_for_arm": 0.0,
+          "median_paired_delta_saved": 0.0,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 0.953125,
+          "p_holm_saved": 1.0,
+          "p_raw_against_arm": 1.0,
+          "p_raw_for_arm": 0.875,
+          "p_raw_saved": 0.875,
+          "test": "T0r_untrained_encoder_probe",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.09999999999999998,
+          "median_paired_delta_for_arm": 0.10000000000000003,
+          "median_paired_delta_saved": 0.09999999999999998,
+          "p_holm_against_arm": 0.3125,
+          "p_holm_for_arm": 0.078125,
+          "p_holm_saved": 0.125,
+          "p_raw_against_arm": 0.078125,
+          "p_raw_for_arm": 0.015625,
+          "p_raw_saved": 0.03125,
+          "test": "T1_chemberta_linear_probe",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.1,
+          "median_paired_delta_for_arm": 0.15000000000000002,
+          "median_paired_delta_saved": 0.10000000000000006,
+          "p_holm_against_arm": 0.046875,
+          "p_holm_for_arm": 0.0234375,
+          "p_holm_saved": 0.0234375,
+          "p_raw_against_arm": 0.0078125,
+          "p_raw_for_arm": 0.00390625,
+          "p_raw_saved": 0.00390625,
+          "test": "T2_chemberta_full_finetune",
+          "tie_robust": true,
+          "verdict_against_arm": "arm better",
+          "verdict_for_arm": "arm better",
+          "verdict_saved": "arm better"
+        },
+        {
+          "median_paired_delta_against_arm": 0.04999999999999999,
+          "median_paired_delta_for_arm": 0.09999999999999998,
+          "median_paired_delta_saved": 0.09999999999999998,
+          "p_holm_against_arm": 1.0,
+          "p_holm_for_arm": 0.953125,
+          "p_holm_saved": 1.0,
+          "p_raw_against_arm": 0.984375,
+          "p_raw_for_arm": 0.4765625,
+          "p_raw_saved": 0.69921875,
+          "test": "T4_indomain_probe",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        },
+        {
+          "median_paired_delta_against_arm": 0.09999999999999998,
+          "median_paired_delta_for_arm": 0.15,
+          "median_paired_delta_saved": 0.15,
+          "p_holm_against_arm": 0.3125,
+          "p_holm_for_arm": 0.078125,
+          "p_holm_saved": 0.078125,
+          "p_raw_against_arm": 0.0625,
+          "p_raw_for_arm": 0.015625,
+          "p_raw_saved": 0.015625,
+          "test": "T5_chained_probe",
+          "tie_robust": true,
+          "verdict_against_arm": "no detectable difference",
+          "verdict_for_arm": "no detectable difference",
+          "verdict_saved": "no detectable difference"
+        }
+      ]
+    },
+    "spearman_shift_with_tied_ranks": {
+      "files": 770,
+      "max": 0.0008268140170832883,
+      "median": 0.0
+    },
+    "tie_sensitive_by_arm": {
+      "B0_median": {
+        "files": 40,
+        "tie_sensitive": 40
+      },
+      "B1_ecfp_histgb": {
+        "files": 40,
+        "tie_sensitive": 6
+      },
+      "B2_descriptors_rf": {
+        "files": 40,
+        "tie_sensitive": 3
+      },
+      "T0r_untrained_encoder_probe": {
+        "files": 120,
+        "tie_sensitive": 9
+      },
+      "T1_chemberta_linear_probe": {
+        "files": 40,
+        "tie_sensitive": 3
+      },
+      "T2_chemberta_full_finetune": {
+        "files": 30,
+        "tie_sensitive": 5
+      },
+      "T2v": {
+        "files": 40,
+        "tie_sensitive": 2
+      },
+      "T4_indomain_probe": {
+        "files": 120,
+        "tie_sensitive": 8
+      },
+      "T4c_indomain_probe_decontaminated": {
+        "files": 40,
+        "tie_sensitive": 7
+      },
+      "T4ft": {
+        "files": 10,
+        "tie_sensitive": 1
+      },
+      "T5_chained_probe": {
+        "files": 120,
+        "tie_sensitive": 8
+      },
+      "T5c_chained_probe_decontaminated": {
+        "files": 40,
+        "tie_sensitive": 7
+      },
+      "T5ft": {
+        "files": 10,
+        "tie_sensitive": 1
+      },
+      "T5r_chained_probe_random_ablation": {
+        "files": 40,
+        "tie_sensitive": 1
+      }
+    },
+    "tie_sensitive_files": 101
+  },
+  "thread_pinned_b3": {
+    "all_numerically_robust": false,
+    "contrasts": [
+      {
+        "arm": "B3",
+        "n_train": 50,
+        "numerically_robust": true,
+        "pinned": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.07934424464727727,
+          "p_holm": 0.01953125,
+          "p_raw": 0.005859375,
+          "paired_ci_hi": 0.19603535915923986,
+          "paired_ci_lo": 0.029472402110767404,
+          "verdict": "arm worse"
+        },
+        "reference": "B1",
+        "saved": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.09266670421617382,
+          "p_holm": 0.01953125,
+          "p_raw": 0.009765625,
+          "paired_ci_hi": 0.1831241762907614,
+          "paired_ci_lo": 0.029917643394238302,
+          "verdict": "arm worse"
+        }
+      },
+      {
+        "arm": "B3",
+        "n_train": 100,
+        "numerically_robust": true,
+        "pinned": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.1039300016350086,
+          "p_holm": 0.01953125,
+          "p_raw": 0.00390625,
+          "paired_ci_hi": 0.1471381537482621,
+          "paired_ci_lo": 0.03289912343460183,
+          "verdict": "arm worse"
+        },
+        "reference": "B1",
+        "saved": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.09025809531085432,
+          "p_holm": 0.015625,
+          "p_raw": 0.00390625,
+          "paired_ci_hi": 0.18103796206084127,
+          "paired_ci_lo": 0.04346374333733166,
+          "verdict": "arm worse"
+        }
+      },
+      {
+        "arm": "B3",
+        "n_train": 250,
+        "numerically_robust": true,
+        "pinned": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.07164596207421958,
+          "p_holm": 0.01953125,
+          "p_raw": 0.00390625,
+          "paired_ci_hi": 0.10912609655729019,
+          "paired_ci_lo": 0.03927991274023357,
+          "verdict": "arm worse"
+        },
+        "reference": "B1",
+        "saved": {
+          "arm_worse_in_seeds": 10,
+          "median_paired_delta": 0.07341301601674838,
+          "p_holm": 0.009765625,
+          "p_raw": 0.001953125,
+          "paired_ci_hi": 0.1362497151596525,
+          "paired_ci_lo": 0.047877769427754235,
+          "verdict": "arm worse"
+        }
+      },
+      {
+        "arm": "B3",
+        "n_train": 347,
+        "numerically_robust": true,
+        "pinned": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.03391808003221236,
+          "p_holm": 0.01953125,
+          "p_raw": 0.005859375,
+          "paired_ci_hi": 0.05785044459522082,
+          "paired_ci_lo": 0.016892767540555464,
+          "verdict": "arm worse"
+        },
+        "reference": "B1",
+        "saved": {
+          "arm_worse_in_seeds": 9,
+          "median_paired_delta": 0.0485879451910875,
+          "p_holm": 0.015625,
+          "p_raw": 0.00390625,
+          "paired_ci_hi": 0.09428087038539334,
+          "paired_ci_lo": 0.02307017138934453,
+          "verdict": "arm worse"
+        }
+      },
+      {
+        "arm": "B3",
+        "n_train": 347,
+        "numerically_robust": false,
+        "pinned": {
+          "arm_worse_in_seeds": 4,
+          "median_paired_delta": -0.008571397431540562,
+          "p_holm": 0.322265625,
+          "p_raw": 0.322265625,
+          "paired_ci_hi": 0.015496913425400827,
+          "paired_ci_lo": -0.04556337416506817,
+          "verdict": "no detectable difference"
+        },
+        "reference": "T2v",
+        "saved": {
+          "arm_worse_in_seeds": 5,
+          "median_paired_delta": 0.00875353359995773,
+          "p_holm": 0.6953125,
+          "p_raw": 0.6953125,
+          "paired_ci_hi": 0.059217699467432494,
+          "paired_ci_lo": -0.026265646656583763,
+          "verdict": "no detectable difference"
+        }
+      }
+    ],
+    "family": "plan.md Amendment 5, Holm m=5, unchanged",
+    "pinned_cells": 40,
+    "pinned_root": "results/sensitivity/b3_threads1",
+    "rmse_shift_by_n_train": {
+      "100": {
+        "max_abs_cell_shift": 0.09956522433307802,
+        "median_abs_cell_shift": 0.043325105382485796,
+        "median_signed_cell_shift": -0.0020235531821298225,
+        "pinned_median_rmse": 0.7515773995594198,
+        "saved_median_rmse": 0.7911105757359995
+      },
+      "250": {
+        "max_abs_cell_shift": 0.08161491318339997,
+        "median_abs_cell_shift": 0.018819394690377522,
+        "median_signed_cell_shift": -0.00554576759422476,
+        "pinned_median_rmse": 0.6434966609826858,
+        "saved_median_rmse": 0.68404702278627
+      },
+      "347": {
+        "max_abs_cell_shift": 0.0828949026375162,
+        "median_abs_cell_shift": 0.014165961857464632,
+        "median_signed_cell_shift": -0.009913577595076689,
+        "pinned_median_rmse": 0.637037131011571,
+        "saved_median_rmse": 0.6668235032609642
+      },
+      "50": {
+        "max_abs_cell_shift": 0.07771850888687404,
+        "median_abs_cell_shift": 0.015581225714172697,
+        "median_signed_cell_shift": -0.00045983759956458314,
+        "pinned_median_rmse": 0.7288594740698158,
+        "saved_median_rmse": 0.7605215391178038
+      }
+    },
+    "status": "complete",
+    "torch_threads": 1
+  }
+}
