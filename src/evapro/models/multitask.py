@@ -25,7 +25,7 @@ import torch
 import torch.nn as nn
 from transformers import AutoConfig, AutoModel, AutoTokenizer
 
-CHEMBERTA = "DeepChem/ChemBERTa-77M-MTR"
+from evapro.models.pretrained import CHEMBERTA, checkpoint_kwargs
 MAX_LEN = 128
 
 
@@ -36,11 +36,11 @@ class MultitaskRegressor(nn.Module):
                  model_name: str = CHEMBERTA):
         super().__init__()
         if pretrained:
-            self.encoder = AutoModel.from_pretrained(model_name)
+            self.encoder = AutoModel.from_pretrained(model_name, **checkpoint_kwargs(model_name))
         else:
             # Same architecture and tokenizer, random weights: the comparison
             # against T5 is then purely about what pretraining contributed.
-            self.encoder = AutoModel.from_config(AutoConfig.from_pretrained(model_name))
+            self.encoder = AutoModel.from_config(AutoConfig.from_pretrained(model_name, **checkpoint_kwargs(model_name)))
         h = self.encoder.config.hidden_size
         self.task_names = list(task_names)
         self.heads = nn.ModuleDict({t: nn.Linear(h, 1) for t in self.task_names})
@@ -59,7 +59,7 @@ class MultitaskRegressor(nn.Module):
 
 
 def tokenize(smiles, model_name: str = CHEMBERTA, max_len: int = MAX_LEN):
-    tok = AutoTokenizer.from_pretrained(model_name)
+    tok = AutoTokenizer.from_pretrained(model_name, **checkpoint_kwargs(model_name))
     enc = tok(list(smiles), padding="max_length", truncation=True,
               max_length=max_len, return_tensors="pt")
     return enc["input_ids"], enc["attention_mask"]

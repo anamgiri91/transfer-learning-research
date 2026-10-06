@@ -25,6 +25,7 @@ from evapro.data.io import load_dataset
 from evapro.data.splits import load_split
 from evapro.evaluation.metrics import compute_all
 from evapro.features.fingerprints import ecfp, rdkit_descriptors
+from evapro.models.pretrained import CHEMBERTA, checkpoint_kwargs
 from evapro.utils.seeding import set_seed
 
 TARGET = "eva71_2a"
@@ -33,7 +34,6 @@ OUT = Path("results/metrics")
 PREDS = Path("results/predictions")
 TRAIN_SIZES = [50, 100, 250, None]          # None = all available
 SEEDS = list(range(10))
-CHEMBERTA = "DeepChem/ChemBERTa-77M-MTR"
 
 METRIC_NAMES = ["rmse", "mae", "r2", "spearman", "pearson", "precision_at_10pct"]
 
@@ -103,8 +103,8 @@ def chemberta_embeddings(smiles: list[str], batch_size: int = 64) -> np.ndarray:
     import torch
     from transformers import AutoModel, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(CHEMBERTA)
-    model = AutoModel.from_pretrained(CHEMBERTA).eval()
+    tok = AutoTokenizer.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
+    model = AutoModel.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA)).eval()
     outs = []
     with torch.no_grad():
         for i in range(0, len(smiles), batch_size):
@@ -159,9 +159,9 @@ def finetune_chemberta(smiles_tr, ytr, smiles_te, seed, epochs=40, lr=3e-5, bs=1
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
     torch.manual_seed(seed)
-    tok = AutoTokenizer.from_pretrained(CHEMBERTA)
+    tok = AutoTokenizer.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
     model = AutoModelForSequenceClassification.from_pretrained(
-        CHEMBERTA, num_labels=1, problem_type="regression")
+        CHEMBERTA, num_labels=1, problem_type="regression", **checkpoint_kwargs())
 
     def encode(s):
         e = tok(list(s), padding="max_length", truncation=True, max_length=128,

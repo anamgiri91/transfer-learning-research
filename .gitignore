@@ -99,3 +99,4 @@ Thumbs.db
 # Run logs regenerate with the sweep.
 results/*.log
 .repro_snapshot/
+/release/
