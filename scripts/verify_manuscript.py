@@ -37,14 +37,15 @@ def _encoder_overlap(seqcls: bool = False) -> int:
     enc = {k[len("encoder."):] for k in sd if k.startswith("encoder.")}
     from transformers import (AutoConfig, AutoModel,
                               AutoModelForSequenceClassification)
-    name = "DeepChem/ChemBERTa-77M-MTR"
+    from evapro.models.pretrained import CHEMBERTA, checkpoint_kwargs
+    name = CHEMBERTA
     if seqcls:
         m = AutoModelForSequenceClassification.from_config(
-            AutoConfig.from_pretrained(name, num_labels=1))
+            AutoConfig.from_pretrained(name, num_labels=1, **checkpoint_kwargs()))
         bb = {k[len("roberta."):] for k in m.state_dict()
               if k.startswith("roberta.")}
     else:
-        bb = set(AutoModel.from_config(AutoConfig.from_pretrained(name)).state_dict())
+        bb = set(AutoModel.from_config(AutoConfig.from_pretrained(name, **checkpoint_kwargs())).state_dict())
     return len(enc & bb)
 
 
@@ -130,14 +131,27 @@ def build_claims() -> list[Claim]:
     C.append(Claim("3.2", "649 complexes in", "curation.json", 649, cur["n_complexes_in"]))
     C.append(Claim("3.2", "10 dropped on structure quality", "curation.json", 10,
                    cur["n_dropped_quality"]))
-    C.append(Claim("3.2", "0 dropped for replicate disagreement", "curation.json", 0,
+    C.append(Claim("3.2", "0 dropped for label disagreement", "curation.json", 0,
                    cur["n_compound_groups_dropped_spread"]))
     C.append(Claim("3.2", "494 unique compounds out", "curation.json", 494, cur["n_compounds_out"]))
     C.append(Claim("3.2", "272 scaffolds", "curation.json", 272, cur["n_scaffolds"]))
-    C.append(Claim("3.2", "max replicate spread 0.49", "curation.json", 0.49,
+    C.append(Claim("3.2", "max within-compound label spread 0.49", "curation.json", 0.49,
                    round(cur["max_replicate_spread"], 2)))
-    C.append(Claim("3.2", "133 compounds with >1 measurement", "eva71_2a.csv", 133,
+    C.append(Claim("3.2", "133 compounds with >1 crystal complex", "eva71_2a.csv", 133,
                    int((ds.n_complexes > 1).sum())))
+    # Count label reuse independently from the raw complex table, not from a
+    # declared replicate count (none is supplied by the release).
+    master = pd.read_csv("data/processed/master.csv")
+    eligible = master[~master.suspected_artefact & master.pb_valid_prepared]
+    grouped = eligible.groupby("compound_group").pKD.agg(["size", "nunique"])
+    for label, expected, actual in [
+        ("single-complex compounds", 361, (grouped["size"] == 1).sum()),
+        ("multi-complex compounds with identical labels", 128,
+         ((grouped["size"] > 1) & (grouped["nunique"] == 1)).sum()),
+        ("multi-complex compounds with distinct labels", 5,
+         ((grouped["size"] > 1) & (grouped["nunique"] > 1)).sum()),
+    ]:
+        C.append(Claim("3.2", label, "master.csv", expected, int(actual)))
     C.append(Claim("3.2", "pKD range 3.44-7.94", "eva71_2a.csv", "3.44/7.94",
                    f"{ds.pactivity.min():.2f}/{ds.pactivity.max():.2f}"))
     C.append(Claim("3.2", "pKD median 4.95", "eva71_2a.csv", 4.95,
@@ -412,6 +426,80 @@ def build_claims() -> list[Claim]:
         C.append(Claim("10", "torch tolerance declared at 1e-6",
                        "retrain-verification", 1e-6,
                        float(_rt["tolerance_relative"])))
+
+    # ---- 6.7 / 10, plan.md Amendment 8's numerical-sensitivity analyses ------
+    _ns = json.loads(Path("docs/numerical-sensitivity.json").read_text())
+    _pa, _tb = _ns["thread_pinned_b3"], _ns["precision_tie_bounds"]
+    if _pa["status"] == "complete":
+        _pb1 = [c for c in _pa["contrasts"] if c["reference"] == "B1"]
+        _pt = [c for c in _pa["contrasts"] if c["reference"] == "T2v"][0]
+        C.append(Claim("6.7", "one-thread B3 replicate is 40 cells",
+                       "numerical-sensitivity", 40, _pa["pinned_cells"]))
+        C.append(Claim("6.7", "one-thread B3 deltas +0.079/+0.104/+0.072/+0.034",
+                       "numerical-sensitivity", "0.079,0.104,0.072,0.034",
+                       ",".join(f"{c['pinned']['median_paired_delta']:.3f}"
+                                for c in _pb1)))
+        C.append(Claim("6.7", "one-thread B3 vs B1 Holm 0.020 at each size",
+                       "numerical-sensitivity", "0.020,0.020,0.020,0.020",
+                       ",".join(f"{c['pinned']['p_holm']:.3f}" for c in _pb1)))
+        C.append(Claim("6.7", "B3 vs B1 verdicts robust at all four sizes",
+                       "numerical-sensitivity", 4,
+                       sum(1 for c in _pb1 if c["numerically_robust"])))
+        C.append(Claim("6.7", "one-thread B3 vs T2v paired median -0.009",
+                       "numerical-sensitivity", -0.009,
+                       round(_pt["pinned"]["median_paired_delta"], 3)))
+        C.append(Claim("6.7", "one-thread B3 vs T2v CI [-0.046, +0.015]",
+                       "numerical-sensitivity", "-0.046/0.015",
+                       f"{_pt['pinned']['paired_ci_lo']:.3f}/"
+                       f"{_pt['pinned']['paired_ci_hi']:.3f}"))
+        C.append(Claim("6.7", "one-thread B3 vs T2v p_raw 0.322",
+                       "numerical-sensitivity", 0.322,
+                       round(_pt["pinned"]["p_raw"], 3)))
+        C.append(Claim("6.7", "B3 vs T2v stays undetected but changes sign",
+                       "numerical-sensitivity", "no detectable difference/False",
+                       f"{_pt['pinned']['verdict']}/{_pt['numerically_robust']}"))
+        _sh = _pa["rmse_shift_by_n_train"].values()
+        C.append(Claim("6.7", "B3 cell shift medians span 0.014 to 0.043",
+                       "numerical-sensitivity", "0.014/0.043",
+                       f"{min(v['median_abs_cell_shift'] for v in _sh):.3f}/"
+                       f"{max(v['median_abs_cell_shift'] for v in _sh):.3f}"))
+        C.append(Claim("6.7", "largest B3 cell shift 0.100",
+                       "numerical-sensitivity", 0.100,
+                       round(max(v["max_abs_cell_shift"] for v in _sh), 3)))
+    _tt = _tb["scaffold_family_5_7"]["tests"] + _tb["amendment_6"]["tests"]
+    C.append(Claim("10", "tie tolerance 1e-5 pKD", "numerical-sensitivity",
+                   1e-5, _tb["eps_pkd"]))
+    C.append(Claim("10", "810 prediction files bounded", "numerical-sensitivity",
+                   810, _tb["prediction_files"]))
+    C.append(Claim("10", "101 tie-sensitive files, 40 of them B0",
+                   "numerical-sensitivity", "101/40",
+                   f"{_tb['tie_sensitive_files']}/"
+                   f"{_tb['tie_sensitive_by_arm']['B0_median']['tie_sensitive']}"))
+    C.append(Claim("10", "all eleven precision@10% contrasts tie-robust",
+                   "numerical-sensitivity", "11/11",
+                   f"{sum(1 for t in _tt if t['tie_robust'])}/{len(_tt)}"))
+    _t2 = [t for t in _tt if t["test"] == "T2_chemberta_full_finetune"][0]
+    C.append(Claim("10", "scaffold T2 Holm 0.023 rises to at most 0.047",
+                   "numerical-sensitivity", "0.023/0.047",
+                   f"{_t2['p_holm_saved']:.3f}/"
+                   f"{max(_t2['p_holm_against_arm'], _t2['p_holm_for_arm']):.3f}"))
+    _t5 = [t for t in _tt if t["test"] == "T5ft (scaffold)"][0]
+    C.append(Claim("10", "T5ft Holm does not move under tie-breaking",
+                   "numerical-sensitivity", 1,
+                   len({_t5["p_holm_saved"], _t5["p_holm_against_arm"],
+                        _t5["p_holm_for_arm"]})))
+    C.append(Claim("10", "largest tied-rank Spearman shift 0.0008",
+                   "numerical-sensitivity", 0.0008,
+                   round(_tb["spearman_shift_with_tied_ranks"]["max"], 4)))
+
+    _ex = _tb["exhaustive_validation"]
+    _extests = _ex["scaffold_family_5_7"] + _ex["amendment_6"]
+    C.append(Claim("10", "all eleven enrichment verdicts certified over all tie assignments",
+                   "numerical-sensitivity", "11/11",
+                   f"{sum(t['all_configurations_robust'] for t in _extests)}/{len(_extests)}"))
+    _et2 = next(t for t in _extests if t["test"] == "T2_chemberta_full_finetune")
+    C.append(Claim("10", "exhaustive scaffold T2 Holm upper bound 0.046875",
+                   "numerical-sensitivity", 0.046875, _et2["p_holm_upper_bound"]))
 
     # ---- 6.8, the RMSE rows the same runs completed --------------------------
     for _sp, _d, _h in (("butina", -0.0556, 0.03906), ("random", -0.0893, 0.16797)):

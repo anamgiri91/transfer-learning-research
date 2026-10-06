@@ -328,6 +328,116 @@ fixed *before* results exist, and any deviation gets an entry in
 
 ---
 
+## Amendment 7 — 2026-10-04, label provenance and publication corrections
+
+The original protocol below used “high-fidelity” and a replicate-agreement
+gate. The available OpenBind table has rows for crystal complexes, not identified
+assay replicates. After structural filtering, 361 compounds have one row; of
+133 multi-row compounds, 128 repeat one label and only 5 have distinct labels.
+The ≤1-log gate rejects nothing in this release. This checks consistency of
+released labels; it does not establish low experimental noise. The manuscript
+and current title now describe a curated CVA16 2A dataset. These wording and
+provenance corrections do not change compounds, splits, model fits or scores.
+
+Completed Amendments 4–6 supersede the older missing-arm statements. The live
+checklist below is updated; earlier amendments remain historical records.
+Wilcoxon is described as a signed-rank test, and seed intervals are scoped to
+repeated splits of the same dataset. The source ZIP and cached ChemBERTa
+revision are pinned, and reproduction includes all six in-domain encoders.
+
+## Amendment 8 — 2026-10-05, numerical-sensitivity analyses for the retraining failure
+
+Written before either analysis below was computed.
+
+**What prompted it.** On 2026-10-04 two of the predetermined retraining cells
+stopped matching their saved outputs: `B3` seed 0 at n = 347 (maximum prediction
+drift 0.46) and `T2v` seed 0 at n = 50 (drift 1.43e-6, which moved
+precision@10% from 0.2 to 0.1). Diagnosis on 2026-10-05, recorded in
+`docs/decision-log.md`:
+
+- Neither script fixes the number of CPU threads. Re-running each cell with
+  `OMP_NUM_THREADS` set to different values gives a different result per value,
+  and the same result every time for a given value. Parallel floating-point
+  reductions are summed in a thread-count-dependent order.
+- For `T2v` this stays at the last float32 digit. For `B3` it does not: about
+  400 optimiser steps with batch normalisation and validation-based early
+  stopping amplify it into a different trajectory and a different stopping epoch.
+- No thread count from 1 to 15 regenerates the saved bytes of either cell today,
+  although both regenerated bit-identically on 2026-09-13. The Python
+  environment, the system libraries and the source are unchanged since then. A
+  second, unidentified machine-state factor therefore exists. It is not
+  explained and is not claimed to be.
+- `precision_at_10pct` breaks ties at the top-decile cutoff by `np.argsort`
+  order, so two predictions that differ in the last digit, or not at all, decide
+  the metric arbitrarily.
+
+**What has already been seen.** `B3` seed 0, n = 347 under twelve thread
+settings (RMSE 0.640–0.691 against the saved 0.680), and `T2v` seed 0, n = 50
+under five. No other cell has been re-run and no contrast has been recomputed.
+
+**Analysis A — thread-pinned `B3` replicate.** All 40 `B3` cells are re-fitted
+with `scripts/run_dmpnn.py --threads 1 --out-root results/sensitivity/b3_threads1`,
+which is the Amendment 5 recipe unchanged except that torch is limited to one
+intra-op thread. Amendment 5's five contrasts are recomputed against the same
+saved `B1` and `T2v` cells, with the same test and the same Holm family (m = 5).
+A contrast is called *numerically robust* if its direction and its Holm verdict
+at 0.05 agree between the saved and the pinned set. Both sets are reported
+whatever the outcome.
+
+**Analysis B — tie sensitivity of precision@10%.** No retraining. For every saved
+prediction file, predictions within ε = 1e-5 pKD of the k-th largest prediction
+are treated as tied at the cutoff, and the lowest and highest precision@10% any
+tie-breaking order could give are computed. ε is about seven times the largest
+drift observed and two orders below reported precision. Every reported
+precision@10% contrast against `B1` — the six scaffold tests of §5.7 and
+Amendment 6's five — is recomputed twice: with the arm at its lower bound and
+`B1` at its upper, and the reverse. Where `B1` predictions were not saved (the
+random and Butina splits) only the arm side is bounded, and that is stated. A
+contrast is *tie-robust* if its Holm verdict is the same in both scenarios as in
+the saved analysis. Spearman is reported with ε-tied predictions given equal
+rank, as the size of the shift only.
+
+**What does not change.** The saved outputs remain the primary results and are
+not overwritten. No tolerance is altered and `make verify-retrain` keeps its
+existing criterion, which the two cells continue to fail against the saved
+outputs. These analyses bound how much the reported conclusions depend on the
+arithmetic; they do not restore bitwise regeneration of the saved files.
+
+### Amendment 8 validation addendum — 2026-10-05
+
+Recorded after the two analyses above, before the additional checks below.
+Their observed results are not independent confirmation. The original two
+endpoint scenarios are retained, but they are not assumed to bound a
+two-sided signed-rank p-value: changing differences also changes their ranks.
+
+For each of the same eleven tests, enumerate every attainable precision hit
+count between the fixed epsilon bounds at each seed. Keep the historical
+SciPy Wilcoxon calculation and the two original Holm families unchanged.
+Compute the minimum and maximum raw p-value over all configurations; applying
+Holm to the vectors of minima and maxima gives conservative adjusted bounds
+(shared B1 outcomes may make those joint extrema unattainable). Claim robustness
+over all configurations only if that entire bound and the possible directions
+retain the saved verdict. Report any failure without changing epsilon, tests,
+families or primary metrics. B1 remains fixed on random and Butina because its
+historical predictions were not saved. Equal-ranking Spearman remains a
+descriptive scenario, not a worst-case bound.
+
+Independently rerun all 40 one-thread B3 cells in the previously installed
+fresh environment, against copies of the existing pinned artifacts taken
+before retraining. Repeat the originally failing T2v seed-0 n=50 cell twice
+in separate one-thread processes. Require exact predictions, labels, row
+identities and metric/selection records (excluding elapsed seconds). Report
+the environment and input/source hashes. This checks present repeatability,
+not regeneration of historical results or determinism on other machines.
+The historical `full_reproduction_passed` field remains false.
+
+Interpretation correction: the thread-count experiments establish a numerical
+sensitivity mechanism, but do not isolate the cause of the September-to-October
+historical mismatch or attribute it to Accelerate specifically. The historical
+records lack sufficient thread/backend/machine-state metadata to rule out all
+environment differences. The earlier assertion of a second machine-state
+factor should be read as an unresolved possibility, not an identified cause.
+
 ## 1. Question
 
 Molecular transfer learning is usually justified on large, noisy benchmarks
@@ -521,71 +631,44 @@ conclusion.
 
 ## 10. Execution checklist
 
-Updated 2026-09-11. `[x]` done, `[~]` partial, `[ ]` not done.
-**Arm labels below are this document's, not the executed study's — see
-Amendment 2 for the mapping.** Partial and
-undone items are each accounted for in `paper/manuscript.md` §7 — an unchecked
-box here must correspond to a stated limitation there, or one of the two
-documents is lying.
+Updated 2026-10-04. This is the live status; the dated amendments above retain
+what was known when each decision was made. Arm labels below use the executed
+study's names (see Amendment 2 for the original mapping).
 
-- [x] Fetch and curate sources — via `scripts/prepare_openbind.py`, not
-      `make data`; the source changed (Amendment 1)
-- [x] Report curated N per target; **apply the §3.2 N < 300 decision rule** —
-      N = 494, so the rule did not fire and the deep arms stayed in scope
-- [x] Build and verify splits — via `python scripts/build_splits.py --target eva71_2a`
-      (leakage tests pass; `tests/test_splits.py`). Credited to `make splits`
-      until 2026-09-11; that target defaulted to the removed 3C target and
-      never ran (Amendment 3)
-- [~] Baselines `B0`–`B3` across seeds and sizes — `B0`–`B2` complete over
-      10 seeds × 4 sizes × 3 splits; **`B3` (D-MPNN) not run** (§7.7)
-- [~] Transfer arms `T1`–`T6`, **in this document's labels** (Amendment 2) —
-      `T2` (frozen probe) runs on all three splits, as do the `T0r` control
-      and the two in-domain **probe** arms added in §6.4; `T1` (full
-      fine-tune) on the scaffold split only (§7.9); **`T3` and `T6` not
-      run**; **`T4` and `T5` as specified — in-domain pretraining followed by
-      fine-tuning — were never built.** The prior wording of this line had
-      the split coverage exactly backwards.
-      **H3 is tested in a substituted form only** (§6.4): the executed
-      contrast varies the pretraining corpus with adaptation held frozen, and
-      is *suggestive* for the chained arm (BH-significant, not Holm). The
-      `T4`-vs-`T1` contrast this document names is **unperformed**, not
-      inconclusive — no in-domain fine-tune exists in `results/metrics/`
-- [~] Contamination measurement, then decontaminated re-run — **done for the
-      in-domain arms** (§6.5), with a size-matched random ablation the protocol
-      did not ask for and the result turns on: without it the ablation reports
-      a significant effect with the causal arrow reversed. **H4 is bounded
-      rather than answered there**: there is no evidence that overlap inflated
-      those arms — a null we can state — but the decisive contrast does not
-      survive Holm (§6.5). **Impossible for the ChemBERTa arms**, whose 77M
-      corpus is not redistributed; only a PubChem-membership upper bound (53%)
-      is available, so **H4 stays untested for those arms** (§7.3)
-- [x] **H2's interaction term** (§6) — run 2026-09-11 (`scripts/analyse_h2.py`,
-      manuscript §5.3). Previously the DER was computed and the interaction
-      term was not, which left H2 resting on a statistic that cannot answer it
-- [~] Ablations §7.2 — activity cliffs done (§6.3); adaptation strategy partial
-      (full FT vs linear probe only, no LoRA / layer-wise); fidelity ablation
-      **vacuous**, the gate removed nothing; corpus size and 2A-vs-3C
-      **impossible here** (§7.10)
-- [x] Figures, tables, manuscript — draft complete including §7; tables are
-      generated from source and every prose number is machine-checked
-      (`make verify`; the claim count lives in one place, manuscript §10)
+- [x] Data: `make data` downloads/checks the versioned OpenBind ZIP, reconstructs
+  `master.csv` (925 → 649 labelled complexes), and curates 494 compounds.
+- [x] Label provenance audit: repeated crystal rows do not identify independent
+  assay replicates. The original high-fidelity claim is withdrawn; the
+  historical spread fields remain compatibility names, not precision estimates.
+- [x] N < 300 decision rule: N = 494, so the deep arms remain in scope.
+- [x] Compound/scaffold split integrity: 30 committed split files.
+- [x] B0–B2: all three splits, four budgets, ten seeds. B3: all four budgets
+  and ten seeds on scaffold splits (Amendment 5).
+- [x] T1, T0r, T4/T5 probes: all three splits and four budgets; T4c/T4r/T5c/T5r
+  ablations: scaffold splits. All six in-domain encoders have build commands,
+  including the two `--drop-random 61` controls.
+- [x] T2: scaffold learning curve plus full-data random/Butina runs.
+- [x] T2v: all four scaffold budgets; T4ft/T5ft: full-data scaffold runs.
+  All 60 Amendment 4 cells completed without failures.
+- [x] H2 interaction: original sweep plus corrected T2v learning curve.
+- [x] H3 matched fine-tune form: performed under Amendment 4, with no detectable
+  RMSE difference; the earlier probe contrast remains suggestive only.
+- [~] H4: in-domain decontamination and size-matched controls completed; the
+  mechanistic contrast does not survive Holm. ChemBERTa's corpus is unavailable.
+- [~] T3/T6, LoRA and layer-wise adaptation were not evaluated. Temporal splitting
+  lacks dates; assay-fidelity sensitivity lacks identifiable measurement replicates.
+- [~] Fully trainable random-init ChemBERTa: design prepared in
+  `docs/random-init-plan.md`; no evaluation has been performed.
+- [x] Retraining failure of 2026-10-04: cause identified as unpinned CPU
+  threading; Amendment 8's two sensitivity analyses completed. Reported verdicts
+  hold, except that the sign of the B3-versus-T2v null is not stable. Bitwise
+  regeneration of the saved T2v and B3 files is not restored.
+- [~] Submission: results and verification are available; author metadata,
+  final manuscript formatting, and public archival deposit remain outstanding.
 
-**H1** (transfer beats the best from-scratch baseline) is answered negatively
-on every arm run. **H2** (the advantage grows as data shrinks) was recorded as
-answered negatively until 2026-09-11 on the strength of the DER alone; with the
-pre-registered interaction term now run, it is **unanswered for the frozen
-probe** (slope +0.007, 95% CI [-0.017, +0.019], p = 0.77, and the same on the
-other two splits) and **contrary to H2 for the fine-tune** (slope -0.176, Holm
-p = 0.014) — but that arm's slope is measured under the fixed schedule §6.2
-shows to be a harness artefact, so it is confounded rather than informative.
-The DER is retained as a descriptive statistic; per seed it is censored rather
-than zero, and no DER in the study is distinguishable from 1 except by
-censoring. **H3** (in-domain beats generic pretraining) is **not tested in its
-pre-registered form at all** — that form needs an in-domain fine-tune, which
-was never built (Amendment 2). The substituted probe-versus-probe contrast is
-*suggestive* for the chained arm `T5`, which beats the generic probe at raw
-p = 0.006, clearing Benjamini-Hochberg and not Holm across the 15 full-data
-contrasts. **H4** has no evidence for the ChemBERTa arms, whose corpus is not
-distributed. For the in-domain arms §6.5 finds **no detectable leakage
-advantage** — a null we can state — but the contrast that would demonstrate the
-mechanism does not survive Holm, so H4 is bounded rather than answered.
+**Current interpretation.** H1 has no demonstrated improvement on primary RMSE
+against B1. H2 is unresolved for the frozen probe and contrary for T2v within
+its scaffold procedure. H3 detects no difference for the matched fine-tune;
+this is not equivalence. H4 remains bounded for the in-domain source and
+untestable for ChemBERTa. The current results compare recipes and do not isolate
+the causal contribution of generic pretraining.

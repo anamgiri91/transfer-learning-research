@@ -1,15 +1,16 @@
 # Provenance map
 
 Every table, figure and dataset-level number in `manuscript.md` resolves through
-this map to a **script** and an **output file on disk**. No number is typed by
-hand into the manuscript; if a value is not reachable from this table it does not
-belong in the paper.
+this map to a **script** and an **output file on disk**. Generated tables and registered numerical checks support the manuscript.
+Their checks do not replace a review of the prose or of scientific interpretation.
 
 ## Data artefacts
 
 | Artefact | Produced by | Output file | Read from |
 |---|---|---|---|
-| Raw structure–affinity release | — (third party) | `data/raw/OpenBind_EV-A71_2A.zip`, `data/processed/master.csv` | Zenodo 10.5281/zenodo.20026661 |
+| Raw structure–affinity release | OpenBind; fetched by `scripts/fetch_openbind.py` and checked by SHA-256 | `data/raw/OpenBind_EV-A71_2A.zip` | Zenodo 10.5281/zenodo.20026661 |
+| Labelled complex table | `scripts/prepare_openbind.py` → `evapro.data.openbind.make_master` (originally `scripts/prototype/fetch_and_prepare_data.py`) | `data/processed/master.csv` | ZIP metadata: rename three columns, drop missing pKD; 925 → 649 rows |
+| Label reuse audit | `scripts/prepare_openbind.py` → `evapro.data.openbind.label_audit` | `data/processed/eva71_2a.label_audit.json` | Same ZIP; structural-quality-filtered complex rows |
 | Compound-level curated set | `scripts/prepare_openbind.py` | `data/processed/eva71_2a.csv` | `data/processed/master.csv` |
 | Curation funnel counts | `scripts/prepare_openbind.py` | `data/processed/eva71_2a.curation.json` | as above |
 | Split assignments | `scripts/build_splits.py` | `data/processed/splits/eva71_2a/{scaffold,butina,random}__seed{0..9}.json` (30 files) | `eva71_2a.csv` |
@@ -18,7 +19,7 @@ belong in the paper.
 | In-domain corpus (raw) | `scripts/fetch_indomain.py` | `data/raw/indomain_<target>.csv` + `.manifest.json` | ChEMBL activity API, 8 targets |
 | In-domain corpus (curated) | `scripts/prepare_indomain.py` | `data/processed/indomain_3c.csv`, `.curation.json` | the 8 raw pulls + `eva71_2a.csv` for overlap flags |
 | 2A surrogate divergence | `scripts/verify_surrogate.py` | `results/tables/table9_surrogate_divergence.csv` | UniProt Q66478 / Q65900 / Q9QF31 |
-| In-domain encoders | `scripts/pretrain_indomain.py` | `models/indomain_{T4,T5}[_clean].pt` + `.json` | `indomain_3c.csv` |
+| In-domain encoders | `scripts/pretrain_indomain.py` | `models/indomain_{T4,T5}{,_clean,_rand61}.pt` + `.json` | `indomain_3c.csv` |
 
 ## Tables and figures
 
@@ -72,22 +73,26 @@ image exists and that the visible numbers run 1..N.
 | Borrowed numbers carry their source sentence | `docs/citation-claims.yaml` + `scripts/verify_citations.py` | Each externally-sourced quantity records the verbatim quote, the URL it was read at and the date; the checker enforces that the quote contains the number, that the claim is still made, and that second-hand quotes are declared |
 | The surrogate claim is re-derived, not cited | `scripts/verify_surrogate.py` | §3.1's CVA16/EV-A71 comparison is recomputed from UniProt-annotated 2A chains into `table9_surrogate_divergence.csv`; 13 claims check against it |
 | The citation checker is itself checked | `tests/test_citations.py` | Each of the eight defects the audit found is pinned as a regression test |
-| Prose numbers are re-derived | `scripts/verify_manuscript.py` | Every numeric claim re-computed from artefacts; non-zero exit on mismatch. The *number* of claims is not restated here — it is asserted against manuscript §10 by the script itself, so there is one place for it to drift and it is checked |
+| Prose numbers are re-derived | `scripts/verify_manuscript.py` | Registered numeric claims re-computed from artefacts; non-zero exit on mismatch. The *number* of claims is not restated here — it is asserted against manuscript §10 by the script itself, so there is one place for it to drift and it is checked |
 | Re-running reproduces committed metrics | `scripts/run_arms.py --save-preds` | Re-runs each completed cell and fails if any stored metric moves by more than 1e-9 |
-| The whole pipeline reproduces | `scripts/verify_reproducibility.py` (`make verify-repro`) | Runs all fourteen offline stages inside a throwaway git worktree at an immutable ref, watching 2036 committed artefacts and **reconstructs 1584** of them; 21 supplied inputs are verified by SHA-256 rather than rebuilt, 452 are compared only, and 329 (figures, and predictions outside the scaffold split) have no committed baseline. Tolerances are 1e-9 relative for metrics and tables, 1e-6 for torch predictions, and exact for row identities, shapes, missingness and every metric file's identity fields. The working tree is never written to. Not covered: the ChemBERTa fine-tune's 40 cells, the six encoders' pretraining, the 41 tuned cells, and table5 (needs PubChem). |
+| The whole pipeline reproduces | `scripts/verify_reproducibility.py` (`make verify-repro`) | Runs the selected offline stages inside a throwaway git worktree at an immutable ref, watching 2036 committed artefacts and **reconstructs 1584** of them; 21 supplied inputs are verified by SHA-256 rather than rebuilt, 452 are compared only, and 329 (figures, and predictions outside the scaffold split) have no committed baseline. Tolerances are 1e-9 relative for metrics and tables, 1e-6 for torch predictions, and exact for row identities, shapes, missingness and every metric file's identity fields. The working tree is never written to. Not covered: the ChemBERTa fine-tune's 40 cells, the six encoders' pretraining, the 41 tuned cells, and table5 (needs PubChem). |
+| Numerical sensitivity of the stated conclusions | `scripts/analyse_numerical_sensitivity.py` (`make sensitivity`) | Recomputes Amendment 5's contrasts on a one-thread `B3` replicate and enumerates attainable precision@10% hit counts with conservative Holm bounds (B1 fixed on random/Butina); writes `docs/numerical-sensitivity.json`. Does not restore bitwise regeneration of the saved fine-tuning or `B3` files |
+| Pinned training repeatability | `scripts/verify_numerical_repeatability.py` | Copies the 40-cell pinned B3 baseline before independent retraining; compares it exactly and repeats the failing T2v cell in separate one-thread processes. Writes environment and source/input hashes to `docs/numerical-repeatability.json`; `--check` rejects stale or incomplete evidence. Does not certify historical reconstruction |
 | Cliff stratification edge cases | `tests/test_cliffs.py` | `distant` is never merged into `smooth`; only training compounds can create a cliff |
 | In-domain corpus membership | `tests/test_indomain.py` | Capsid, RNA-polymerase and papain-like assays cannot enter a '3C-like' corpus on target name alone; every exclusion carries a stated reason |
 | Split integrity | `tests/test_splits.py` | No compound or scaffold straddles train/test |
 | All of the above | `make verify` | Runs tests + freshness check + claim verification + citation checks |
 | Plus link liveness | `make verify-online` | As above, and every cited URL must still resolve |
 
-Bit-reproducibility is verified on every `make verify-repro`, not once by hand:
+Recorded coverage is tied to the baseline commit in `docs/reproduction-coverage.json`.
+The full tier rebuilds the frozen probes and B3; the fast tier skips them.
+The previously recorded runs found:
 `eva71_2a.csv`, `indomain_3c.csv` and all 30 split files are byte-identical,
 the 360 re-fitted baseline metric files match to ~1e-15 relative, and the data
 rows of all 32 tables are byte-identical. The nine figures are
 regenerated but **not verified**: they are gitignored as regenerable, so a
 reconstruction has no committed copy to diff against, and matplotlib PNG output
-is not byte-stable across environments in any case. The transfer arms'
+is not byte-stable across environments in any case. The original T2 and amended fine-tune
 metrics are **not** re-fitted by that run — the figures below for T1/T2/T0r/T4/T5
 come from the original hand check and from `run_arms.py --save-preds`, which
 re-runs a completed cell and fails if a stored metric moves by more than 1e-9. The full stage-level
@@ -98,15 +103,15 @@ the order of the floating-point reduction across threads vary.
 ## Reproduction order
 
 ```bash
-python scripts/prepare_openbind.py                     # -> eva71_2a.csv
+python scripts/fetch_openbind.py                       # versioned ZIP, SHA-256 checked
+python scripts/prepare_openbind.py                     # -> master.csv, eva71_2a.csv, label audit
 python scripts/build_splits.py --target eva71_2a       # -> splits/, asserts no leakage
 python scripts/audit_splits.py                         # -> table0
 python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold random butina
 python scripts/run_arms.py --arms T2 --splits scaffold   # fine-tune, ~2 h on CPU
 python scripts/make_report.py --require-seeds 10         # -> tables + figures
 python scripts/measure_contamination.py                  # -> table5 (PubChem lookup)
-python scripts/tune_arms.py --arms B1 B2 T1 --trials 32  # -> tuned_metrics/
-python scripts/tune_arms.py --arms T2 --sizes 50 --trials 6
+make tuning                                             # exact 41 historical cells
 python scripts/analyse_tuning.py                         # -> table13
 python scripts/run_arms.py --arms B0 B1 B2 T1 --splits scaffold --save-preds
 python scripts/run_arms.py --arms T2 --splits scaffold --sizes 347 --save-preds
@@ -119,8 +124,8 @@ python scripts/pretrain_indomain.py --arm T4             # random init
 python scripts/pretrain_indomain.py --arm T5             # from ChemBERTa
 python scripts/pretrain_indomain.py --arm T4 --decontaminate
 python scripts/pretrain_indomain.py --arm T5 --decontaminate
-python scripts/pretrain_indomain.py --arm T4 --drop-random   # size-matched control
-python scripts/pretrain_indomain.py --arm T5 --drop-random   # -- 6.5 turns on it
+python scripts/pretrain_indomain.py --arm T4 --drop-random 61# size-matched control
+python scripts/pretrain_indomain.py --arm T5 --drop-random 61# -- 6.5 turns on it
 # T0r/T4/T5 run on all three splits (5.5, 5.7); the ablation arms on scaffold
 python scripts/run_arms.py --arms T0r T4 T5 --splits scaffold random butina --save-preds
 python scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold --save-preds

@@ -1,4 +1,4 @@
-# Benchmarking Transfer Learning Efficacy on a High-Fidelity Viral Protease Dataset: A Case Study on EV-A71 / CVA16 2A Protease
+# Benchmarking Molecular Transfer Learning on a Curated CVA16 2A Protease Dataset
 
 **Status: draft. Results sections are populated only from files listed in
 [`provenance.md`](provenance.md).** Every number below carries an inline
@@ -13,7 +13,7 @@ script that produced it.
 molecular property prediction, but its evidence base is large, noisy
 benchmarks. We test the opposite regime — a few hundred compounds, one target,
 one assay — on the OpenBind EV-A71 / CVA16 2A protease release: 494 curated
-compounds, 272 scaffolds, maximum replicate spread 0.49 log units.
+compounds and 272 scaffolds, with affinity labels linked to crystal complexes.
 
 **Results.** Twelve arms were compared on identical materialised splits across
 10 seeds and four training-set sizes (1,060 evaluated runs), plus 100 amended runs. On scaffold-split RMSE a frozen ChemBERTa-2 probe is worse than an
@@ -40,8 +40,7 @@ rather than activity cliffs, a decontamination ablation whose size-matched
 control reverses the conclusion the protocol as written would have reached, and
 a matched in-domain-versus-generic contrast in which paired and marginal
 summaries disagree in sign. It also documents two pre-registered hypotheses
-reported as answered on analyses never run, recovered by machine-checked
-verification of every numeric claim.
+reported as answered on analyses never run, recovered through protocol review and checks against saved results.
 
 ## 1. Introduction
 
@@ -57,8 +56,9 @@ rather than scale alone (§2).
 
 The OpenBind EV-A71 / CVA16 2A protease release makes the question answerable
 on a clean example. It pairs a crystallographic fragment-screening campaign with
-K_D measurements from a single biophysical assay, so the label noise that
-usually confounds "does pretraining help?" is largely absent.
+K_D measurements reported from a single biophysical assay platform. This reduces
+assay heterogeneity, but the released complex-level labels do not identify
+independent measurement replicates or establish the magnitude of assay noise.
 
 **Contributions.**
 
@@ -181,7 +181,7 @@ structural proximity, but "none near the active site" is a stronger claim than
 "none catalytic", and only the latter is what we have verified.
 
 The consequence for reading this paper is unchanged: every "EV-A71" result
-here — including in the title — is strictly a CVA16 result extrapolated across
+here — where used as shorthand — is strictly a CVA16 result extrapolated across
 a handful of non-catalytic substitutions. We state it here rather than in a
 limitations paragraph because it conditions the entire study.
 
@@ -193,21 +193,30 @@ folds. Curation [→ `scripts/prepare_openbind.py` → `data/processed/eva71_2a.
 funnel in `data/processed/eva71_2a.curation.json`]:
 
 1. Drop complexes flagged `suspected_artefact` or failing `pb_valid_prepared`.
-2. Group by `compound_group`; discard any compound whose replicate pK_D spread
-   exceeds 1 log unit (the fidelity gate).
+2. Group by `compound_group`; discard any compound whose within-group pK_D
+   label spread exceeds 1 log unit (a label-consistency check).
 3. Collapse survivors to the median pK_D; standardise structures with RDKit and
    key on InChIKey; merge any InChIKey collisions.
 
 **Funnel** [→ `eva71_2a.curation.json`]: 649 complexes in → 10 dropped on
-structure quality → 0 compounds dropped for replicate disagreement → **494
+structure quality → 0 compounds dropped for label disagreement → **494
 unique compounds out**, spanning **272 Bemis–Murcko scaffolds**.
 
-**The fidelity claim is supported, and it is worth being precise about how.**
-Of 494 compounds, 133 carry more than one measurement. The maximum replicate
-spread across the entire dataset is **0.49 log units**, and **no compound
-exceeds the 1-log gate** [→ `eva71_2a.curation.json`, `max_replicate_spread`].
-The gate therefore removed nothing — it is reported as a passed audit, not as a
-filter that did work. pK_D spans 3.44–7.94 (median 4.95, SD 0.86).
+**Repeated structures do not establish assay replication.** Of 494 compounds,
+361 occur in one crystal complex and 133 in multiple complexes. Among those
+133, 128 repeat an identical pK_D label across their structures; only 5 have
+more than one distinct label. The maximum within-compound label spread is
+**0.49 log units**, and no compound exceeds the 1-log threshold
+[→ `eva71_2a.label_audit.json`; the historical `replicate_spread` and
+`max_replicate_spread` field names are retained for data compatibility].
+
+The release has no measurement identifiers or replicate counts. It therefore
+cannot distinguish independent repeat assays from one affinity label copied
+across structures. The spread check removed nothing and does not estimate
+experimental precision. We describe this as a curated, single-target dataset,
+with structural-quality filters and assay provenance reported by its depositors;
+we do not infer low label noise from these repeated rows. pK_D spans 3.44–7.94
+(median 4.95, SD 0.86).
 
 A consequence for interpretation: the dynamic range is narrow (about 4.5 log
 units, mostly compressed between 4 and 6) and the assay is a fragment-screening
@@ -283,18 +292,28 @@ transfer bought data [→ `table2_der__*.csv`].
 Paired Wilcoxon signed-rank across the 10 seeds against `B1`, Holm-corrected
 over the arm family [→ `table3_paired_tests__*.csv`]. Two disciplines apply:
 
-- **Effect size is always reported beside p.** Wilcoxon ranks signs, not
-  magnitudes, so a tiny but perfectly consistent difference is "significant".
+- **Effect size is always reported beside p.** Wilcoxon combines signs with
+  ranks of absolute paired differences. Positive rescaling that preserves
+  these ranks leaves the statistic unchanged, so a tiny consistent difference
+  can be statistically significant without being practically meaningful.
   This is asserted as a unit test
-  (`tests/test_stats.py::test_wilcoxon_is_sign_based_so_tiny_consistent_deltas_are_significant`).
+  (`tests/test_stats.py::test_wilcoxon_can_detect_tiny_consistent_deltas`).
 - **Underpowered ⇒ inconclusive, not null.** With 10 seeds only large effects
-  are detectable; a non-significant comparison is reported as inconclusive.
+  are detectable; a non-significant comparison is reported as inconclusive, not as evidence
+  of equivalence. No equivalence margin or equivalence test was specified.
 - **Corrections are applied to both directions.** §5.4's family is the five
   pre-registered arms; §6.4–6.5's is the 15 full-data RMSE contrasts of the
   arms added later; §5.7's is each endpoint's own arm family. An earlier draft
   corrected the first and left the others raw, which applied the penalty
   exactly where it cost nothing. Where Holm and Benjamini–Hochberg disagree we
   report both and describe the claim as suggestive rather than established.
+
+The ten seeds reuse the same 494-compound dataset with different partitions
+and, for stochastic models, training randomness. Seed-bootstrap intervals
+summarise variability under this repeated-split procedure conditional on this
+dataset; they are not confidence intervals from independent samples of a
+compound population. Overlapping training and test sets limit population-level
+interpretation of the signed-rank p-values.
 
 ## 5. Results
 
@@ -567,12 +586,13 @@ sign at +0.0306 (Holm p = 0.023). Against that reference:
   answered for this arm at all.**
 - **`T2`, the fine-tune, is significantly contrary to H2.** Slope −0.1764,
   CI [−0.2216, −0.1215], negative in 10 of 10 seeds, Holm p = 0.014 — its
-  deficit *grows* as data shrinks. This is the only formally significant H2
-  result in the study, and it must be read with §6.2: it is measured under the
+  deficit *grows* as data shrinks. This was the only formally significant H2
+  result in the original sweep, and it must be read with §6.2: it is measured under the
   fixed 40-epoch schedule that drove the same arm from R² +0.30 to −1.26 at
   n = 50. Most of this slope is the harness artefact whose interpretation we
   already retracted (§5.6), so we do **not** advance it as evidence about
-  transfer, and the tuned arm was not run at enough sizes to re-measure it.
+  transfer on its own. The corrected `T2v` learning curve now re-measures
+  the slope at all four sizes (§6.6) and retains a smaller negative slope.
 - Every other arm, including both in-domain arms, is inconclusive.
 
 **What H2 now says.** There is no sign of the crossover that motivates
@@ -675,7 +695,8 @@ Figure 1, which would read as Butina being the easier split. It is not — the
 test fold's label SD falls from 0.839 to 0.658, so RMSE is measuring a
 different-variance target. The R² table above is the comparable view, and
 `fig2_ranking__butina.png` shows the same ordering on a scale-free metric.
-T2 was not run on this split (§7.9).
+T2 was subsequently evaluated here at full data (§6.8); the smaller-size
+T2 learning curve and the corrected T2v curve remain scaffold-only (§7.9).
 
 **(ii) Transfer degrades more than the baselines when the test set is genuinely
 novel — but the untrained control degrades *less* than the pretrained arm.**
@@ -870,18 +891,19 @@ should not be read without it.**
    earlier draft of this list: on precision@10% the fine-tune beats the
    baseline under correction (point 10). On scaffold-split RMSE, the frozen
    probe is significantly worse under the fixed schedule (Holm p = 0.012) and
-   was not re-tuned. The fine-tune, once tuned, is **statistically
-   indistinguishable** from the baseline at both sizes tested (n = 50: better in
+   was not re-tuned. The fine-tune, once tuned, is **not detectably different** from the baseline in that earlier sweep at both sizes tested (n = 50: better in
    3 of 10 seeds, p = 0.16; n = 347: better in 2 of 5, p = 0.63) while costing
    ~70× more compute per fit. We claim the absence of a demonstrated benefit,
-   **not** a demonstrated deficit — and note the search budget still favours the
-   baselines (§6.2).
-2. **The two baselines are indistinguishable** (p = 0.56), and are **not
+   the earlier sweep was inconclusive. The later T2v experiment finds a
+   deficit at all four sizes under its amended validation procedure (§6.6).
+   Search budgets still differ (§6.2).
+2. **The comparison does not distinguish the two baselines** (p = 0.56), and are **not
    under-tuned**: a 32-trial search changes B1 by a median of +0.004 RMSE and
    helps in only 11 of 26 matched cells (§6.2).
 3. **The frozen probe degraded more than the baselines under Butina splitting**
    (§5.5): 13% R² retained vs 40–50%. One transfer arm on one target, with the
-   fine-tune untested there — suggestive, not established.
+   original fine-tune subsequently evaluated at full data (§6.8). The
+   corrected fine-tune remains untested on Butina.
 4. **Scaffold splitting was not harder than random splitting here** (§5.5).
    Scaffold-split R² exceeds random for B1 (+0.014) and B2 (+0.052) and is level
    for T1 (−0.002), despite zero shared scaffolds, because 29% of scaffold-split
@@ -891,16 +913,16 @@ should not be read without it.**
    from R² +0.30 to −1.26 at n = 50. **This replaces the "learns ranking before
    calibration" claim of §5.6, which we withdraw.**
 6. **Up to ~53% of test compounds could have been in pretraining** (§6.1, an
-   upper bound). This cannot explain transfer losing, but it means no transfer
-   advantage measured here should be taken at face value.
+   upper bound). Its performance effect cannot be identified without the
+   actual corpus and a matched decontamination experiment.
 7. **Generic pretraining is not separable from no pretraining here** (§6.4).
    Against an untrained encoder of the same architecture, ChemBERTa's frozen
    embeddings win in 5 of 10 seeds (raw p = 0.49) — a null, so correction
    cannot threaten it. The in-domain arms beat that control by three times the
    margin (7 and 8 of 10) and the chained arm beats the generic probe in 9 of
    10, but **after multiplicity correction these clear BH and not Holm**, so
-   H3 is suggestive rather than supported, and unsupported in its
-   pre-registered form. None of them overtakes the fingerprint baseline.
+   the probe contrast is suggestive rather than supported. The matched
+   fine-tune contrast subsequently found no detectable difference (§6.6). None of them overtakes the fingerprint baseline.
 8. **Decontaminating the in-domain corpus shows no leakage advantage, and the
    size-matched control is what makes that readable** (§6.5). Removing the 61
    overlapping records hurts (raw p = 0.010); removing 61 random records hurts
@@ -958,10 +980,9 @@ test folds are somewhat more enriched (63.8%).
 This is a real upper bound, not a clean bill of health: up to half of each test
 fold could have appeared in pretraining. Two things limit the damage. The bound
 is loose — PubChem contains ~119M compounds against the corpus's 77M, and many
-of these are recent Enamine catalogue entries. And the direction of the bias is
-known: contamination can only *flatter* the transfer arms, so it cannot explain
-a transfer arm losing. It does mean any transfer *advantage* observed here
-should be treated as an upper estimate.
+of these are recent Enamine catalogue entries. The direction and magnitude of any performance effect are unmeasured.
+A corpus-membership upper bound cannot establish how removing that overlap
+would change a trained model.
 
 We did not re-pretrain ChemBERTa on a decontaminated corpus, and cannot: that
 requires the corpus. **For the in-domain arms of §6.4 the corpus is ours, so
@@ -1200,9 +1221,8 @@ differs by a single well-defined transformation.
 `analyse_indomain.py` → `results/tables/table10_indomain_contrasts.csv`,
 `table11_random_encoder_draws.csv`]
 
-H3 — that in-domain transfer beats generic self-supervised pretraining — was
-listed in §7.7 as untested, because no in-domain arm existed. This section
-runs it.
+This section evaluates the probe-versus-probe version of H3. The matched
+fine-tune comparison is reported separately in §6.6.
 
 **The corpus.** Eight ChEMBL 3C / 3C-like protease targets. ChEMBL files
 picornaviral proteases under the *whole genome polyprotein*, whose component
@@ -1211,7 +1231,7 @@ evidence of what was assayed; every record is screened on its assay
 description instead. That screen dropped **2,022 non-3C and 757 wrong-enzyme
 records of 7,634**, and two otherwise-obvious targets were excluded outright —
 poliovirus CHEMBL5127 is RNA-polymerase data and HCoV-NL63 CHEMBL3232683 is
-the papain-like protease PLP2, a different fold. After the §3.2 fidelity gate:
+the papain-like protease PLP2, a different fold. After the corpus-specific assay and activity curation:
 **2,974 measurements on 2,743 compounds**, of which 2,829 are coronaviral and
 145 picornaviral.
 
@@ -1351,7 +1371,7 @@ in direction while no longer being degenerate.
 `T4` matches `B1`'s marginal median almost exactly (0.6028 vs 0.6031) but loses
 the paired test in 8 of 10 seeds (−0.047, p = 0.064, inconclusive); `T5` loses it in 10 of 10 (−0.014,
 p = 0.002) on an effect of 0.014 RMSE — significant and practically negligible
-at once, which is the sign-based Wilcoxon behaving exactly as §4.4 warns. So
+at once, which is the signed-rank test responding to consistency and relative ranks (§4.4). So
 the paper's headline is unchanged. What changes is the mechanism underneath it:
 the failure of transfer here is **not** obviously a failure of pretrained
 representations in general. It is specifically a failure of *generic*
@@ -1435,7 +1455,7 @@ decontamination to remove, which is itself a consequence of the corpus being
 chemically near-disjoint from the evaluation set (§6.4). A corpus that actually
 overlapped the target chemistry would be a sterner test of H4 than this one.
 
-### 6.6 Amended fine-tuning arms (in progress)
+### 6.6 Amended fine-tuning arms
 
 [→ `scripts/run_finetune.py`, `analyse_amended.py` → `table17`, `table18`]
 
@@ -1473,8 +1493,7 @@ token states. Against a `<s>`-token classification head, which has no pooler,
 the figure would be 53.) It is still not
 `plan.md`'s `T4`, which was specified for the 3C target Amendment 1 removed.
 
-**Status: incomplete at the time of writing, and no statistics are reported
-until it is not.**
+**Status: all 60 planned cells completed, with no failures.**
 
 <!-- TABLE:amended_progress START -->
 | Arm | Size | planned | complete | missing | failures |
@@ -1491,8 +1510,8 @@ until it is not.**
 `analyse_amended.py` withholds any contrast still missing a planned cell —
 summarising whichever seeds happen to have finished is a stopping rule
 introduced by accident — and reports one whose own ten seeds are all present.
-`T2v` is complete at all four sizes with no failures; the H3 arms are still
-running and every number they produce will be reported, favourable or not.
+`T2v` is complete at all four sizes; both H3 arms are complete at full data.
+All planned results are reported below.
 
 #### What the corrected fine-tune shows (H1, and H2 again)
 
@@ -1787,6 +1806,17 @@ Two results, both within Amendment 5's five-contrast family:
 - **`B3` and `T2v` are not separated at full data** — paired median +0.009,
   95% CI [−0.026, +0.059], 5 seeds each way, p_raw = 0.695, Holm 0.695.
 
+**Both results were re-tested against arithmetic noise (`plan.md` Amendment 8,
+§10).** A `B3` fit depends on the number of CPU threads it runs on, which the
+script did not fix, so all 40 cells were re-fitted on one thread and the same
+five contrasts recomputed. `B3` is still worse than `B1` at every size (paired
+median +0.079, +0.104, +0.072, +0.034; Holm 0.020 at each). The `B3`-versus-`T2v`
+contrast is still undetected, but its paired median changes sign, from +0.009 to
+−0.009 (95% CI [−0.046, +0.015], p_raw = 0.322). The direction of that
+difference is therefore not established even on this dataset; only its absence
+of significance is stable. Single cells move by a median of 0.014 to 0.043 RMSE
+depending on training size, and by at most 0.100.
+
 **What that second result does and does not license.** The two deep arms land
 in the same place and both sit behind count fingerprints, which is consistent
 with the deficit belonging to the model class rather than to whether the
@@ -1912,10 +1942,9 @@ single-assay regression problem of this shape.
 
 **2. The measured protein is CVA16 2A^pro, not EV-A71 2A^pro.** Stated in §3.1
 rather than deferred here because it conditions the whole study: every
-"EV-A71" result, including the title, is a CVA16 result extrapolated across a
-handful of non-catalytic substitutions — 7 or 8 depending on strain, which our
-own re-derivation puts at odds with the count of five the source paper reports
-for its constructs (§3.1).
+"EV-A71" result, where used as shorthand, is a CVA16 result extrapolated across a
+handful of non-catalytic substitutions — 7 or 8 for the reference strains we checked; these need not match the
+source paper's specific constructs (§3.1).
 
 **3. Pretraining decontamination is answered for one pretraining source and
 unanswerable for the other.** `plan.md` §7.1 makes re-pretraining on a
@@ -1925,11 +1954,9 @@ apparent transfer gain is leakage — is what it was to decide.
 For **ChemBERTa** it cannot be done: the 77M corpus is not redistributed, so it
 can be neither diffed nor rebuilt. §6.1 supplies a PubChem-membership **upper
 bound** instead — up to 53% of test compounds could have been seen — so **H4
-remains untested for those arms.** The bound's direction is the saving grace:
-contamination can only flatter a transfer arm, so it cannot explain a transfer
-arm losing, and the negative result survives. The asymmetry does not run the
-other way — had transfer won, this design could not have told you whether the
-win was real.
+remains untested for those arms.** The observed model comparisons remain descriptive. Without the corpus and
+a matched decontaminated pretraining run, we cannot establish either the
+presence or the direction of a contamination effect.
 
 For the **in-domain arms** the corpus is ours, so overlap is measured rather
 than bounded (0 exact, 0 near-duplicate, 61 scaffold-level of 2,974
@@ -1947,17 +1974,12 @@ penalty is chosen by internal cross-validation, so it is not untuned, but that
 is weaker than the search its comparator received. This is why §5.8 claims **no
 demonstrated benefit** rather than a demonstrated deficit.
 
-**5. Multiplicity is the binding constraint on every positive claim.** The arms
-added after pre-registration required 15 full-data contrasts, and the endpoint
-set adds more. Under Holm within those families, **every surviving result is a
-negative one** — the frozen probe below the baseline, the chained probe below
-it, the random ablation below the full corpus. The positive claims — in-domain
-pretraining beating the untrained control, H3's chained contrast, the
-decontamination reversal — clear Benjamini–Hochberg at best and Holm not at
-all. We report them as suggestive. A reader who insists on Holm throughout
-should read this paper as: generic pretraining fails on the primary endpoint,
-one transfer arm beats the baseline on enrichment, and nothing else is
-established.
+**5. Positive secondary-endpoint results depend on the comparison family.**
+The in-domain probe and decontamination contrasts are suggestive under
+Benjamini–Hochberg but do not survive Holm for their specified RMSE family.
+On precision@10%, T2 and T5ft beat B1 within their separate endpoint families,
+but neither survives pooling across endpoints (§6.8). These enrichment results
+remain exploratory; they do not override the primary RMSE comparisons.
 
 **6. The study is powered only for large effects.** Ten seeds for the main
 sweep, and five for the tuned full-data comparison. Several of the comparisons
@@ -1966,19 +1988,16 @@ that matter most — the fine-tune against B1 untuned (p = 0.074) and tuned
 and are reported that way throughout (§4.4). A larger seed budget could move any
 of them in either direction.
 
-**7. Most of the pre-registered arm list was not run.** `plan.md` §4 freezes
-four baselines and six transfer arms; this paper reports three baselines
-(B0–B2) and two transfer arms (T1, T2). B3 (D-MPNN from scratch), T3
-(alternative encoder) and T6 (ligand + ESM-2 target embedding) were not run.
-T4 and T5 **were** run (§6.4), so H3 is tested — but on a corpus that Amendment
-1 made harder than the protocol intended: the in-domain set was specified for
-an EV-A71 3C target and is being transferred to 2A, and it is chemically
-near-disjoint from the evaluation set (median nearest-neighbour Tanimoto 0.247).
-H3 is *suggestive* for the chained arm T5 — Benjamini–Hochberg-significant but
-not Holm-significant across the 15 full-data contrasts — and inconclusive for
-T4, which is the contrast `plan.md` names. A stronger in-domain corpus —
-picornaviral rather than 95% coronaviral, and overlapping the fragment
-chemistry — could still change the answer.
+**7. Arm coverage and domain matching remain limited.** All four baseline
+families B0–B3 were evaluated; B3's implementation was specified in Amendment 5
+and runs on scaffold splits (§6.7). T1 and T2, the in-domain probes T4/T5, and
+the amended fine-tunes T2v/T4ft/T5ft are complete at their declared budgets.
+T3 (alternative pretrained encoder) and T6 (ligand plus target embedding) were
+not run. The matched in-domain-versus-generic fine-tune comparison finds no
+detectable RMSE difference (§6.6); this is not equivalence. The corpus was
+originally intended for 3C, is 95% coronaviral, and is chemically distant from
+the 2A evaluation set (median nearest-neighbour Tanimoto 0.247). These results
+do not settle transfer from a chemically closer picornaviral corpus.
 
 **8. The dataset is a fragment screen, and its regime is narrow.** pK_D spans
 3.44–7.94 with SD 0.86, mostly compressed between 4 and 6, and the compounds
@@ -1989,23 +2008,22 @@ where transfer is usually deployed: whether these findings hold on a
 lead-optimisation series with a wide potency range is an open question this
 dataset cannot answer.
 
-**9. Split coverage is incomplete.** The temporal split of `plan.md` §3.3 was
-dropped — the OpenBind release carries no per-compound year — so the
-deployment-realism endpoint is absent. The fine-tune T2 was run on the scaffold
-split only, at ~185 s per fit, so the Butina degradation result of §5.5(ii)
-rests on the frozen probe alone; whether full fine-tuning degrades the same way
-under a stricter split is untested.
+**9. Split coverage is incomplete.** The temporal split was dropped because
+the release has no per-compound year. T2 has a full scaffold learning curve
+and full-data runs on random and Butina splits (§6.8). T2v, T4ft/T5ft and B3
+were evaluated on scaffold splits only. The corrected fine-tune's performance
+under stricter splitting and its cross-split learning curves remain unknown.
 
 **10. Four of the five §7.2 ablations are missing, for three different
 reasons.** The adaptation-strategy sweep is partial: full fine-tune and linear
 probe are compared (T1 vs T2), but LoRA and layer-wise unfreezing were not run
 — affordable in principle, simply not done. Pretraining-corpus size and the 2A
 vs 3C transfer check are **impossible here**: the first needs the corpus, the
-second needs a 3C dataset, and neither exists in this environment. The fidelity
-ablation is **vacuous rather than skipped**: relaxing the 1-log replicate gate
-cannot change the dataset, because the gate removed nothing at all (maximum
-observed spread 0.49 log units, §3.2), so there is no relaxed variant to
-compare against. Of the five, only the activity-cliff ablation (§6.3) was
+second needs a 3C dataset, and neither exists in this environment. The planned fidelity
+ablation cannot be interpreted as a test of assay noise: the released rows
+do not identify independent measurement replicates (§3.2). Relaxing the
+1-log label-consistency threshold also leaves this particular dataset unchanged
+(maximum label spread 0.49 log units). Of the five, only the activity-cliff ablation (§6.3) was
 carried out in full.
 
 **11. H2 rests on a test specified after the results existed, and it is
@@ -2016,10 +2034,11 @@ front of us (§5.3, and the decision log). We report the choice rather than
 present it as pre-specified. What would settle H2 is not a better model but
 more seeds: the frozen probe's slope CI is [−0.017, +0.019], and a real
 crossover effect of the size transfer is supposed to deliver would sit inside
-that interval. The one significant slope, the fine-tune's, is confounded by
-the fixed training schedule (§6.2) and cannot be cleaned up without re-running
-that arm tuned at every training size — the most expensive experiment this
-study has left.
+that interval. The original fine-tune slope was confounded by
+the fixed schedule (§6.2). The amended T2v experiment re-ran all four sizes
+with validation selection and retained a smaller negative slope (§6.6),
+contrary to H2 within that procedure. More seeds could improve precision for
+the probe; they would not provide an independent target or compound population.
 
 **12. No experiment here isolates the effect of pretraining, and three
 comparisons that look as though they might, do not.** The study has one
@@ -2068,8 +2087,8 @@ the pre-registered interaction test and finds the frozen probe's deficit
 neither shrinks nor grows detectably with n (slope +0.007, CI [−0.017, +0.019],
 p = 0.77). H2 is unanswered for that arm. The frozen probe was significantly
 worse
-(Holm p = 0.012); the fine-tune, once given a search budget, was
-indistinguishable rather than worse. Neither reached the baseline's full-data
+(Holm p = 0.012). The earlier tuning sweep was inconclusive; the corrected
+T2v fine-tune was subsequently worse at every size (§6.6). Neither reached the baseline's full-data
 RMSE on the median curve — but that is a statement about threshold-crossing at
 the full-data end, and treating it as the verdict on H2 was an error this draft
 corrects. An arm can be worse at full data and lose no ground at n = 50, and
@@ -2081,14 +2100,14 @@ rather than zero on all, and its interval spans 1 wherever it is defined
 refuses it.** On precision@10% the fine-tune beats the baseline under Holm
 correction within that endpoint's family (§5.7) — the same arm that is worst on
 RMSE. It is a coarse metric on a 10-compound decile, it is specific to the
-scaffold split, and `T2`'s replication elsewhere is untested; but "pretraining
-did not help" is a statement about predicting the value, not about ranking the
-top of the list.
+scaffold split: full-data random and Butina checks detected no enrichment
+advantage (§6.8). Neither positive enrichment contrast survives pooling across
+endpoints, so these observations remain exploratory.
 
 What the paper does **not** support is the sentence it would be easiest to
 extract from it. It is not evidence that molecular pretraining does not work —
-and §6.4 makes that sharper rather than softer. **Generic** pretraining is what
-fails here, and it fails in a specific and measurable way. Two margins against
+and §6.4 makes that sharper rather than softer. The evaluated generic-pretrained recipes did not improve the primary
+endpoint; that comparison does not isolate pretraining itself (§7.12). Two margins against
 the same untrained control, measured the same way: ChemBERTa's frozen
 representation is ahead of it by a median of 0.011 RMSE across five draws of
 that control, and by 0.004 against the single draw the paired test was run on,
@@ -2097,15 +2116,14 @@ In-domain pretraining on 2,743 related-protease compounds is ahead of the same
 control by 0.030 — roughly three times the larger of those two margins — and
 beats the generic probe in 9 of 10 seeds. **That second contrast is suggestive
 and not established**: corrected across the 15 full-data contrasts it clears
-Benjamini–Hochberg and not Holm, and the pre-registered `T4`-vs-`T1` form is
-inconclusive (§6.4). It still does not overtake count fingerprints. A null
+Benjamini–Hochberg and not Holm, and the matched fine-tune form finds no detectable difference (§6.6). It still does not overtake count fingerprints. A null
 result is not proof of no effect, and we do not read it as one — what we claim
 is the ratio between two margins, and that neither is large.
 
 ### 8.2 Where the deficit lives, and what that suggests
 
 The more informative result is not that transfer lost but *where* it lost.
-Two independent measurements agree:
+Two related analyses of the same dataset agree:
 
 - **Across splits** (§5.5): moving from scaffold to Butina clustering, the
   baselines retain 40–50% of their R² and the frozen probe retains 13%.
@@ -2226,20 +2244,16 @@ and §7 lists eleven reasons why.
 
 ### 8.4 What we would need to change our minds
 
-Both pre-registered experiments have now been run (§6.4, §6.5) and neither is
-settled. What would settle them:
+The in-domain and decontamination analyses are complete, including the
+amended fine-tune contrast (§6.4–6.6). The remaining questions are:
 
-- **H3, in-domain pretraining (arms T4 and T5).** Run, and suggestive rather
-  than established: the chained arm beats the generic probe in 9 of 10 seeds,
-  which clears Benjamini–Hochberg and not Holm across the 15 full-data
-  contrasts, and the pre-registered `T4`-vs-`T1` form is inconclusive. Two
-  things would decide it. **More seeds** — at 10 the study is powered only for
-  large effects and the effect here is 0.025 RMSE. And **a corpus that is
-  in-domain chemically as well as by protein family**: ours is 95% coronaviral,
-  its median nearest-neighbour Tanimoto to the evaluation set is 0.247, and it
-  was specified for the 3C target Amendment 1 removed. A picornaviral corpus
-  overlapping the fragment chemistry would test the mechanism §2 identifies as
-  the actual source of transfer gains, and the scale required is modest:
+- **H3, in-domain pretraining.** Both the probe comparison (§6.4) and the
+  matched fine-tune comparison (§6.6) are complete. The former is suggestive
+  for the chained probe; the latter detects no RMSE difference. More seeds
+  could improve precision, while a corpus closer in both protein family and
+  chemistry would test a different transfer setting. The current corpus is
+  95% coronaviral with median nearest-neighbour Tanimoto 0.247. A picornaviral
+  corpus overlapping the fragment chemistry would address that limitation.
   [Sultan et al. (2025)](https://arxiv.org/abs/2503.03360) report domain
   adaptation working on sets of **≤ 4K molecules**, and report pretraining
   corpus size saturating at **400K–800K** — so the relevant scale for this
@@ -2248,18 +2262,18 @@ settled. What would settle them:
 - **H4, decontamination.** Still not answerable for ChemBERTa, whose corpus is
   not distributed; §6.1 could only bound test-set overlap at 53%. Changing the
   design does make it answerable, and §6.5 does so for the in-domain arms —
-  negatively, and only because a size-matched control was run alongside. What
+  with a bounded conclusion and a size-matched control alongside. What
   remains open is the harder version: a corpus that genuinely overlaps the
   target chemistry, where decontamination would have something substantial to
   remove. Ours had zero exact and zero near-duplicate overlap to begin with.
 
-Both would also address the asymmetry that currently limits this study's
-positive claims: because contamination can only flatter a transfer arm, this
-design can refute transfer but could never have credited it.
+A disclosed pretraining corpus would also permit direct overlap measurement.
+The current comparisons cannot attribute performance differences uniquely to
+pretraining or establish the direction of an unmeasured contamination effect.
 
 ## 9. Conclusion
 
-On a small, high-fidelity, single-target protease dataset, a generically
+On a small, curated, single-target protease dataset, a generically
 pretrained chemical language model did not beat count fingerprints with
 gradient boosting — not at full data and not at 50 compounds. On data
 efficiency the honest verdict is weaker than the one we previously printed
@@ -2272,7 +2286,7 @@ baseline remains the right default, and the burden of proof sits with the
 pretrained model.
 
 **The deep arms land together, behind fingerprints.** A from-scratch D-MPNN —
-the baseline the protocol froze and this study had not run — is also worse than
+the baseline specified in the protocol and completed under Amendment 5 — is also worse than
 the fingerprint baseline at every training-set size (Holm ≤ 0.020), and is not
 separated from the corrected fine-tune (§6.7). So the arm transfer fails to
 beat is not merely a fingerprint model; a maintained graph network given the
@@ -2303,18 +2317,14 @@ Raw RMSE is not comparable across splitting strategies, because stricter splits
 change the variance of the target. And zero scaffold overlap is not chemical
 novelty: our scaffold split was no harder than a random one.
 
-Finally, the scope, which is narrow. One encoder family, one assay, one protein
-— itself a surrogate differing from the one in the title at a handful of
-non-catalytic residues (§3.1). H1 is answered negatively. **H2 is not
-answered**: the DER on which we had rested it cannot decide it, and the
-interaction term the protocol also specified is inconclusive for the frozen
-probe and confounded by the training schedule for the fine-tune. H3 is
-*suggestive* in its chained form — clearing Benjamini–Hochberg but not Holm —
-and inconclusive in the form this study pre-registered; H4 remains
-unanswerable for the ChemBERTa arms, whose corpus is not distributed. The in-domain corpus that supports H3 is 95% coronaviral and
-chemically near-disjoint from the evaluation set, so it tests a weaker version
-of "in-domain" than the phrase suggests. These results constrain what to expect
-in this regime. They are not a verdict on molecular pretraining.
+The scope is one encoder family, one reported assay platform, and CVA16 2A
+protease used as a surrogate for EV-A71 (§3.1). H1 has no demonstrated benefit
+on the primary endpoint. H2 remains unresolved for the frozen probe and is
+contradicted for the corrected fine-tune within its tested scaffold procedure.
+The matched H3 fine-tune contrast detects no difference; the earlier probe
+contrast remains suggestive. H4 remains untestable for ChemBERTa and bounded
+for the available in-domain corpus. These are results about the evaluated
+recipes and dataset, not a general verdict on molecular pretraining.
 
 ## 10. Reproduction and verification
 
@@ -2328,9 +2338,9 @@ hand-typed. `render_manuscript_tables.py --check` fails if the manuscript is
 stale relative to the CSVs.
 
 **Prose numbers are machine-checked.** `scripts/verify_manuscript.py` re-derives
-every numeric claim made in the body text — dataset counts, per-arm scores,
+registered numeric claims from the body text — dataset counts, per-arm scores,
 p-values, seed-win counts, similarity fractions — from the artefacts and exits
-non-zero on any mismatch. It currently checks **514 claims** across sections 3.1
+non-zero on any mismatch. It currently checks **536 claims** across sections 3.1
 through 6.5 and the summary sections §5.8, §8.1 and §8.3 — the last three added
 after the 2026-09-06 audit found that every statement it caught drifting lived
 in a section with no claims at all. That count is itself one of the claims: the
@@ -2338,7 +2348,7 @@ script parses this
 sentence and fails if the stated total disagrees with the number of checks it
 actually ran, so the one hand-typed number in a section arguing that no number
 is hand-typed cannot go stale either. It has already caught two errors: a count
-of compounds with replicate measurements taken from the raw table (137) rather
+of compounds with multiple crystal complexes taken from the raw table (137) rather
 than the curated one (133), and this sentence itself, left reading 85 after the
 ablations of §6 added checks.
 
@@ -2437,6 +2447,10 @@ offline stage there and diffs the result. The working tree is never written to.
 The previous in-place design could — and once did — let a failed run's output
 become the baseline that the next run compared against and passed.
 
+The coverage counts below describe the historical full-tier run at the commit
+recorded in `docs/reproduction-coverage.json`. They do not certify the current
+fresh-installation retraining check, reported separately below.
+
 Three questions are answered separately, because an earlier version ran them
 together and so reported 1,104 artefacts "regenerated" when the number was 424:
 
@@ -2458,7 +2472,7 @@ against**: the 9 figures, gitignored as regenerable, and 320 prediction files,
 because predictions were only ever committed for the scaffold split. The 120
 Amendment 4 artefacts — 60 metric files and 60 prediction bundles — are
 **compared, not regenerated**: re-running those fine-tunes costs ~7 h, so the
-training is declared unexecuted while the five tables derived from them are
+training is declared unexecuted while the six tables derived from them are
 reconstructed by the `analyse_amended` stage. The analysis is verified; the
 training behind it is verified only as committed bytes. Until
 2026-09-12 this section claimed all nine figures reproduce byte-identically;
@@ -2485,10 +2499,10 @@ byte-identical. What is stable, and is the claim:
 |---|---|---|
 | byte-identical after canonicalisation | provenance timestamps stripped, nothing else | — |
 | bytes differ, every number identical | wall-clock `seconds` in metric JSONs; identity fields and metric names checked exactly | drift exactly 0 |
-| within tolerance, non-zero drift | float reduction order | **< 1e-15** observed against a 1e-9 limit, across every run |
+| within tolerance, non-zero drift | float reduction order | **approximately 1e-15** observed against a 1e-9 limit in the recorded runs |
 
 **The amended arms' training path is verified on a predetermined subset.**
-Placing 200 artefacts in *compared only* leaves the training itself unshown:
+Comparing saved fine-tuning artifacts alone leaves their training unshown:
 committed bytes are self-consistent, but that is not evidence they can be
 produced again. `make verify-retrain` retrains five cells fixed in the source
 rather than chosen afterwards — `T2v` at n = 50 and n = 347, `T4ft` and `T5ft`
@@ -2497,15 +2511,68 @@ supplied inputs symlinked read-only, and diffs them against the worktree's own
 pristine checkout. The committed outputs are the reference and are never
 written to.
 
-**All five reproduce bit-identically**: metric drift 0.00e+00, prediction drift
+**In the historical verification, all five reproduced bit-identically**: metric drift 0.00e+00, prediction drift
 0.00e+00, with test-row identities, labels, selected learning rate and
 train/validation sizes compared **exactly** rather than within tolerance —
 numbers agreeing while the selection landed elsewhere would be coincidence, not
-a rerun. The torch fine-tuning path on this hardware is fully deterministic
-under the study's seeding, so the 1e-6 tolerance declared for it was never
-approached. Results in `docs/retrain-verification.json`; the remaining 195
-cells stay *compared only*, with commands and costs in
+a rerun. That recorded run did not approach the tolerance. It does not establish
+bitwise determinism across fresh installations or process environments. Results in `docs/retrain-verification.json`; the other 56 amended fine-tuning
+cells remain un-retrained by that subset; B3 is rebuilt by the full tier, with commands and costs in
 [`../docs/reproduction-coverage.md`](../docs/reproduction-coverage.md).
+
+**Fresh-installation validation exposed a reproducibility gap, addressed by
+sensitivity analysis.** The pinned environment installs and passes the verification
+suite, and reconstruction preserves the curated datasets and result-table
+values. Two of the five retraining cells nevertheless stopped matching their
+saved outputs: `T2v` seed 0 at n = 50, whose predictions drift by 1.43e-6 but
+whose precision@10% moves from 0.2 to 0.1, and `B3` seed 0 at n = 347, whose
+predictions drift by up to 0.46. Evidence and paired predictions are in
+`docs/publication-validation.json` and `docs/publication-validation/`.
+
+The training scripts historically left CPU thread count unspecified. Changing
+it changes the numerical result; repeated runs at each tested setting agree.
+This is consistent with parallel reductions being summed in different orders.
+For `T2v` the prediction difference stays at approximately float32 precision,
+but near-tied predictions change the top-decile membership and Spearman ranks.
+For `B3`, optimisation and validation-based stopping amplify numerical changes
+into another trajectory and fit. Thread count therefore matters, but it has not
+fully explained the historical discrepancy: none of the tested settings recovers
+the saved predictions. The historical records do not isolate the remaining
+backend or machine-state difference, and Accelerate is not established as its
+cause.
+
+`plan.md` Amendment 8 fixed two analyses before either was run; results are in
+`docs/numerical-sensitivity.json`. First, all 40 `B3` cells were re-fitted on
+one thread (§6.7): the four `B3`-versus-`B1` verdicts are unchanged, and the
+`B3`-versus-`T2v` null stays a null while its sign reverses. Second,
+precision@10% was bounded over every order in which predictions within 1e-5 pKD
+of the cutoff could be ranked. Of 810 saved prediction files, 101 can change,
+40 of them the constant predictor `B0`. All eleven reported precision@10%
+contrasts keep their Holm verdict at both extremes, including the scaffold `T2`
+result of §5.7, whose Holm p rises from 0.023 to at most 0.047, and `T5ft`'s of
+§6.8, which does not move. The dated validation addendum also enumerates every
+attainable hit-count assignment across seeds, because two endpoint scenarios
+do not generally bound a two-sided signed-rank test. Conservative Holm bounds
+certify all eleven verdicts; scaffold T2's upper bound is 0.046875. B1 is held
+fixed on random and Butina because its historical predictions were not saved
+there. Spearman shifts by at most 0.0008 in the equal-ranking scenario; this is
+a descriptive sensitivity, not a bound over all possible rank perturbations.
+
+Independent repeatability checks use copies of the existing pinned B3 baseline
+and fresh temporary output directories, with exact comparisons of predictions,
+identities, labels and metric/selection records, excluding elapsed seconds.
+`docs/numerical-repeatability.json` records the environment, source/input hashes
+and results for all 40 pinned B3 cells and two separate one-thread fits of the
+failing T2v cell. These checks concern present repeatability on the tested
+platform, not recovery of historical bytes. All 40 B3 cells match the pinned baseline exactly, and the two T2v fits match each other exactly (maximum prediction drift 0.0).
+
+The saved outputs remain the primary results and were not replaced, and no
+tolerance was changed. The two cells still fail the retraining criterion
+against the saved files, so this study does not claim bitwise regeneration of
+its fine-tuning or `B3` outputs on another machine or thread configuration. It
+claims that the reported verdicts survive the arithmetic differences measured
+here, with the one exception stated in §6.7. The enrichment findings remain
+exploratory.
 
 **Tolerances are declared, justified and tested from both sides.** 1e-9
 relative for metrics and derived tables — four orders above the worst observed
@@ -2540,6 +2607,9 @@ The stage table below was the original hand check:
 Determinism comes from seeding Python, NumPy and torch per run
 (`evapro.utils.seeding.set_seed`, with `torch.use_deterministic_algorithms`)
 and from splits being read from committed files rather than recomputed.
+Seeding does not fix the CPU thread count, which the torch arms also depend on
+as described above; both amended training CLIs now accept
+`--threads 1 --out-root <separate-directory>` for pinned numerical validation.
 
 One caveat, stated precisely: the random-forest arm is reproducible to ~1e-16
 rather than bit-identically, because `n_jobs=-1` makes the order of the
@@ -2551,7 +2621,7 @@ equality, and we do not claim it is.
 make verify   # tests + table freshness + claim verification
 ```
 
-**What is not reproducible from this repository alone:** the 495 MB raw release
+**What is not reproducible from this repository alone:** the 98.4 MB source archive
 is referenced by DOI rather than vendored, and the ChemBERTa-2 checkpoint is
 fetched from HuggingFace at run time. Both are external dependencies whose
 future availability we do not control.
@@ -2560,8 +2630,9 @@ future availability we do not control.
 
 ### Availability of data and materials
 
-All data and code required to reach the conclusions of this paper are openly
-available without registration, login, or licence terms other than those below.
+Code and committed results are held in the project repository. A local review
+bundle includes the supplied inputs; public archival deposition and a persistent
+identifier must be completed before submission. The per-source terms are below.
 
 | What | Where | Licence |
 |---|---|---|
@@ -2569,15 +2640,15 @@ available without registration, login, or licence terms other than those below.
 | Curated evaluation set (`data/processed/eva71_2a.csv`, 494 compounds) | this repository | CC0, inherited from the source release |
 | In-domain pretraining corpus (`data/processed/indomain_3c.csv`, 2,974 measurements) | this repository | CC BY-SA 3.0, inherited from ChEMBL |
 | Materialised split files (30 JSON, InChIKey → fold) | this repository | CC0 |
-| All 1,040 per-run metric files and 690 prediction bundles | this repository | CC0 |
-| All 23 result tables | this repository | CC0 |
+| Original sweep: 1,060 metric files and 710 prediction bundles; amended arms: 100 of each | this repository | CC0 |
+| All 32 result tables | this repository | CC0 |
 | Primary structure–affinity data | OpenBind Zenodo record 20026661 | CC0 |
 | In-domain source records | ChEMBL, 8 targets, manifests in `data/raw/` | CC BY-SA 3.0 |
 | Pretrained encoder | `DeepChem/ChemBERTa-77M-MTR`, HuggingFace | as published |
 
-**Two categories are not redistributed here, and both are stated rather than
-implied.** The 186 MB of raw payloads and the six in-domain encoder checkpoints
-in `models/` are not in version control; `docs/input-checksums.json` gives a
+**Two categories need separate availability statements.** The 186 MB of raw payloads and the six in-domain encoder checkpoints
+in `models/` are not in version control. The local review bundle includes them,
+but public archival deposition remains pending. `docs/input-checksums.json` gives a
 SHA-256 for each of the 21 files so that a reproduction can confirm it has the
 same bytes, and `docs/reproduction-coverage.md` states which pipeline stages
 that does and does not cover. The ChemBERTa-2 pretraining corpus (77M molecules)

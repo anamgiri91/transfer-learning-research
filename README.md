@@ -1,14 +1,14 @@
-# Benchmarking Transfer Learning Efficacy on High-Fidelity Viral Protease Datasets
+# Benchmarking Molecular Transfer Learning on a Curated CVA16 2A Protease Dataset
 
-### A Case Study on EV-A71
+How do pretrained molecular models compare with classical baselines on a small,
+single-target affinity dataset?
 
-Does pretraining actually help when the target dataset is *small but clean*?
-
-This study uses the **OpenBind EV-A71 / CVA16 2A protease** structure–affinity
-release ([Zenodo, CC0](https://doi.org/10.5281/zenodo.20026661)): 494 curated
-compounds across 272 scaffolds, with pK_D from a single Creoptix WAVEsystem
-assay. Maximum replicate spread across the whole set is 0.49 log units — this
-really is a high-fidelity dataset, which is what makes the question clean.
+This study uses the **OpenBind EV-A71 / CVA16 2A protease** release
+([Zenodo, CC0](https://doi.org/10.5281/zenodo.20026661)): 494 curated compounds
+and 272 scaffolds. Depositors report affinities measured with the Creoptix
+WAVEsystem. Multiple crystal structures often repeat the same affinity label;
+the release does not identify independent assay replicates. Its within-compound
+label consistency is not evidence of low experimental noise.
 
 **Note on the target.** Affinities are measured on *Coxsackievirus A16* 2A
 protease as a surrogate for EV-A71. The source paper reports a five-residue
@@ -20,55 +20,72 @@ catalytic. Note that this is weaker than "none near the active site" — in the
 G-10 strain the N57D substitution sits between two structural zinc ligands. See
 `paper/manuscript.md` §3.1 and `results/tables/table9_surrogate_divergence.csv`.
 
-**Claim under test.** Transfer learning improves data efficiency on
-high-fidelity, low-volume protease datasets — and the improvement survives
-scaffold-based splitting and is not an artefact of test-set leakage.
+**Scope.** Compare evaluated pretrained recipes with from-scratch baselines
+on identical splits and budgets. A fully trainable random-initialization
+transformer control has not been evaluated, so the existing results do not
+isolate the effect of pretraining.
 
 ---
 
 ## Layout
 
 ```
-config/      YAML experiment configs (public, versioned — one per benchmark arm)
+config/      Retired prototype configs; executed settings live in the scripts
 data/        Directory structure + manifests are public; payloads are not
 src/evapro/  Importable package: data, features, models, evaluation
-scripts/     Thin CLI entrypoints that call src/ (no logic lives here)
+scripts/     Executed training, analysis and verification entrypoints
 notebooks/   Exploration only; anything load-bearing gets promoted to src/
 tests/       pytest — split integrity and leakage checks are the important ones
 results/     metrics/, predictions/ and tables/ are versioned; figures/ are regenerated
-reports/     Public write-ups, preprint-ready figures
+paper/       Manuscript and provenance map
 docs/        Methods notes, data licences, decision log
 private/     NOT version controlled — see private/README.md
 ```
 
-The public/private line: **anything needed to reproduce a published number is
-public.** `private/` holds embargoed inputs, notes, and drafts only.
+Release inputs and their current availability are documented in
+`docs/reproduction-coverage.md`. `private/` holds embargoed inputs, notes, and drafts only.
 
 ## Setup
 
+The reproduction environment is CPython 3.14.7 on macOS arm64. Exact package
+versions are recorded in `requirements-repro.txt`; other platforms are unverified.
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-cp .env.example .env        # fill in optional API keys
-nbstripout --install        # keep notebook outputs out of history
+python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-repro.txt
+python -m pip install --no-deps --no-build-isolation -e .
 ```
 
 ## Reproducing the benchmark
 
 ```bash
-python scripts/prepare_openbind.py                # master.csv -> 494 compounds
-python scripts/build_splits.py --target eva71_2a  # splits + leakage assertions
-python scripts/audit_splits.py                    # Table 0: leakage audit
-python scripts/run_arms.py --arms B0 B1 B2 T1     # baselines + frozen-encoder probe
-python scripts/run_arms.py --arms T2 --splits scaffold   # ChemBERTa fine-tune (slow)
-make indomain                                     # in-domain corpus + encoders (§6.4)
-python scripts/run_arms.py --arms T0r T4 T5      # controls, all three splits
-python scripts/run_arms.py --arms T4c T4r T5c T5r --splits scaffold   # §6.5 ablations
-python scripts/analyse_h2.py                      # H2 interaction + DER CIs (§5.3)
-python scripts/make_report.py                     # tables + figures
+make data          # fetch/check source ZIP, build master.csv and compound dataset
+make splits
+make indomain      # corpus and all SIX encoders, including --drop-random 61
+make bench         # original sweep, amendments, B3, enrichment and tuning
+make analysis
+make report
+python scripts/render_manuscript_tables.py
 ```
 
-Then verify nothing drifted:
+This is a multi-hour rebuild. Live ChEMBL queries can change; the historical
+exports/checkpoints and their publication status are documented in
+[`docs/reproduction-coverage.md`](docs/reproduction-coverage.md).
+The command list and exact tuning budgets are in [`paper/provenance.md`](paper/provenance.md).
+
+Numerical validation preserves the historical outputs and tolerances. The
+historical retraining check still fails for two cells; Amendment 8 reports a
+separate pinned B3 replicate and ranking sensitivity analysis. The B3-versus-T2v
+direction is unstable, while the specified B3-versus-B1 and enrichment verdicts
+survive. See the coverage document for the limits of this evidence.
+
+```bash
+make sensitivity
+make verify-numerical-repeatability  # fresh fits in a temporary source snapshot
+```
+
+Verify the stored evidence and manuscript:
 
 ```bash
 make verify        # tests + table freshness + every machine-checked claim + citations
@@ -77,7 +94,8 @@ make verify-repro  # re-run every offline stage and diff it against what is comm
 
 Full artefact map: [`paper/provenance.md`](paper/provenance.md).
 
-Every run writes `results/metrics/<arm>__<split>__seed<N>.json`. Those files are
+Original-sweep runs write `results/metrics/<arm>__<split>__seed<N>__n<size>.json`;
+amended fine-tunes and B3 use `metrics_ft/` and `metrics_b3/`. Those files are
 committed, so any change in a headline number shows up as a reviewable diff.
 
 ## Benchmark design in one paragraph
