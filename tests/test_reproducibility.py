@@ -235,11 +235,11 @@ def test_the_unexecuted_list_is_not_empty_and_carries_reasons():
 
 
 def test_supplied_inputs_are_all_in_the_manifest():
-    """Including the six encoders: 12 model files plus the raw payloads."""
+    """Including the twelve encoders: 24 model files plus the raw payloads."""
     bad = vr.check_inputs()
     assert not bad, bad
     man = json.loads(vr.INPUT_MANIFEST.read_text())["files"]
-    assert sum(1 for k in man if k.startswith("models/") and k.endswith(".pt")) == 6
+    assert sum(1 for k in man if k.startswith("models/") and k.endswith(".pt")) == 12
     assert all(len(v["sha256"]) == 64 for v in man.values())
 
 

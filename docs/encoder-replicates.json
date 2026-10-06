@@ -1,0 +1,56 @@
+{
+  "amendment": "plan.md Amendment 9 (2026-10-05)",
+  "conditions": {
+    "T4": {
+      "condition_mean": 0.6314520779416128,
+      "encoder_medians": [
+        0.6028,
+        0.6537,
+        0.6379
+      ],
+      "n_encoders": 3,
+      "published_encoder_median": 0.6028257943067699,
+      "within_condition_range": 0.0508343754720163,
+      "within_condition_sd": 0.0260178462189175
+    },
+    "T4_clean": {
+      "condition_mean": 0.6390041999037089,
+      "encoder_medians": [
+        0.6241,
+        0.6354,
+        0.6575
+      ],
+      "n_encoders": 3,
+      "published_encoder_median": 0.6240730553010807,
+      "within_condition_range": 0.03345796328999706,
+      "within_condition_sd": 0.017016329832588863
+    },
+    "T4_rand61": {
+      "condition_mean": 0.6507262689319361,
+      "encoder_medians": [
+        0.6297,
+        0.6783,
+        0.6442
+      ],
+      "n_encoders": 3,
+      "published_encoder_median": 0.6296848599067307,
+      "within_condition_range": 0.04859731222515773,
+      "within_condition_sd": 0.02494501282104251
+    }
+  },
+  "contrast": {
+    "condition_mean_difference": -0.0117,
+    "decision_rule": "encoder-robust only if |condition difference| exceeds the largest within-condition range of encoder medians",
+    "encoder_robust": false,
+    "largest_within_condition_range": 0.0508,
+    "name": "T4_clean minus T4_rand61",
+    "published_single_encoder_difference": -0.0056,
+    "verdict": "within encoder noise"
+  },
+  "held_fixed": "corpus validation split (--split-seed 0) and the identity of the 61 removed records (--draw-seed 0)",
+  "limits": "R=3 supports no encoder-level p-value; this compares the size of an effect against the size of a nuisance. The removed-record draw is held fixed, so draw-to-draw uncertainty remains unestimated. Published per-seed contrasts are unchanged and not recomputed.",
+  "n_downstream_seeds": 10,
+  "n_train": 347,
+  "scope": "T4 family, R=3 encoders per condition; probe and splits unchanged",
+  "varied_within_condition": "encoder initialisation and batch order only"
+}

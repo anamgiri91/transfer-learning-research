@@ -52,6 +52,38 @@
       "bytes": 13750288,
       "sha256": "456d99bdcbf46f08f6ef54db1de93e725cc17adc7d1533781baaa3e27ad59277"
     },
+    "models/indomain_T4_clean_init1.json": {
+      "bytes": 641,
+      "sha256": "1ca594dcb1ac3b071beff21666eb080f9c3c746fb28b43494af7342f82f7008f"
+    },
+    "models/indomain_T4_clean_init1.pt": {
+      "bytes": 13750814,
+      "sha256": "63ad001bb28c1d61c5bf4ad95822be5aae7bdb5a58aefdb6ce4a24fda5eab516"
+    },
+    "models/indomain_T4_clean_init2.json": {
+      "bytes": 642,
+      "sha256": "6b07faecebe9edc9faa54a89632cdafb8f54b699be80ecdb370e376c73041da6"
+    },
+    "models/indomain_T4_clean_init2.pt": {
+      "bytes": 13750814,
+      "sha256": "eb600f5852323c661f67fad07bf8c855e8ffbd5e9676d511a19eeebdf74fdaa4"
+    },
+    "models/indomain_T4_init1.json": {
+      "bytes": 641,
+      "sha256": "17d1a0ee04ab72abd5e35cb47fa93d2a1e4c9052246d2a6f33e89a056826a8c9"
+    },
+    "models/indomain_T4_init1.pt": {
+      "bytes": 13750288,
+      "sha256": "33e6c7f470bb0aa9ec4d4f235607e1632b91604d56cfa9ab49ea22cc97fb11cd"
+    },
+    "models/indomain_T4_init2.json": {
+      "bytes": 641,
+      "sha256": "d6b4483e213662c10ac5879ae832df7deb5119c7cca0955cc05dc70db6e21206"
+    },
+    "models/indomain_T4_init2.pt": {
+      "bytes": 13750288,
+      "sha256": "562dcdb4226f60fa3e492d5dcbdc69bd952f076b8621b9a98b7d3f0eddfb2659"
+    },
     "models/indomain_T4_rand61.json": {
       "bytes": 562,
       "sha256": "46953f69ac48e62952f6ec898fd5856a45a116b52528c2287ea38ea94a6938e1"
@@ -59,6 +91,22 @@
     "models/indomain_T4_rand61.pt": {
       "bytes": 13750365,
       "sha256": "c8b31e247926655f57009131b4fc2eee7847b10c88108f64fb004902ed751bfd"
+    },
+    "models/indomain_T4_rand61_init1.json": {
+      "bytes": 642,
+      "sha256": "d1b32032ea024c40c8f3e0f8d6411064da2c1933b795d9213b941685b4e95f66"
+    },
+    "models/indomain_T4_rand61_init1.pt": {
+      "bytes": 13750891,
+      "sha256": "85d818623cec238827c6da15f4a5a3eaab6a7b672d9de144a28444d71c6d98a9"
+    },
+    "models/indomain_T4_rand61_init2.json": {
+      "bytes": 644,
+      "sha256": "92599c36ad2d94a38fc520c09bc44daca273b7bb1a08626e8308f11401fb6c24"
+    },
+    "models/indomain_T4_rand61_init2.pt": {
+      "bytes": 13750891,
+      "sha256": "f929d8b78a7d03107ad10cf7e83974414d3fbc00a4fc70aa990ce567e46b613e"
     },
     "models/indomain_T5.json": {
       "bytes": 545,
@@ -85,6 +133,6 @@
       "sha256": "87bd533be3e67eb5dd8485a3a6c0d1b7c7991531d7bd4c1e0d9b567a462275d0"
     }
   },
-  "n_files": 21,
+  "n_files": 33,
   "note": "Supplied inputs: consumed by the pipeline, not rebuilt by it, and not in git. Reproducing the study requires obtaining these bytes; see data/raw/README.md and docs/reproduction-coverage.md."
 }
