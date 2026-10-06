@@ -1,0 +1,451 @@
+{
+  "audit_date": "2026-10-05",
+  "data_actually_used": {
+    "compounds_reaching_any_executed_arm": 445,
+    "consequence": "Every split file reserves a validation fold that the executed runners never read: they select folds 'train' and 'test' only. The largest labelled budget, n = 347, is therefore 70% of the curated set, and the reserved compounds enter no arm's training or evaluation.",
+    "curated_compounds": 494,
+    "test": 98,
+    "train": 347,
+    "validation_fold": 49,
+    "validation_fold_read_by": [
+      "scripts/audit_design.py",
+      "scripts/audit_splits.py",
+      "scripts/tune_arms.py"
+    ]
+  },
+  "fitted_training_sizes": {
+    "at_labelled_budget": 347,
+    "consequence": "At the same labelled budget the arms do not fit the same number of compounds. B1 holds out 15% internally without exposing the split; the amended fine-tunes and B3 hold out 52 and report it; B2 and the frozen probes hold out none. The headline frozen-probe contrast therefore gives the transfer arm more training data than its baseline, which is conservative for a negative result but not matched.",
+    "per_arm": [
+      {
+        "arm": "B1_ecfp_histgb",
+        "internal_validation": "internal, not exposed",
+        "labelled_budget": 347,
+        "n_internal_val": null,
+        "n_train_fitted": null
+      },
+      {
+        "arm": "B2_descriptors_rf",
+        "internal_validation": "none",
+        "labelled_budget": 347,
+        "n_internal_val": null,
+        "n_train_fitted": null
+      },
+      {
+        "arm": "T1_chemberta_linear_probe",
+        "internal_validation": "none",
+        "labelled_budget": 347,
+        "n_internal_val": null,
+        "n_train_fitted": null
+      },
+      {
+        "arm": "T2v",
+        "internal_validation": "exposed",
+        "labelled_budget": 347,
+        "n_internal_val": 52,
+        "n_train_fitted": 295
+      },
+      {
+        "arm": "B3",
+        "internal_validation": "exposed",
+        "labelled_budget": 347,
+        "n_internal_val": 52,
+        "n_train_fitted": 295
+      }
+    ]
+  },
+  "leave_one_seed_out": [
+    {
+      "contrast": "T1 vs B1",
+      "crosses_0_05": false,
+      "full_median_paired_delta": 0.0487,
+      "full_p_raw": 0.0039,
+      "leave_one_out": [
+        {
+          "dropped_seed": 0,
+          "median_paired_delta": 0.052,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 1,
+          "median_paired_delta": 0.052,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 2,
+          "median_paired_delta": 0.052,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 3,
+          "median_paired_delta": 0.052,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 4,
+          "median_paired_delta": 0.0455,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 5,
+          "median_paired_delta": 0.052,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 6,
+          "median_paired_delta": 0.0455,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 7,
+          "median_paired_delta": 0.0455,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 8,
+          "median_paired_delta": 0.0455,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 9,
+          "median_paired_delta": 0.0455,
+          "p_raw": 0.0078
+        }
+      ],
+      "median_paired_delta_range": [
+        0.0455,
+        0.052
+      ],
+      "metric": "rmse",
+      "n_train": 347,
+      "p_raw_range": [
+        0.0039,
+        0.0078
+      ],
+      "sign_stable": true
+    },
+    {
+      "contrast": "T2 vs B1",
+      "crosses_0_05": true,
+      "full_median_paired_delta": 0.0878,
+      "full_p_raw": 0.0371,
+      "leave_one_out": [
+        {
+          "dropped_seed": 0,
+          "median_paired_delta": 0.0934,
+          "p_raw": 0.0195
+        },
+        {
+          "dropped_seed": 1,
+          "median_paired_delta": 0.0823,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 2,
+          "median_paired_delta": 0.0934,
+          "p_raw": 0.0547
+        },
+        {
+          "dropped_seed": 3,
+          "median_paired_delta": 0.0934,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 4,
+          "median_paired_delta": 0.0823,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 5,
+          "median_paired_delta": 0.0934,
+          "p_raw": 0.0273
+        },
+        {
+          "dropped_seed": 6,
+          "median_paired_delta": 0.0823,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 7,
+          "median_paired_delta": 0.0823,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 8,
+          "median_paired_delta": 0.0823,
+          "p_raw": 0.0742
+        },
+        {
+          "dropped_seed": 9,
+          "median_paired_delta": 0.0934,
+          "p_raw": 0.0273
+        }
+      ],
+      "median_paired_delta_range": [
+        0.0823,
+        0.0934
+      ],
+      "metric": "rmse",
+      "n_train": 347,
+      "p_raw_range": [
+        0.0195,
+        0.0742
+      ],
+      "sign_stable": true
+    },
+    {
+      "contrast": "T2v vs B1",
+      "crosses_0_05": false,
+      "full_median_paired_delta": 0.0481,
+      "full_p_raw": 0.002,
+      "leave_one_out": [
+        {
+          "dropped_seed": 0,
+          "median_paired_delta": 0.0497,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 1,
+          "median_paired_delta": 0.0465,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 2,
+          "median_paired_delta": 0.0497,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 3,
+          "median_paired_delta": 0.0497,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 4,
+          "median_paired_delta": 0.0497,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 5,
+          "median_paired_delta": 0.0465,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 6,
+          "median_paired_delta": 0.0465,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 7,
+          "median_paired_delta": 0.0465,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 8,
+          "median_paired_delta": 0.0465,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 9,
+          "median_paired_delta": 0.0497,
+          "p_raw": 0.0039
+        }
+      ],
+      "median_paired_delta_range": [
+        0.0465,
+        0.0497
+      ],
+      "metric": "rmse",
+      "n_train": 347,
+      "p_raw_range": [
+        0.0039,
+        0.0039
+      ],
+      "sign_stable": true
+    },
+    {
+      "contrast": "B3 vs B1",
+      "crosses_0_05": false,
+      "full_median_paired_delta": 0.0486,
+      "full_p_raw": 0.0039,
+      "leave_one_out": [
+        {
+          "dropped_seed": 0,
+          "median_paired_delta": 0.0575,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 1,
+          "median_paired_delta": 0.0397,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 2,
+          "median_paired_delta": 0.0575,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 3,
+          "median_paired_delta": 0.0397,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 4,
+          "median_paired_delta": 0.0397,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 5,
+          "median_paired_delta": 0.0575,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 6,
+          "median_paired_delta": 0.0397,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 7,
+          "median_paired_delta": 0.0575,
+          "p_raw": 0.0078
+        },
+        {
+          "dropped_seed": 8,
+          "median_paired_delta": 0.0575,
+          "p_raw": 0.0039
+        },
+        {
+          "dropped_seed": 9,
+          "median_paired_delta": 0.0397,
+          "p_raw": 0.0078
+        }
+      ],
+      "median_paired_delta_range": [
+        0.0397,
+        0.0575
+      ],
+      "metric": "rmse",
+      "n_train": 347,
+      "p_raw_range": [
+        0.0039,
+        0.0078
+      ],
+      "sign_stable": true
+    }
+  ],
+  "note": "Read from committed split files, metric records and predictions. No model was fitted and no published artefact was modified.",
+  "seed_dependence": {
+    "consequence": "Per-seed differences entering every paired test are positively correlated through shared compounds. Nominal p-values and seed bootstrap intervals are therefore anticonservative; no test in this study adjusts for it.",
+    "per_split": {
+      "butina": {
+        "compounds_ever_in_a_test_fold": 316,
+        "compounds_never_in_any_test_fold": 178,
+        "max_pairwise_test_overlap": 0.5612,
+        "max_test_folds_one_compound_appears_in": 7,
+        "mean_pairwise_test_overlap": 0.3066,
+        "min_pairwise_test_overlap": 0.1224,
+        "n_curated": 494
+      },
+      "random": {
+        "compounds_ever_in_a_test_fold": 445,
+        "compounds_never_in_any_test_fold": 49,
+        "max_pairwise_test_overlap": 0.2653,
+        "max_test_folds_one_compound_appears_in": 7,
+        "mean_pairwise_test_overlap": 0.1971,
+        "min_pairwise_test_overlap": 0.1429,
+        "n_curated": 494
+      },
+      "scaffold": {
+        "compounds_ever_in_a_test_fold": 453,
+        "compounds_never_in_any_test_fold": 41,
+        "max_pairwise_test_overlap": 0.4082,
+        "max_test_folds_one_compound_appears_in": 6,
+        "mean_pairwise_test_overlap": 0.1927,
+        "min_pairwise_test_overlap": 0.051,
+        "n_curated": 494
+      }
+    }
+  },
+  "test_fold_composition": {
+    "consequence": "The seeds are not exchangeable: a fold built mostly from one congeneric series measures a different quantity from a fold spanning sixty scaffolds. `n_test_scaffolds` is recorded in table0 but no reported summary conditions on it.",
+    "least_diverse_seeds": [
+      9
+    ],
+    "n_test_scaffolds_range": [
+      30,
+      68
+    ],
+    "per_seed": [
+      {
+        "largest_series_fraction": 0.1122,
+        "largest_series_in_test": 11,
+        "n_test": 98,
+        "n_test_scaffolds": 58,
+        "seed": 0
+      },
+      {
+        "largest_series_fraction": 0.1122,
+        "largest_series_in_test": 11,
+        "n_test": 98,
+        "n_test_scaffolds": 65,
+        "seed": 1
+      },
+      {
+        "largest_series_fraction": 0.0918,
+        "largest_series_in_test": 9,
+        "n_test": 98,
+        "n_test_scaffolds": 68,
+        "seed": 2
+      },
+      {
+        "largest_series_fraction": 0.1224,
+        "largest_series_in_test": 12,
+        "n_test": 98,
+        "n_test_scaffolds": 57,
+        "seed": 3
+      },
+      {
+        "largest_series_fraction": 0.2245,
+        "largest_series_in_test": 22,
+        "n_test": 98,
+        "n_test_scaffolds": 56,
+        "seed": 4
+      },
+      {
+        "largest_series_fraction": 0.1224,
+        "largest_series_in_test": 12,
+        "n_test": 98,
+        "n_test_scaffolds": 61,
+        "seed": 5
+      },
+      {
+        "largest_series_fraction": 0.2245,
+        "largest_series_in_test": 22,
+        "n_test": 98,
+        "n_test_scaffolds": 62,
+        "seed": 6
+      },
+      {
+        "largest_series_fraction": 0.1837,
+        "largest_series_in_test": 18,
+        "n_test": 98,
+        "n_test_scaffolds": 60,
+        "seed": 7
+      },
+      {
+        "largest_series_fraction": 0.2245,
+        "largest_series_in_test": 22,
+        "n_test": 98,
+        "n_test_scaffolds": 60,
+        "seed": 8
+      },
+      {
+        "largest_series_fraction": 0.5816,
+        "largest_series_in_test": 57,
+        "n_test": 98,
+        "n_test_scaffolds": 30,
+        "seed": 9
+      }
+    ],
+    "split": "scaffold"
+  }
+}
