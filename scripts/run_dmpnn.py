@@ -188,13 +188,30 @@ def main() -> int:
     ap.add_argument("--seeds", type=int, nargs="+", default=SEEDS)
     ap.add_argument("--sizes", type=int, nargs="+", default=None)
     ap.add_argument("--dry-run", action="store_true")
+    # plan.md Amendment 8. The result depends on the intra-op thread count:
+    # parallel reductions sum in a different order, and ~400 optimiser steps
+    # with early stopping amplify that. Unset reproduces the historical,
+    # machine-dependent behaviour the saved cells were produced under.
+    ap.add_argument("--threads", type=int, default=None,
+                    help="pin torch intra-op threads (1 for the pinned replicate)")
+    ap.add_argument("--out-root", type=Path, default=None,
+                    help="write <out-root>/metrics and <out-root>/predictions "
+                         "instead of results/metrics_b3 and results/predictions_b3")
     args = ap.parse_args()
+    if args.threads is not None:
+        if args.threads < 1:
+            ap.error("--threads must be positive")
+        if args.out_root is None:
+            ap.error("--threads requires --out-root to protect historical results")
+        torch.set_num_threads(args.threads)
+    out = OUT if args.out_root is None else args.out_root / "metrics"
+    preds_dir = PREDS if args.out_root is None else args.out_root / "predictions"
 
     df = load_dataset(TARGET)
     smiles = df["canonical_smiles"].tolist()
     y = df["pactivity"].to_numpy()
-    OUT.mkdir(parents=True, exist_ok=True)
-    PREDS.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
+    preds_dir.mkdir(parents=True, exist_ok=True)
 
     planned = []
     for split in args.splits:
@@ -207,7 +224,7 @@ def main() -> int:
                 if args.sizes and size not in args.sizes:
                     continue
                 tag = f"B3__{split}__seed{seed}__n{size}"
-                if (OUT / f"{tag}.json").exists():
+                if (out / f"{tag}.json").exists():
                     continue
                 planned.append((tag, split, seed, size, tr, te))
 
@@ -218,15 +235,18 @@ def main() -> int:
     for i, (tag, split, seed, size, tr, te) in enumerate(planned, 1):
         try:
             rec, preds = run_cell(split, seed, size, smiles, y, tr, te)
-            (OUT / f"{tag}.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
-            np.savez(PREDS / f"{tag}.npz",
+            if args.threads is not None:
+                # Only on pinned runs, so default cells keep the saved key set.
+                rec["torch_threads"] = int(torch.get_num_threads())
+            (out / f"{tag}.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
+            np.savez(preds_dir / f"{tag}.npz",
                      inchikey=df["inchikey"].to_numpy()[te],
                      y_true=y[te], y_pred=np.asarray(preds, dtype=float))
             print(f"  [{i}/{len(planned)}] {tag}  rmse={rec['metrics']['rmse']:.3f} "
                   f"lr={rec['selected_lr']:g} ({rec['seconds']:.0f}s)", flush=True)
         except Exception:
             failures += 1
-            (OUT / f"{tag}.FAILED.json").write_text(json.dumps(
+            (out / f"{tag}.FAILED.json").write_text(json.dumps(
                 {"tag": tag, "error": traceback.format_exc()}, indent=2))
             print(f"  [{i}/{len(planned)}] {tag}  FAILED", flush=True)
     print(f"\ndone. {len(planned) - failures} succeeded, {failures} failed.")

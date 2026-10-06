@@ -75,8 +75,7 @@ three new arms and the confound was pushed onto the one contrast that already
 has §6.2's tuned comparison speaking to it.
 
 Writes results/metrics_ft/<arm>__<split>__seed<N>__n<size>.json, kept in a
-separate directory so the published sweep's 1,040 files stay exactly as
-committed.
+separate directory so the original sweep remains separate from the amended runs.
 """
 from __future__ import annotations
 
@@ -97,6 +96,7 @@ from transformers import AutoConfig, AutoModel, AutoTokenizer
 from evapro.data.io import load_dataset
 from evapro.data.splits import load_split
 from evapro.evaluation.metrics import compute_all
+from evapro.models.pretrained import CHEMBERTA, checkpoint_kwargs
 from evapro.utils.seeding import set_seed
 
 TARGET = "eva71_2a"
@@ -105,7 +105,6 @@ OUT = Path("results/metrics_ft")
 PREDS = Path("results/predictions_ft")
 TRAIN_SIZES = [50, 100, 250, None]
 SEEDS = list(range(10))
-CHEMBERTA = "DeepChem/ChemBERTa-77M-MTR"
 MAX_LEN = 128
 METRIC_NAMES = ["rmse", "mae", "r2", "spearman", "pearson", "precision_at_10pct"]
 
@@ -128,9 +127,9 @@ class MeanPoolRegressor(nn.Module):
 
     def __init__(self, init_state: str | None):
         super().__init__()
-        cfg = AutoConfig.from_pretrained(CHEMBERTA)
+        cfg = AutoConfig.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
         if init_state is None:
-            self.encoder = AutoModel.from_pretrained(CHEMBERTA)
+            self.encoder = AutoModel.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
         else:
             # The in-domain checkpoints are MultitaskRegressor state dicts:
             # `encoder.*` is the backbone, `heads.*` are per-protease heads we
@@ -200,7 +199,7 @@ def train_one(arm: str, lr: float, smiles, y, tr_idx, va_idx, seed: int):
     """
     set_seed(seed)
     torch.manual_seed(seed)
-    tok = AutoTokenizer.from_pretrained(CHEMBERTA)
+    tok = AutoTokenizer.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
     model = MeanPoolRegressor(INITS[arm])
     ids_tr, mask_tr = encode(tok, [smiles[i] for i in tr_idx])
     ids_va, mask_va = encode(tok, [smiles[i] for i in va_idx])
@@ -251,7 +250,7 @@ def run_cell(arm: str, split: str, seed: int, size: int, smiles, y,
             best_lr, best_val = lr, info["val_rmse"]
             best_model, best_info, best_hist = model, info, hist
 
-    tok = AutoTokenizer.from_pretrained(CHEMBERTA)
+    tok = AutoTokenizer.from_pretrained(CHEMBERTA, **checkpoint_kwargs(CHEMBERTA))
     ids_te, mask_te = encode(tok, [smiles[i] for i in te_idx])
     preds = predict(best_model, ids_te, mask_te)
     scores = compute_all(y[te_idx], preds, METRIC_NAMES)
@@ -283,13 +282,25 @@ def main() -> int:
     ap.add_argument("--sizes", type=int, nargs="+", default=None)
     ap.add_argument("--dry-run", action="store_true",
                     help="print the cells that would run, and exit")
+    ap.add_argument("--threads", type=int, default=None,
+                    help="pin torch intra-op threads for numerical validation")
+    ap.add_argument("--out-root", type=Path, default=None,
+                    help="write metrics/ and predictions/ beneath this directory")
     args = ap.parse_args()
+    if args.threads is not None:
+        if args.threads < 1:
+            ap.error("--threads must be positive")
+        if args.out_root is None:
+            ap.error("--threads requires --out-root to protect historical results")
+        torch.set_num_threads(args.threads)
+    out = OUT if args.out_root is None else args.out_root / "metrics"
+    preds_dir = PREDS if args.out_root is None else args.out_root / "predictions"
 
     df = load_dataset(TARGET)
     smiles = df["canonical_smiles"].tolist()
     y = df["pactivity"].to_numpy()
-    OUT.mkdir(parents=True, exist_ok=True)
-    PREDS.mkdir(parents=True, exist_ok=True)
+    out.mkdir(parents=True, exist_ok=True)
+    preds_dir.mkdir(parents=True, exist_ok=True)
 
     planned, done_n = [], 0
     for arm in args.arms:
@@ -303,7 +314,7 @@ def main() -> int:
                     if args.sizes and size not in args.sizes:
                         continue
                     tag = f"{arm}__{split}__seed{seed}__n{size}"
-                    if (OUT / f"{tag}.json").exists():
+                    if (out / f"{tag}.json").exists():
                         done_n += 1
                         continue
                     planned.append((tag, arm, split, seed, size, tr, te))
@@ -318,8 +329,10 @@ def main() -> int:
     for i, (tag, arm, split, seed, size, tr, te) in enumerate(planned, 1):
         try:
             rec, preds = run_cell(arm, split, seed, size, smiles, y, tr, te)
-            (OUT / f"{tag}.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
-            np.savez(PREDS / f"{tag}.npz",
+            if args.threads is not None:
+                rec["torch_threads"] = int(torch.get_num_threads())
+            (out / f"{tag}.json").write_text(json.dumps(rec, indent=2, sort_keys=True))
+            np.savez(preds_dir / f"{tag}.npz",
                      inchikey=df["inchikey"].to_numpy()[te],
                      y_true=y[te], y_pred=np.asarray(preds, dtype=float))
             print(f"  [{i}/{len(planned)}] {tag}  rmse={rec['metrics']['rmse']:.3f} "
@@ -329,7 +342,7 @@ def main() -> int:
             failures += 1
             # A failure is a result. Record it where the analysis will see it
             # rather than letting the cell silently not exist.
-            (OUT / f"{tag}.FAILED.json").write_text(json.dumps(
+            (out / f"{tag}.FAILED.json").write_text(json.dumps(
                 {"tag": tag, "arm": arm, "split": split, "seed": seed,
                  "n_train": int(size), "error": traceback.format_exc(),
                  "source_script": "scripts/run_finetune.py"}, indent=2))

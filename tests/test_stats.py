@@ -45,11 +45,11 @@ def test_paired_compare_applies_holm_correction():
     assert results["T_noise"].inconclusive
 
 
-def test_wilcoxon_is_sign_based_so_tiny_consistent_deltas_are_significant():
+def test_wilcoxon_can_detect_tiny_consistent_deltas():
     """A 1e-9 but perfectly consistent improvement is 'significant'.
 
-    Wilcoxon signed-rank ranks signs, not magnitudes, so consistency alone
-    drives p. This is precisely why plan.md §6 requires the effect size to be
+    Wilcoxon combines signs with ranks of absolute differences, and is invariant
+    to positive rescaling that preserves those ranks. This is why the effect size is
     reported next to every p-value -- significance alone is not evidence of a
     difference that matters.
     """
@@ -58,9 +58,32 @@ def test_wilcoxon_is_sign_based_so_tiny_consistent_deltas_are_significant():
     res = {r.arm: r for r in paired_compare({"B1": base, "T_tiny": [b - 1e-9 for b in base]},
                                             baseline="B1")}["T_tiny"]
     assert res.p_raw < 0.05                       # significant ...
-    assert abs(res.median_delta) < 1e-6           # ... but the effect is nil
+    assert abs(res.median_delta) < 1e-6           # ... but the effect is tiny
 
 
 def test_paired_compare_rejects_mismatched_seed_counts():
     with pytest.raises(ValueError, match="seeds"):
         paired_compare({"B1": [1.0, 2.0, 3.0], "T1": [1.0]}, baseline="B1")
+
+
+def test_precision_bounds_collapse_without_ties():
+    from evapro.evaluation.metrics import precision_at_k_frac, precision_at_k_frac_bounds
+
+    rng = np.random.default_rng(0)
+    y, yhat = rng.normal(size=100), rng.normal(size=100)
+    lo, hi = precision_at_k_frac_bounds(y, yhat)
+    assert lo == hi == precision_at_k_frac(y, yhat)
+
+
+def test_precision_bounds_span_a_tie_at_the_cutoff():
+    from evapro.evaluation.metrics import precision_at_k_frac, precision_at_k_frac_bounds
+
+    # k = 2. The top prediction is a hit; a hit and a miss tie for the last slot.
+    y = np.array([9.0, 8.0, 1.0, 0.0] + [0.5] * 16)
+    yhat = np.array([5.0, 3.0, 3.0 + 4e-7, 0.0] + [0.1] * 16)
+    lo, hi = precision_at_k_frac_bounds(y, yhat)
+    assert (lo, hi) == (0.5, 1.0)
+    assert lo <= precision_at_k_frac(y, yhat) <= hi
+    # A gap wider than eps is not a tie.
+    yhat[2] = 3.0 + 1e-3
+    assert precision_at_k_frac_bounds(y, yhat) == (0.5, 0.5)
