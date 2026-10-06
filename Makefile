@@ -1,4 +1,4 @@
-.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full verify-retrain finetune tuning sensitivity verify-numerical-repeatability
+.PHONY: help setup data splits bench indomain analysis report test lint check-private clean verify verify-online verify-repro verify-repro-full verify-retrain finetune tuning sensitivity verify-numerical-repeatability plan-h2 audit-design encoder-replicates
 .DEFAULT_GOAL := help
 
 PY ?= python
@@ -95,6 +95,20 @@ sensitivity:  ## One-thread B3 replicate and precision@10% tie bounds (Amendment
 verify-numerical-repeatability:  ## Independently refit the pinned B3 sweep and repeat the failing T2v cell
 	$(PY) scripts/verify_numerical_repeatability.py
 
+audit-design:  ## Design diagnostics: seed dependence, fold composition, data used
+	$(PY) scripts/audit_design.py
+
+encoder-replicates:  ## Amendment 9: replicate T4-family encoders, then analyse (~2 h)
+	@for i in 1 2; do \
+	  $(PY) scripts/pretrain_indomain.py --arm T4 --init-seed $$i --split-seed 0 --draw-seed 0 --tag-suffix _init$$i || exit 1; \
+	  $(PY) scripts/pretrain_indomain.py --arm T4 --decontaminate --init-seed $$i --split-seed 0 --draw-seed 0 --tag-suffix _init$$i || exit 1; \
+	  $(PY) scripts/pretrain_indomain.py --arm T4 --drop-random 61 --init-seed $$i --split-seed 0 --draw-seed 0 --tag-suffix _init$$i || exit 1; \
+	done
+	$(PY) scripts/analyse_encoder_replicates.py
+
+plan-h2:  ## Rebuild conditional H2 design simulations; no model training
+	$(PY) scripts/plan_h2_power.py
+
 report:  ## Regenerate figures and tables from results/metrics/
 	$(PY) scripts/make_report.py
 
@@ -103,6 +117,8 @@ test:  ## Run the test suite
 
 verify:  ## Run tests, check tables are fresh, verify every claim and citation
 	$(PY) -m pytest -q
+	$(PY) scripts/plan_h2_power.py --check
+	$(PY) scripts/audit_design.py --check
 	$(PY) scripts/analyse_numerical_sensitivity.py --check
 	$(PY) scripts/verify_numerical_repeatability.py --check
 	$(PY) scripts/render_manuscript_tables.py --check

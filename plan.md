@@ -438,6 +438,64 @@ records lack sufficient thread/backend/machine-state metadata to rule out all
 environment differences. The earlier assertion of a second machine-state
 factor should be read as an unresolved possibility, not an identified cause.
 
+## Amendment 9 — 2026-10-05, replicate encoders for the H4 ablation
+
+Written and dated before any replicate encoder was trained.
+
+**What prompted it.** Every encoder-level contrast in §6.4–6.5 compares two
+*single* pretraining runs. `models/` holds exactly one checkpoint per condition,
+and the ten downstream seeds resample only the probe's split and subsample, so
+no reported interval or p-value contains any pretraining variance. The audited
+consequence: `T4c` vs `T4r`, the contrast §6.5 calls "H4 decided", is a
+difference between one decontaminated encoder and one size-matched random-ablated
+encoder (+0.0141 median RMSE, Holm 0.273). The study already demonstrates that
+this class of variation is non-trivial — `table11` re-draws `T0r`'s random
+encoder five times and spans 0.6438 to 0.6549, a range of 0.011, which is
+comparable to the effect being attributed to the corpus intervention.
+
+A second entanglement found in the same audit: one `--seed` controlled the
+weight initialisation, the corpus validation split and the random-ablation draw
+simultaneously. The three historical `T4` conditions therefore differ in corpus
+content *and* in which molecules formed the pretraining validation set
+(`n_val` 447 / 438 / 437) *and* in the epoch early stopping selected
+(24 / 19 / 21). `pretrain_indomain.py` now takes `--init-seed`, `--split-seed`
+and `--draw-seed` separately; each defaults to `--seed`, so every historical
+command reproduces unchanged.
+
+**Scope.** The `T4` family only — `T4`, `T4_clean`, `T4_rand61`. H4's decisive
+contrast lives there, and the `T5` family's equivalent is inconclusive by a wide
+margin (Holm 0.439). This is a variance-scale check on an existing claim, not a
+new hypothesis.
+
+**Design.** Two replicate encoders per condition, at `--init-seed 1` and
+`--init-seed 2`, joining the existing seed-0 encoder for R = 3. `--split-seed 0`
+and `--draw-seed 0` are held fixed, so the only factor varying within a
+condition is the encoder initialisation and batch order; the corpus validation
+split and the identity of the 61 removed records are the historical ones.
+Every other pretraining hyperparameter is the published one. Downstream
+evaluation is the published frozen probe — `StandardScaler` then `RidgeCV` over
+the same alpha grid — on the committed scaffold split files, seeds 0–9,
+n = 347. No published arm, metric file or table is modified.
+
+**Estimand and decision rule, fixed before execution.** For each encoder,
+the median test RMSE over the ten downstream seeds. A condition's value is the
+mean of its three encoder medians. The contrast of interest is
+`T4_clean` − `T4_rand61`.
+
+The contrast is called **encoder-robust** only if its magnitude exceeds the
+largest within-condition range of encoder medians across the three conditions.
+Otherwise it is called **within encoder noise**, and §6.5's H4 reading plus the
+corresponding contribution claim are rescoped to single-encoder evidence. Both
+outcomes are reported, with all nine encoder medians and the within-condition
+spreads, whatever the direction.
+
+**What this cannot establish.** R = 3 supports no usable encoder-level p-value;
+this compares the size of an effect against the size of a nuisance, and is not
+a test. Holding `--draw-seed` fixed means draw-to-draw uncertainty in *which*
+61 records are removed remains unestimated, and no claim is made about it. The
+historical per-seed contrasts stay as published and are not recomputed under
+this amendment.
+
 ## 1. Question
 
 Molecular transfer learning is usually justified on large, noisy benchmarks

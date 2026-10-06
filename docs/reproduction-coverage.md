@@ -32,7 +32,7 @@ does not contain them.
 
 A full-tier run watches **2,036** artefacts and **reconstructs 1,584**: the
 curated datasets, all 30 split files, the metric files and prediction bundles
-of every arm except the ChemBERTa fine-tune, and all 32 tables.
+of every arm except the ChemBERTa fine-tune, and all 33 tables.
 
 Stages run inside a throwaway `git worktree` at a committed ref. The working
 tree is never written to, so a failed run cannot become the next run's
@@ -245,7 +245,7 @@ are in `numerical-sensitivity.json`, rebuilt by `make sensitivity`.
 |---|---|
 | All 40 B3 cells re-fitted on one thread (`make sensitivity`); Amendment 5's five contrasts recomputed unchanged | B3 remains worse than B1 at all four sizes (Holm 0.020 at each). B3 vs T2v remains undetected (p = 0.32), but its median changes sign, +0.009 to −0.009, so that contrast fails the pre-specified direction criterion |
 | Size of the effect on single B3 cells | median absolute RMSE shift 0.014–0.043 by training size, largest 0.100 |
-| precision@10% bounded over every tie-break within 1e-5 pKD, 810 prediction files | 101 files can change, 40 of them the constant predictor B0. All eleven reported contrasts keep their Holm verdict under exhaustive hit-count enumeration and conservative Holm bounds; the scaffold T2 result moves from 0.023 to at most 0.047 |
+| precision@10% bounded over every prediction and label tie-break within 1e-5 pKD, 810 prediction files | 103 files can change, 40 of them the constant predictor B0. All eleven reported contrasts keep their Holm verdict under exhaustive hit-count enumeration and conservative Holm bounds; the scaffold T2 result moves from 0.023 to at most 0.047 |
 | Spearman with tied predictions given equal rank | largest shift 0.0008 |
 | The failing T2v cell | its rerun value, 0.1, is the lower tie bound of the saved cell, [0.1, 0.2] |
 
@@ -275,6 +275,18 @@ Both training CLIs accept `--threads 1 --out-root <separate-directory>`; a
 thread-pinned run requires a separate output root. `make verify` re-derives the
 sensitivity report and rejects missing, incomplete or stale evidence. The review
 archive includes `plan.md`, the sensitivity artifacts and both JSON reports.
+
+**Design diagnostics (2026-10-05).** `make audit-design` writes
+`design-diagnostics.json` from the committed split files, metric records and
+predictions, with no fitting. It reports four properties no results table
+shows: the ten seeds share 19.3% of their test compounds pairwise and 41
+compounds appear in no test fold, so the paired tests' independence assumption
+is approximate; one seed's test fold spans 30 scaffolds against 56–68
+elsewhere, so the seeds are not exchangeable; 49 of 494 curated compounds are
+reserved by every split and read by no executed arm; and at the same labelled
+budget the arms fit between 295 and 347 compounds. Leave-one-seed-out over the
+headline contrasts is included — none changes sign, and only `T2` vs `B1`
+crosses 0.05.
 
 **Status.** The saved outputs are unchanged and remain the primary results. No
 tolerance was changed, and the two cells still fail `make verify-retrain`

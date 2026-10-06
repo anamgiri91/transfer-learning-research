@@ -427,6 +427,130 @@ def build_claims() -> list[Claim]:
                        "retrain-verification", 1e-6,
                        float(_rt["tolerance_relative"])))
 
+    # ---- 6.9, plan.md Amendment 9's replicate encoders ----------------------
+    if Path("docs/encoder-replicates.json").exists():
+        _er = json.loads(Path("docs/encoder-replicates.json").read_text())
+        _ec, _ex = _er["conditions"], _er["contrast"]
+        C.append(Claim("6.9", "three encoders per condition", "encoder-replicates",
+                       "3,3,3", ",".join(str(v["n_encoders"]) for v in _ec.values())))
+        for cond, medians, mean, rng in (
+                ("T4", "0.6028,0.6537,0.6379", 0.6315, 0.0508),
+                ("T4_clean", "0.6241,0.6354,0.6575", 0.6390, 0.0335),
+                ("T4_rand61", "0.6297,0.6783,0.6442", 0.6507, 0.0486)):
+            C.append(Claim("6.9", f"{cond} encoder medians", "encoder-replicates",
+                           medians,
+                           ",".join(f"{m:.4f}" for m in _ec[cond]["encoder_medians"])))
+            C.append(Claim("6.9", f"{cond} condition mean", "encoder-replicates",
+                           mean, round(_ec[cond]["condition_mean"], 4)))
+            C.append(Claim("6.9", f"{cond} within-condition range",
+                           "encoder-replicates", rng,
+                           round(_ec[cond]["within_condition_range"], 4)))
+        C.append(Claim("6.9", "condition difference -0.0117", "encoder-replicates",
+                       -0.0117, _ex["condition_mean_difference"]))
+        C.append(Claim("6.9", "published single-encoder difference -0.0056",
+                       "encoder-replicates", -0.0056,
+                       _ex["published_single_encoder_difference"]))
+        C.append(Claim("6.9", "largest within-condition range 0.0508",
+                       "encoder-replicates", 0.0508,
+                       _ex["largest_within_condition_range"]))
+        C.append(Claim("6.9", "the contrast is within encoder noise",
+                       "encoder-replicates", "within encoder noise", _ex["verdict"]))
+        C.append(Claim("6.9", "both ablations remain worse than the full corpus",
+                       "encoder-replicates", 2,
+                       sum(1 for k in ("T4_clean", "T4_rand61")
+                           if _ec[k]["condition_mean"] > _ec["T4"]["condition_mean"])))
+        C.append(Claim("6.9", "random removal remains worse than overlap removal",
+                       "encoder-replicates", True,
+                       _ec["T4_rand61"]["condition_mean"]
+                       > _ec["T4_clean"]["condition_mean"]))
+        C.append(Claim("6.9", "the published encoder is best in all three conditions",
+                       "encoder-replicates", 3,
+                       sum(1 for v in _ec.values()
+                           if round(v["published_encoder_median"], 4)
+                           == min(v["encoder_medians"]))))
+
+    # ---- 3.3 / 4.2 / 4.4 / 5.5, the 2026-10-05 design audit ------------------
+    if Path("docs/design-diagnostics.json").exists():
+        _dd = json.loads(Path("docs/design-diagnostics.json").read_text())
+        _sd = _dd["seed_dependence"]["per_split"]["scaffold"]
+        C.append(Claim("4.4", "mean pairwise test overlap 19.3%", "design-diagnostics",
+                       0.193, _sd["mean_pairwise_test_overlap"]))
+        C.append(Claim("4.4", "test overlap ranges 5% to 41%", "design-diagnostics",
+                       "0.05/0.41",
+                       f"{_sd['min_pairwise_test_overlap']:.2f}/"
+                       f"{_sd['max_pairwise_test_overlap']:.2f}"))
+        C.append(Claim("4.4", "one compound appears in 6 of 10 test folds",
+                       "design-diagnostics", 6,
+                       _sd["max_test_folds_one_compound_appears_in"]))
+        C.append(Claim("4.4", "41 compounds appear in no test fold",
+                       "design-diagnostics", 41,
+                       _sd["compounds_never_in_any_test_fold"]))
+        _du = _dd["data_actually_used"]
+        C.append(Claim("3.3", "49 compounds reserved and unread", "design-diagnostics",
+                       49, _du["validation_fold"]))
+        C.append(Claim("3.3", "445 compounds reach the study", "design-diagnostics",
+                       445, _du["compounds_reaching_any_executed_arm"]))
+        C.append(Claim("3.3", "n=347 is 70% of the curated set", "design-diagnostics",
+                       0.70, round(_du["train"] / _du["curated_compounds"], 2)))
+        _fc = _dd["test_fold_composition"]
+        C.append(Claim("5.5", "seed 9 spans 30 test scaffolds", "design-diagnostics",
+                       30, min(r["n_test_scaffolds"] for r in _fc["per_seed"])))
+        C.append(Claim("5.5", "other seeds span 56 to 68 scaffolds",
+                       "design-diagnostics", "56/68",
+                       "%d/%d" % (min(r["n_test_scaffolds"] for r in _fc["per_seed"]
+                                      if r["seed"] != 9),
+                                  max(r["n_test_scaffolds"] for r in _fc["per_seed"]))))
+        C.append(Claim("5.5", "seed 9's largest series fills 58% of its fold",
+                       "design-diagnostics", 0.58,
+                       round([r["largest_series_fraction"] for r in _fc["per_seed"]
+                              if r["seed"] == 9][0], 2)))
+        C.append(Claim("5.5", "least diverse fold is seed 9", "design-diagnostics",
+                       "[9]", str(_fc["least_diverse_seeds"])))
+        _lo = {c["contrast"]: c for c in _dd["leave_one_seed_out"]}
+        for name, lo, hi in (("T1 vs B1", 0.0455, 0.0520),
+                             ("T2v vs B1", 0.0465, 0.0497),
+                             ("B3 vs B1", 0.0397, 0.0575)):
+            C.append(Claim("5.5", f"leave-one-seed-out {name} delta range",
+                           "design-diagnostics", f"{lo}/{hi}",
+                           "/".join(str(v) for v in
+                                    _lo[name]["median_paired_delta_range"])))
+        C.append(Claim("5.5", "T2 vs B1 leave-one-out p straddles 0.05",
+                       "design-diagnostics", "0.0195/0.0742",
+                       "/".join(str(v) for v in _lo["T2 vs B1"]["p_raw_range"])))
+        C.append(Claim("5.5", "only T2's leave-one-out p crosses 0.05",
+                       "design-diagnostics", 1,
+                       sum(1 for c in _dd["leave_one_seed_out"] if c["crosses_0_05"])))
+        C.append(Claim("5.5", "no leave-one-out contrast changes sign",
+                       "design-diagnostics", 4,
+                       sum(1 for c in _dd["leave_one_seed_out"] if c["sign_stable"])))
+        _fs = {r["arm"]: r for r in _dd["fitted_training_sizes"]["per_arm"]}
+        C.append(Claim("4.2", "the amended arms fit 295 of 347",
+                       "design-diagnostics", "295/52",
+                       f"{_fs['T2v']['n_train_fitted']}/{_fs['T2v']['n_internal_val']}"))
+
+    # ---- 5.3, the H2 estimand's specificity against the non-learning arm -----
+    if Path("results/tables/table15_h2_interaction.csv").exists():
+        _h2 = read_table("table15_h2_interaction.csv")
+        _h2 = _h2[_h2.split == "scaffold"].set_index("arm")
+        if "slope_minus_non_learning_median" in _h2.columns:
+            for arm, label, med, pv in (
+                    ("T1_chemberta_linear_probe", "T1", -0.0247, 0.0020),
+                    ("T4_indomain_probe", "T4", -0.0260, 0.0195),
+                    ("T5_chained_probe", "T5", -0.0251, 0.0059),
+                    ("B2_descriptors_rf", "B2", -0.0220, 0.0059),
+                    ("T0r_untrained_encoder_probe", "T0r", -0.0045, 0.2754)):
+                C.append(Claim("5.3", f"{label} slope minus the non-learning arm",
+                               "table15", med,
+                               float(_h2.loc[arm, "slope_minus_non_learning_median"])))
+                C.append(Claim("5.3", f"{label} vs the non-learning arm, p",
+                               "table15", pv,
+                               float(_h2.loc[arm, "p_vs_non_learning"])))
+            C.append(Claim("5.3", "T1 is flatter than B0 in 0 of 10 seeds", "table15",
+                           0, int(_h2.loc["T1_chemberta_linear_probe",
+                                          "slope_exceeds_non_learning_in_seeds"])))
+            C.append(Claim("5.3", "no arm beats the non-learning arm's flatness",
+                           "table15", 0, int(_h2.specific_to_learning_arms.sum())))
+
     # ---- 6.7 / 10, plan.md Amendment 8's numerical-sensitivity analyses ------
     _ns = json.loads(Path("docs/numerical-sensitivity.json").read_text())
     _pa, _tb = _ns["thread_pinned_b3"], _ns["precision_tie_bounds"]
@@ -471,8 +595,8 @@ def build_claims() -> list[Claim]:
                    1e-5, _tb["eps_pkd"]))
     C.append(Claim("10", "810 prediction files bounded", "numerical-sensitivity",
                    810, _tb["prediction_files"]))
-    C.append(Claim("10", "101 tie-sensitive files, 40 of them B0",
-                   "numerical-sensitivity", "101/40",
+    C.append(Claim("10", "103 tie-sensitive files, 40 of them B0",
+                   "numerical-sensitivity", "103/40",
                    f"{_tb['tie_sensitive_files']}/"
                    f"{_tb['tie_sensitive_by_arm']['B0_median']['tie_sensitive']}"))
     C.append(Claim("10", "all eleven precision@10% contrasts tie-robust",
@@ -1390,6 +1514,46 @@ def build_claims() -> list[Claim]:
                                      "median_rmse_delta_vs_baseline")) < 0)))
     C.append(Claim("8.3", "and B2 is not shown to beat them either", "table3", True,
                    bool(float(t3("scaffold", "B2_descriptors_rf", "p_holm")) > 0.05)))
+
+    # ---- 8.4, conditional H2 planning; parse prose rather than mirror it ----
+    _power = json.loads(Path("docs/h2-power-planning.json").read_text())
+    _design_text = MANUSCRIPT.read_text().split("### 8.4", 1)[1].split("### 8.5", 1)[0]
+    def _stated_design(pattern):
+        match = re.search(pattern, _design_text)
+        return match.group(1) if match else "MISSING"
+    def _power_row(n, family=1):
+        return next(r for r in _power["scenarios"] if r["seeds"] == n
+                    and r["effect_per_doubling"] == 0.01
+                    and r["sd_factor"] == 1.5 and r["family_allowance"] == family)
+    C.append(Claim("8.4", "planning slope SD", "h2-power-planning",
+                   _stated_design(r"pilot slope SD ([0-9.]+) and"),
+                   f"{_power['pilot_slope_sd']:.4f}"))
+    C.append(Claim("8.4", "proposed fresh seed budget", "h2-power-planning",
+                   _stated_design(r"([0-9]+) fresh\s+seeds give"),
+                   str(_power["proposed_fresh_seed_count"])))
+    C.append(Claim("8.4", "design effect and SD factor", "h2-power-planning",
+                   _stated_design(r"minimum relevant effect\s+is \+([0-9.]+) pKD") + "/" +
+                   _stated_design(r"SD multiplied by ([0-9]+\.[0-9]+)"),
+                   f"{_power['design_effect']}/{_power['design_sd_factor']}"))
+    C.append(Claim("8.4", "150-seed detection probability", "h2-power-planning",
+                   _stated_design(r"150 fresh\s+seeds give ([0-9.]+)%"),
+                   f"{100 * _power_row(150)['h2_detection_probability']:.1f}"))
+    C.append(Claim("8.4", "150-seed Monte Carlo interval", "h2-power-planning",
+                   _stated_design(r"Monte Carlo interval is\s+([0-9.]+–[0-9.]+)%"),
+                   "–".join(f"{100 * v:.1f}" for v in
+                            _power_row(150)["monte_carlo_95_interval"])))
+    C.append(Claim("8.4", "30-seed detection probability", "h2-power-planning",
+                   _stated_design(r"Thirty seeds give only ([0-9.]+)%"),
+                   f"{100 * _power_row(30)['h2_detection_probability']:.1f}"))
+    C.append(Claim("8.4", "seven-comparison allowance at 150 seeds", "h2-power-planning",
+                   _stated_design(r"150 seeds give only ([0-9.]+)%"),
+                   f"{100 * _power_row(150, 7)['h2_detection_probability']:.1f}"))
+    _family7 = [r["seeds"] for r in _power["scenarios"]
+                if r["effect_per_doubling"] == 0.01 and r["sd_factor"] == 1.5
+                and r["family_allowance"] == 7 and r["monte_carlo_95_interval"][0] >= 0.8]
+    C.append(Claim("8.4", "seven-comparison planning grid first qualifying budget",
+                   "h2-power-planning", _stated_design(r"planning criterion at ([0-9]+)"),
+                   str(min(_family7))))
 
     # ---- Run inventory ----
     n_runs = len(list(METRICS.glob("*.json")))

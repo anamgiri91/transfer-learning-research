@@ -51,6 +51,8 @@ Their checks do not replace a review of the prose or of scientific interpretatio
 | Table 23 — B3 D-MPNN learning curve (§6.7) | `scripts/run_dmpnn.py` → `analyse_b3.py` | `results/tables/table23_b3_curve.csv` |
 | Table 24 — Amendment 5's five B3 contrasts (§6.7) | `scripts/analyse_b3.py` | `results/tables/table24_b3_contrasts.csv` |
 | Table 25 — enrichment robustness, Amendment 6's five tests (§6.8) | `scripts/run_arms.py` → `analyse_enrichment.py` | `results/tables/table25_enrichment_robustness.csv` |
+| Table 26 — Amendment 9's replicate T4-family encoders (§6.9) | `scripts/pretrain_indomain.py --init-seed` → `analyse_encoder_replicates.py` | `results/tables/table26_encoder_replicates.csv` |
+| Design diagnostics — seed dependence, fold composition, leave-one-seed-out, data actually used, fitted sizes (§3.3, §4.2, §4.4, §5.5) | `scripts/audit_design.py` | `docs/design-diagnostics.json` |
 | Supplied-input checksums | `scripts/verify_reproducibility.py --write-input-manifest` | `docs/input-checksums.json` |
 | Reproduction coverage, written by the passing run | `scripts/verify_reproducibility.py --tier full` | `docs/reproduction-coverage.json`, `docs/reproduction-coverage.md` |
 | Figures 1, 3, 4 — RMSE learning curves | `scripts/make_report.py` | `results/figures/fig1_learning_curves__<split>.png` |
@@ -63,6 +65,14 @@ carries the mapping and `scripts/verify_citations.py` checks that every embedded
 image exists and that the visible numbers run 1..N.
 
 ## Verification
+
+The narrative revision's additional records are
+`docs/checkpoint-provenance.md` (model-card discrepancy and pinned identity) and
+`docs/h2-followup-design.md` (unexecuted prospective design). Its conditional
+power calculation is produced by `scripts/plan_h2_power.py` from the original
+paired T1/B1 learning curves and saved to `docs/h2-power-planning.json`.
+`make verify` checks that report for freshness. No new experimental predictions
+or primary-result tables are produced by this planning calculation.
 
 | Check | Script | What it guarantees |
 |---|---|---|
@@ -89,7 +99,7 @@ The full tier rebuilds the frozen probes and B3; the fast tier skips them.
 The previously recorded runs found:
 `eva71_2a.csv`, `indomain_3c.csv` and all 30 split files are byte-identical,
 the 360 re-fitted baseline metric files match to ~1e-15 relative, and the data
-rows of all 32 tables are byte-identical. The nine figures are
+rows of all 33 tables are byte-identical. The nine figures are
 regenerated but **not verified**: they are gitignored as regenerable, so a
 reconstruction has no committed copy to diff against, and matplotlib PNG output
 is not byte-stable across environments in any case. The original T2 and amended fine-tune

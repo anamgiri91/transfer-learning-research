@@ -1,7 +1,7 @@
-# Benchmarking Molecular Transfer Learning on a Curated CVA16 2A Protease Dataset
+# Anatomy of a Transfer Deficit: Chemical Extrapolation and Methodological Forensics in Low-Data Molecular Benchmarking
 
-How do pretrained molecular models compare with classical baselines on a small,
-single-target affinity dataset?
+Where does a molecular transfer deficit arise, and how do controls, paired
+comparisons and protocol audits change its interpretation?
 
 This study uses the **OpenBind EV-A71 / CVA16 2A protease** release
 ([Zenodo, CC0](https://doi.org/10.5281/zenodo.20026661)): 494 curated compounds
@@ -44,6 +44,26 @@ private/     NOT version controlled — see private/README.md
 
 Release inputs and their current availability are documented in
 `docs/reproduction-coverage.md`. `private/` holds embargoed inputs, notes, and drafts only.
+
+The manuscript treats this benchmark as a case study in methodological
+forensics: chemical stratification, size-matched decontamination controls,
+paired comparisons and protocol-to-analysis traceability. The practical
+checklist is in manuscript §8.3. The proposed H2 follow-up and its conditional
+power calculation are in [`docs/h2-followup-design.md`](docs/h2-followup-design.md);
+checkpoint attribution is documented in
+[`docs/checkpoint-provenance.md`](docs/checkpoint-provenance.md).
+
+A repository-wide methodological audit on 2026-10-05 produced nineteen
+findings. Thirteen are fixed in the current draft and recorded in
+[`docs/decision-log.md`](docs/decision-log.md); the design properties behind
+them are generated into
+[`docs/design-diagnostics.json`](docs/design-diagnostics.json) by
+`make audit-design`. Two changed what the paper claims: the pre-registered
+data-efficiency estimand is shown to have no specificity for transfer, because
+a constant predictor attains the largest positive slope in the study (§5.3),
+and every encoder-level contrast is a comparison of single pretraining runs,
+re-examined under replicate encoders pre-registered as `plan.md` Amendment 9
+(`make encoder-replicates`).
 
 ## Setup
 
