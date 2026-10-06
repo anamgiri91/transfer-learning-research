@@ -136,6 +136,9 @@ from evapro.evaluation.stats import n_to_reach
 
 TABLES = Path("results/tables")
 BASELINE = "B1_ecfp_histgb"
+# The constant predictor. It cannot benefit from transfer, so its slope measures
+# how much "flatter curve than B1" a model with no learning already buys.
+NON_LEARNING_REFERENCE = "B0_median"
 SIZES = [50, 100, 250, 347]
 N_BOOT = 10000
 BOOT_SEED = 0
@@ -311,10 +314,40 @@ def interaction(M, split: str) -> pd.DataFrame:
         # The verdict is driven by the TEST, and the test is about the sign of
         # a location shift, so it is reported against the estimator the test
         # localises rather than against whichever point estimate is largest.
+        # A positive slope means only "this arm's curve is flatter than B1's",
+        # which a NON-LEARNING arm maximises: B0, a constant predictor, attains
+        # a significant positive slope here. So the estimand has no specificity
+        # for transfer on its own, B0 is labelled as the scale reference rather
+        # than as evidence for H2, and every arm is also reported against B0's
+        # slope -- the flatness a model with no learning already achieves.
         df["h2_verdict"] = np.where(
-            df.p_holm > 0.05, "inconclusive",
-            np.where(df.hodges_lehmann > 0, "slope > 0: consistent with H2",
-                     "slope < 0: contrary to H2"))
+            df.arm == NON_LEARNING_REFERENCE,
+            "scale reference: a constant predictor, not evidence on H2",
+            np.where(df.p_holm > 0.05, "inconclusive",
+                     np.where(df.hodges_lehmann > 0,
+                              "slope > 0: consistent with H2",
+                              "slope < 0: contrary to H2")))
+        if NON_LEARNING_REFERENCE in set(df.arm):
+            spec = []
+            for arm in df.arm:
+                if arm == NON_LEARNING_REFERENCE:
+                    spec.append((0.0, 0, np.nan))
+                    continue
+                seeds = sorted(set(complete_seeds(M, arm, split))
+                               & set(complete_seeds(M, NON_LEARNING_REFERENCE, split)))
+                a_s = per_seed_slopes(M, arm, seeds)
+                b_s = per_seed_slopes(M, NON_LEARNING_REFERENCE, seeds)
+                d = a_s - b_s
+                pv = (float(stats.wilcoxon(a_s, b_s).pvalue)
+                      if np.any(d != 0) else 1.0)
+                spec.append((float(np.median(d)), int((d > 0).sum()), pv))
+            df["slope_minus_non_learning_median"] = [round(v[0], 4) for v in spec]
+            df["slope_exceeds_non_learning_in_seeds"] = [v[1] for v in spec]
+            df["p_vs_non_learning"] = [round(v[2], 4) if v[2] == v[2] else np.nan
+                                       for v in spec]
+            df["specific_to_learning_arms"] = np.where(
+                df.arm == NON_LEARNING_REFERENCE, False,
+                df.slope_minus_non_learning_median > 0)
         df["estimators_agree_in_sign"] = (
             np.sign(df.median_slope) == np.sign(df.mean_slope))
     return df
