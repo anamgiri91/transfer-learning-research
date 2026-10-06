@@ -1,0 +1,2001 @@
+{
+  "arm": "T1_chemberta_linear_probe",
+  "design_effect": 0.01,
+  "design_family_allowance": 1,
+  "design_sd_factor": 1.5,
+  "input_sha256": {
+    "results/metrics/B1_ecfp_histgb__scaffold__seed0__n100.json": "bdb5e6aca3c8abc35ec71eed4e795217b648a5b515bf740404c9027a053b998f",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed0__n250.json": "50b96ed164f512b6fd03e040880452d2fd1139d374c0d79bd3112e7efe0a978f",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed0__n347.json": "8342d1f0eabd0f261823eb04cb12775eac5248e79bc07108e3c6d321763c954e",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed0__n50.json": "8cee0028cd1b8095f06dc05357598b3b2a25400627ce69127f5c478e11ce68c9",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed1__n100.json": "193eac2ff30dac7c7770c997dc0468032ce5bec124c8556852a985990797a76a",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed1__n250.json": "c8e3a89b5827cd3c50ed449c6ae558c02ce8f81b18d16b5623b6fa2c27378dd8",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed1__n347.json": "8822a0ba444cccaeeb506b8b2d0fdeea7d428cce0a5d3e2153cde78838bd7a55",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed1__n50.json": "a9e392be9de2f91b1dea9737ad632cab8a83bda30fce8106ad8bb80960406acd",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed2__n100.json": "4da1ea704fd9020bf2c2feac9f63938cfafda0ffbe6becd2a99b1571a0e13fa3",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed2__n250.json": "53382dbedba79cf50f08f3592cefb68000e85d09ab8d17f19f3d713576de7342",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed2__n347.json": "e3e8fe672a8b5446eac0f89bd6d24c13cf24fa830a8041926deb89b2fd1d6dfc",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed2__n50.json": "3cb44b2b1059b816bd42640258ec88147fc3df4192771e84b71d293c92e75482",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed3__n100.json": "e69f43a78819a8606cf9d2c17cc4868a870dcad709deb803204bbfa06d5be08b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed3__n250.json": "c94c45f37fc8f3122afc985e405283ef5dd98304175ee7d28297b9d9a8ed5a34",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed3__n347.json": "8362d24036d7b52765afc49452649945fcb70a0ef35805c73507e34475f7eb96",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed3__n50.json": "ba2ad687352e4469e7d5f6a0d060e5f0392a1aed37a73e7c75a3b104dcde81a5",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed4__n100.json": "b1df3d71ea2279ce94b051833e2873c150c964a4c7ac16a6bc631393eea70635",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed4__n250.json": "1191c233066e552a1a232e4c85da3d100b9029bdbf8d2210d29f78ea24f35d8b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed4__n347.json": "9b20f816c6627e867e76c8b19c0821b94cf2bfce7bdb7e6b7dfcb12017de0022",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed4__n50.json": "08dbd5b6b4749a0eacb349f17c03307a0d8d4904c9a5a283bb694fcda1b342ef",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed5__n100.json": "07667f2ae9748f7c218cb0edc449094b336f48072f5944f19051b162fba47be8",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed5__n250.json": "5e825d797dcf619ee3683a41af078000b58c34a46d2b8db8592efe848b426c5b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed5__n347.json": "2aec783f0f30bea88e8e10fc43c29d652d3b1a3299f15ba015e4b1e50f45291b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed5__n50.json": "c5a8e530aad8e0841127bbf3f4db700623de3e3bc305123433663ad7e8253ceb",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed6__n100.json": "dbd87ba2368266c26d82c3dc9a3a2b60926220388d97fbe38f46175564decc71",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed6__n250.json": "b7370ede156d8285b6de1d20f1b683b15a43f3001956b1726ad0c50162008e0c",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed6__n347.json": "fbc157a1065e16ee622abe7513093c61eae9aaf2b16c6c9b0c536259b29c6dd0",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed6__n50.json": "b492ed2697abe4901077234f70a316095f924c0b1dd40ad8dcb00ea010f99c30",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed7__n100.json": "204f31fd4a26676507e4350701d1660da328fb690cbfdbb2fd569634ee6e4f23",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed7__n250.json": "008ebb8a1b9a747eae8f747a6acadc9e7c8e1cba425077c1de50c6777daeae9b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed7__n347.json": "ed0ddf276f526d16bdf9d96ceafc91d994e06f78516dc7d29d5cfd822fd3415e",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed7__n50.json": "eb3f23c03f2cd15aeca284cee14931deaa668953537d8dda7677fe0a72ef226a",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed8__n100.json": "06a4ed7feb6f0f54714ae5964129d34a2f156edbaf0137a1aefb5940ebd6ff02",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed8__n250.json": "8542dbfc2289d2d0bd5550fde1b505a0ed1422924fd5d9a9c7864654584e0e1a",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed8__n347.json": "85dea9d465703ca27c09d4950fde5cd7cdc68ae62fc8a1f59ce4fc3a861bdae1",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed8__n50.json": "0ba4138944ec5da6e4ff6214fdf75e630a7d75b5eb249bef09392671c9a09ea6",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed9__n100.json": "3c060ecdbe701a8fa92965adf359249add44ff7abde58c6f4a6966100e2302c1",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed9__n250.json": "dc276fc659ba4457d8abc7339356a975c41ccafac57195e27c893cf690f268f8",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed9__n347.json": "0caa5f1bcff4d3838cd99b184d97728458c3858b1ccd38cb8fdf4d2e8266813b",
+    "results/metrics/B1_ecfp_histgb__scaffold__seed9__n50.json": "36d4739ee65b182754dfecb1545092b2a8f64483c1733be95c417f6698e0a574",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed0__n100.json": "cfec79cd7d3819f3b9f8da03d01eb44fc0f50ad142993a8fe5a07ee8488dc05d",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed0__n250.json": "73646485979082ed0da68b547461e7b12a7ccae0b7b88d978068e992f40f3766",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed0__n347.json": "d26bd08bdafe4abb871a76218cc2bbbc3c614568017cf81cccacd8ad0d563a2a",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed0__n50.json": "9298f68a0b1de5bd63aa4dc466ba02c50df96d4541b73fbf5174ffffb1ec2912",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed1__n100.json": "275f7c7499709f09f7cde570af9656bba87d638450ea955d9b054807bee20804",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed1__n250.json": "9c0480dbc4a598a39456de5f55d42dbfd5f1d622dd71cd5cc2a84b4a322fda20",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed1__n347.json": "07634986819587420763e62133761a82bc2dcce646af41defffe66836ec4a0bc",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed1__n50.json": "8013b9f8da76e35fc233f39ecf481ed98df44ffb10acdd6006474b6d668baf4e",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed2__n100.json": "94c705e3c464677af25be04ea2f3ce0c7309f8db3d9b15012bf81a938248ecb2",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed2__n250.json": "eb37c975bc9e2d56baf5e6d217f1dd1074679e4a7b101bc49d027c4fdde98840",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed2__n347.json": "cea46fb3695ded43b8e63a99b1d6ef2737f78dab1f716afa6982ec535628ddfa",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed2__n50.json": "9329e2fd3b0fe5ed4aa64811ed4792e0ec7d172f0723468fbf63464fe3fa1245",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed3__n100.json": "fcf3374d3a43c3a084d7fab62b82ffffc016ea636f7c6cb511a4220462e8cf86",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed3__n250.json": "7b28eeff76fa41f1b25d79de3d568391c2ce1da14dc6b4183008e4f03b319aa3",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed3__n347.json": "a565947844c14d19df8b646a2fd2d06634a2a0b925afad0040be8a14a75857a7",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed3__n50.json": "f6ea0e4ba06fae410cd4fa2f63e969ef071f754fc1101f020f1a13336452944a",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed4__n100.json": "b874987ad9f15407981f17fa6b4b312630963ea9837f587649c59a82b93223ae",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed4__n250.json": "2d9b672ebd473e2542f9d7e2f11c0e3fb11140cac05e1cf9d0fce2255d6fedd4",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed4__n347.json": "38a43ef25f02379ab2465a976c0bf48f5ddd99e349ba7db4242db4683293c343",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed4__n50.json": "670e3af57b1629658fae89723883b5eb56001cefd075e8cfcd66dbfa9f240694",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed5__n100.json": "f9bc8a1f873a66718ff51359af05ca8ef48d9532ab8e6f606a811335279377f8",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed5__n250.json": "f36a95eb0a1bdf9f87f82faf5dd25232f601675e5a345a5532711afc9ea5dd5e",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed5__n347.json": "01fa397353b14e02ff17ce05323ddd4fd64088ab1f16b6caf5dac9cf21426054",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed5__n50.json": "c99eacbf567cccaed9738249bf60a74744be1a05206c45077ed50c2e7ac4784a",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed6__n100.json": "1294061d53c3f0f3dc042e4f648115529cb0e6dca331caa406d5d1d172d33419",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed6__n250.json": "31ad4ea22cf3ba93e3b314940eb5c6eaa92839878671edd49f9f36cf06e4f8b9",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed6__n347.json": "f7f7567ab4b29fd68162f0f89ce90f819469b97e4f4acc95596c0364d9176773",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed6__n50.json": "0a5191fd06c079689ff8b24c158594eb2c772a12712a673b00f26ee25c04ebf6",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed7__n100.json": "73093765bcfb8818855df96024625a135119cd192c4c600dd0910effe571532e",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed7__n250.json": "06002c0cdc1f2474e850df97c85ea90724dc0fcff595c8bed86af9b7527b37b4",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed7__n347.json": "029f54344790d120aca5d1f15926572f9a428305f8e770caf0eefade0667c306",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed7__n50.json": "9a47b4d2c0c20096e17a69dc0f6347d197e719cbdc3f36ce235120e288d500c7",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed8__n100.json": "ccae49279e6cceff8e892a0f5ea0d9fc2c9d3a680f17ee6946c70274447ff396",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed8__n250.json": "a77a7513de76fac4f7e31c7df45c680b57033a15c3722ec0201b9782f6599cb8",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed8__n347.json": "88ed9fee083cb77bf36f6a9240ea05d6979357b07fe284d0a254c189f362f97f",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed8__n50.json": "582bebdcb13aaf3a46acb40a8347da2cfe64eaf073190d92686e8007d84098c2",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed9__n100.json": "2fb506ebcde3661106e33f1dade086be5e4f698a5796fdf31943883a7c123932",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed9__n250.json": "b723afd7c0800af30669714e03fc33991360bd4d9fc1b9157f668a29bc12fe0b",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed9__n347.json": "5fa508793bd7d4af7c057663afe3d85330041118aae6aaa8f763742189e23d16",
+    "results/metrics/T1_chemberta_linear_probe__scaffold__seed9__n50.json": "247b544c738a86785dae1291cfffa9f28644e114f60dfaaaf8b9517785bed0ca"
+  },
+  "model": "Independent Gaussian seed slopes with a fixed location shift; conditional on this dataset, not a population-power guarantee.",
+  "pilot_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "pilot_slope_sd": 0.026737197894221364,
+  "pilot_slopes": [
+    0.02589548120008204,
+    -0.04811294506651252,
+    0.0031948386423340785,
+    0.011489421355226575,
+    -0.00011759371586792216,
+    -0.013089169607685084,
+    0.04014947310087523,
+    0.013630144809798333,
+    -0.034738311701063486,
+    0.011863166749220564
+  ],
+  "proposed_fresh_seed_count": 150,
+  "reference": "B1_ecfp_histgb",
+  "rng_seed": 20261005,
+  "scenarios": [
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0215,
+      "monte_carlo_95_interval": [
+        0.018835546721927495,
+        0.024531939718810004
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.044
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0024,
+      "monte_carlo_95_interval": [
+        0.0016133788093978356,
+        0.0035687763690995114
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0056
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0714,
+      "monte_carlo_95_interval": [
+        0.06651612030545831,
+        0.07661304309788566
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0777
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0097,
+      "monte_carlo_95_interval": [
+        0.007958481396960246,
+        0.011818067405325223
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0105
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.1777,
+      "monte_carlo_95_interval": [
+        0.17033202057048907,
+        0.18531550477924902
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.179
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0322,
+      "monte_carlo_95_interval": [
+        0.028915695755265144,
+        0.03584357312033987
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0324
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.5481,
+      "monte_carlo_95_interval": [
+        0.5383290165996021,
+        0.557834042757139
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.5481
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1793,
+      "monte_carlo_95_interval": [
+        0.17190509629701944,
+        0.18694120025793248
+      ],
+      "sd_factor": 1.0,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1793
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0215,
+      "monte_carlo_95_interval": [
+        0.018835546721927495,
+        0.024531939718810004
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.044
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0024,
+      "monte_carlo_95_interval": [
+        0.0016133788093978356,
+        0.0035687763690995114
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0056
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0505,
+      "monte_carlo_95_interval": [
+        0.0463781434893128,
+        0.05496707104592546
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0602
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.006,
+      "monte_carlo_95_interval": [
+        0.0046645228934497195,
+        0.007714867496778757
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0076
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0998,
+      "monte_carlo_95_interval": [
+        0.09407813237565461,
+        0.10582921992023493
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1033
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0149,
+      "monte_carlo_95_interval": [
+        0.012704886505102705,
+        0.017467668714127728
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0156
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.29,
+      "monte_carlo_95_interval": [
+        0.2811884089322745,
+        0.2989728703834096
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.2903
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0619,
+      "monte_carlo_95_interval": [
+        0.057343140440990745,
+        0.06679331893139606
+      ],
+      "sd_factor": 1.5,
+      "seeds": 10,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0619
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0255,
+      "monte_carlo_95_interval": [
+        0.022587782727039547,
+        0.02877663172673254
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0494
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0035,
+      "monte_carlo_95_interval": [
+        0.0025177785056224875,
+        0.004863531876459371
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0074
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.115,
+      "monte_carlo_95_interval": [
+        0.10889457697171259,
+        0.12140110177370839
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1188
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0263,
+      "monte_carlo_95_interval": [
+        0.023340779696836927,
+        0.029623020359542077
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0266
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.3425,
+      "monte_carlo_95_interval": [
+        0.3332611415472564,
+        0.3518598179395067
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.3427
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1084,
+      "monte_carlo_95_interval": [
+        0.10245645550232378,
+        0.11464429202159011
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1085
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.8685,
+      "monte_carlo_95_interval": [
+        0.8617346296685646,
+        0.8749823635322467
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.8685
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.5998,
+      "monte_carlo_95_interval": [
+        0.5901608216781816,
+        0.6093625322470314
+      ],
+      "sd_factor": 1.0,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.5998
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0255,
+      "monte_carlo_95_interval": [
+        0.022587782727039547,
+        0.02877663172673254
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0494
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0035,
+      "monte_carlo_95_interval": [
+        0.0025177785056224875,
+        0.004863531876459371
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0074
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0709,
+      "monte_carlo_95_interval": [
+        0.06603264214417441,
+        0.07609690525754025
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0779
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.015,
+      "monte_carlo_95_interval": [
+        0.012797042489119614,
+        0.01757543593043668
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0156
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.1733,
+      "monte_carlo_95_interval": [
+        0.16600722639603668,
+        0.1808436781393634
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1752
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0432,
+      "monte_carlo_95_interval": [
+        0.03938757077465523,
+        0.0473632501367949
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0434
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.5422,
+      "monte_carlo_95_interval": [
+        0.5324208031247462,
+        0.5519467874127688
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.5423
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.2294,
+      "monte_carlo_95_interval": [
+        0.22126422822890982,
+        0.23774359168930034
+      ],
+      "sd_factor": 1.5,
+      "seeds": 20,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.2294
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0257,
+      "monte_carlo_95_interval": [
+        0.02277595874247574,
+        0.028988302111948076
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0529
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0039,
+      "monte_carlo_95_interval": [
+        0.002854360868773877,
+        0.005326642314611441
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0073
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.1571,
+      "monte_carlo_95_interval": [
+        0.15009961551240988,
+        0.16436373057020007
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1586
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0407,
+      "monte_carlo_95_interval": [
+        0.03700032210807924,
+        0.044752418795224264
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0408
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.4899,
+      "monte_carlo_95_interval": [
+        0.48010793861049417,
+        0.49969981815659337
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.49
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.2053,
+      "monte_carlo_95_interval": [
+        0.19749717582969648,
+        0.2133291528099803
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.2053
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9722,
+      "monte_carlo_95_interval": [
+        0.9687920269633385,
+        0.9752453249753943
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9722
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.858,
+      "monte_carlo_95_interval": [
+        0.8510212038665368,
+        0.8647038533000586
+      ],
+      "sd_factor": 1.0,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.858
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0257,
+      "monte_carlo_95_interval": [
+        0.02277595874247574,
+        0.028988302111948076
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0529
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0039,
+      "monte_carlo_95_interval": [
+        0.002854360868773877,
+        0.005326642314611441
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0073
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0962,
+      "monte_carlo_95_interval": [
+        0.09057483393320491,
+        0.10213528315095348
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1007
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0199,
+      "monte_carlo_95_interval": [
+        0.017341459859383034,
+        0.02282725537614063
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0203
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.2463,
+      "monte_carlo_95_interval": [
+        0.23795387070003676,
+        0.2548409700732445
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.2467
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0763,
+      "monte_carlo_95_interval": [
+        0.0712578919927582,
+        0.08166750822655316
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0763
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.7262,
+      "monte_carlo_95_interval": [
+        0.7173747582647657,
+        0.7348515208723402
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.7262
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.4293,
+      "monte_carlo_95_interval": [
+        0.41962761685567235,
+        0.4390266805139413
+      ],
+      "sd_factor": 1.5,
+      "seeds": 30,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.4293
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0243,
+      "monte_carlo_95_interval": [
+        0.021459791775913607,
+        0.027505544273948104
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0476
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0033,
+      "monte_carlo_95_interval": [
+        0.002350823409618217,
+        0.004630640571811913
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0069
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.2401,
+      "monte_carlo_95_interval": [
+        0.2318289453564007,
+        0.24857065699667702
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.2406
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0719,
+      "monte_carlo_95_interval": [
+        0.06699967006474782,
+        0.0771291093402255
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0719
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.7176,
+      "monte_carlo_95_interval": [
+        0.7086946312603476,
+        0.726338252648734
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.7176
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.4177,
+      "monte_carlo_95_interval": [
+        0.40806725316025844,
+        0.4273959529715549
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.4177
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9991,
+      "monte_carlo_95_interval": [
+        0.9982902698869756,
+        0.999526422939415
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9991
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9881,
+      "monte_carlo_95_interval": [
+        0.9857794195664497,
+        0.9900457212240957
+      ],
+      "sd_factor": 1.0,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9881
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0243,
+      "monte_carlo_95_interval": [
+        0.021459791775913607,
+        0.027505544273948104
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0476
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0033,
+      "monte_carlo_95_interval": [
+        0.002350823409618217,
+        0.004630640571811913
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0069
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.1295,
+      "monte_carlo_95_interval": [
+        0.12306136861047148,
+        0.1362231741821999
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1323
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0308,
+      "monte_carlo_95_interval": [
+        0.02758969484715041,
+        0.034370649223892505
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0311
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.3883,
+      "monte_carlo_95_interval": [
+        0.3787924828354498,
+        0.39789330240055926
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.3885
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1464,
+      "monte_carlo_95_interval": [
+        0.1396071761595279,
+        0.15346438748821462
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1464
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9217,
+      "monte_carlo_95_interval": [
+        0.9162712811378073,
+        0.9268048546363639
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9217
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.7368,
+      "monte_carlo_95_interval": [
+        0.7280791535266075,
+        0.7453389848450401
+      ],
+      "sd_factor": 1.5,
+      "seeds": 50,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.7368
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0254,
+      "monte_carlo_95_interval": [
+        0.022493713338593437,
+        0.028670777914852785
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0487
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0042,
+      "monte_carlo_95_interval": [
+        0.0031088769681385277,
+        0.005671895816224385
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0068
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.3418,
+      "monte_carlo_95_interval": [
+        0.33256597239259644,
+        0.3511555246918855
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.3422
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1197,
+      "monte_carlo_95_interval": [
+        0.11348333327873987,
+        0.12620873588199674
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1197
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.8807,
+      "monte_carlo_95_interval": [
+        0.8742002991198212,
+        0.8869073245207457
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.8807
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.6546,
+      "monte_carlo_95_interval": [
+        0.6452226345756855,
+        0.6638586331281011
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.6546
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9996,
+      "monte_carlo_95_interval": [
+        0.9989718716646431,
+        0.9998444371633769
+      ],
+      "sd_factor": 1.0,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9996
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0254,
+      "monte_carlo_95_interval": [
+        0.022493713338593437,
+        0.028670777914852785
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0487
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0042,
+      "monte_carlo_95_interval": [
+        0.0031088769681385277,
+        0.005671895816224385
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0068
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.1757,
+      "monte_carlo_95_interval": [
+        0.1683659916890709,
+        0.18328306965414992
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.1772
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0451,
+      "monte_carlo_95_interval": [
+        0.04120432664892541,
+        0.04934503506871614
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0453
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.5527,
+      "monte_carlo_95_interval": [
+        0.5429363795123063,
+        0.5624231470594243
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.5527
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.254,
+      "monte_carlo_95_interval": [
+        0.24556390261875521,
+        0.2626250245796176
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.254
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.989,
+      "monte_carlo_95_interval": [
+        0.9867597195466726,
+        0.9908647300468056
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.989
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9243,
+      "monte_carlo_95_interval": [
+        0.9189510571323222,
+        0.9293230818503216
+      ],
+      "sd_factor": 1.5,
+      "seeds": 75,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9243
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0232,
+      "monte_carlo_95_interval": [
+        0.020427485405598345,
+        0.026338695440678853
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.044
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.003,
+      "monte_carlo_95_interval": [
+        0.0021022876940520996,
+        0.004279406686400436
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.006
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.4302,
+      "monte_carlo_95_interval": [
+        0.4205247695029098,
+        0.4399288366696366
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.4302
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1728,
+      "monte_carlo_95_interval": [
+        0.16551588212319596,
+        0.18033540641057483
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1728
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9534,
+      "monte_carlo_95_interval": [
+        0.9490917977675526,
+        0.9573599925099179
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9534
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.814,
+      "monte_carlo_95_interval": [
+        0.8062535850324208,
+        0.821505263990794
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.814
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0232,
+      "monte_carlo_95_interval": [
+        0.020427485405598345,
+        0.026338695440678853
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.044
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.003,
+      "monte_carlo_95_interval": [
+        0.0021022876940520996,
+        0.004279406686400436
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.006
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.2195,
+      "monte_carlo_95_interval": [
+        0.21149610833268326,
+        0.22771931475326632
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.2203
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.062,
+      "monte_carlo_95_interval": [
+        0.05743954480412971,
+        0.06689683776858298
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.062
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.6734,
+      "monte_carlo_95_interval": [
+        0.6641433041160825,
+        0.6825235252489668
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.6734
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.3697,
+      "monte_carlo_95_interval": [
+        0.3602905140023668,
+        0.3792095559730314
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.3697
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.998,
+      "monte_carlo_95_interval": [
+        0.9969126493353494,
+        0.9987048882874566
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.998
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9833,
+      "monte_carlo_95_interval": [
+        0.9805964537384424,
+        0.9856323734364614
+      ],
+      "sd_factor": 1.5,
+      "seeds": 100,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9833
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0216,
+      "monte_carlo_95_interval": [
+        0.018929067542718933,
+        0.02463834209834443
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0485
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0033,
+      "monte_carlo_95_interval": [
+        0.002350823409618217,
+        0.004630640571811913
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.007
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.5961,
+      "monte_carlo_95_interval": [
+        0.5864477637087218,
+        0.6056784318044341
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.5962
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.3068,
+      "monte_carlo_95_interval": [
+        0.29783693883407614,
+        0.31591143813635325
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.3068
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9925,
+      "monte_carlo_95_interval": [
+        0.9906096594933204,
+        0.9940121021115632
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9925
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9562,
+      "monte_carlo_95_interval": [
+        0.9520107024993677,
+        0.960038937387227
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9562
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0216,
+      "monte_carlo_95_interval": [
+        0.018929067542718933,
+        0.02463834209834443
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0485
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0033,
+      "monte_carlo_95_interval": [
+        0.002350823409618217,
+        0.004630640571811913
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.007
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.3102,
+      "monte_carlo_95_interval": [
+        0.3012080204031197,
+        0.31933774537838894
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.3105
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1091,
+      "monte_carlo_95_interval": [
+        0.10313895989083074,
+        0.11536125003536421
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1092
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.8428,
+      "monte_carlo_95_interval": [
+        0.8355344628323705,
+        0.8498022678846936
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.8428
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.5916,
+      "monte_carlo_95_interval": [
+        0.5819326469444273,
+        0.6011970045540649
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.5916
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9999,
+      "monte_carlo_95_interval": [
+        0.9994337311025987,
+        0.9999823473263989
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9999
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9991,
+      "monte_carlo_95_interval": [
+        0.9982902698869756,
+        0.999526422939415
+      ],
+      "sd_factor": 1.5,
+      "seeds": 150,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9991
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0225,
+      "monte_carlo_95_interval": [
+        0.019771455245325746,
+        0.0255952631986704
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0471
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0036,
+      "monte_carlo_95_interval": [
+        0.0026016036387784434,
+        0.004979629943629281
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0066
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.7301,
+      "monte_carlo_95_interval": [
+        0.7213124340663721,
+        0.7387108498834425
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.7302
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.4443,
+      "monte_carlo_95_interval": [
+        0.4345844128419153,
+        0.4540583645765779
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.4443
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9996,
+      "monte_carlo_95_interval": [
+        0.9989718716646431,
+        0.9998444371633769
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9996
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9927,
+      "monte_carlo_95_interval": [
+        0.9908319591742815,
+        0.9941896488312537
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9927
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0225,
+      "monte_carlo_95_interval": [
+        0.019771455245325746,
+        0.0255952631986704
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0471
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.0036,
+      "monte_carlo_95_interval": [
+        0.0026016036387784434,
+        0.004979629943629281
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0066
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.4028,
+      "monte_carlo_95_interval": [
+        0.3932262357006403,
+        0.4124484135826191
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.403
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.1548,
+      "monte_carlo_95_interval": [
+        0.14784321560387417,
+        0.16202189687124094
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.1548
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9289,
+      "monte_carlo_95_interval": [
+        0.923696630970077,
+        0.9337739752275563
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.929
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.7659,
+      "monte_carlo_95_interval": [
+        0.7574996869368313,
+        0.7740961027296429
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.7659
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.5,
+      "seeds": 200,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0239,
+      "monte_carlo_95_interval": [
+        0.021084215098547462,
+        0.02708142815001079
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0462
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.004,
+      "monte_carlo_95_interval": [
+        0.002939013737731544,
+        0.005441912645979639
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0072
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.8885,
+      "monte_carlo_95_interval": [
+        0.8821812047923988,
+        0.8945204284735854
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.8885
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.6817,
+      "monte_carlo_95_interval": [
+        0.6725018762263286,
+        0.6907585787657675
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.6817
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9999,
+      "monte_carlo_95_interval": [
+        0.9994337311025987,
+        0.9999823473263989
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9999
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.0,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.0239,
+      "monte_carlo_95_interval": [
+        0.021084215098547462,
+        0.02708142815001079
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.0462
+    },
+    {
+      "effect_per_doubling": 0.0,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.004,
+      "monte_carlo_95_interval": [
+        0.002939013737731544,
+        0.005441912645979639
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.0072
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.5613,
+      "monte_carlo_95_interval": [
+        0.5515524082508595,
+        0.5710005135488957
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.5613
+    },
+    {
+      "effect_per_doubling": 0.005,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.2835,
+      "monte_carlo_95_interval": [
+        0.27475094245557774,
+        0.29241532883892507
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.2835
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 1,
+      "h2_detection_probability": 0.9882,
+      "monte_carlo_95_interval": [
+        0.9858881833673648,
+        0.9901368806235064
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 0.9882
+    },
+    {
+      "effect_per_doubling": 0.01,
+      "family_allowance": 7,
+      "h2_detection_probability": 0.9399,
+      "monte_carlo_95_interval": [
+        0.9350706252345946,
+        0.9443915329988839
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 0.9399
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 1,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.05,
+      "two_sided_rejection_probability": 1.0
+    },
+    {
+      "effect_per_doubling": 0.02,
+      "family_allowance": 7,
+      "h2_detection_probability": 1.0,
+      "monte_carlo_95_interval": [
+        0.9996160016293234,
+        1.0
+      ],
+      "sd_factor": 1.5,
+      "seeds": 300,
+      "threshold": 0.0071428571428571435,
+      "two_sided_rejection_probability": 1.0
+    }
+  ],
+  "selection_rule": "Smallest candidate budget whose lower 95% Monte Carlo Wilson bound for H2 detection reaches 0.80.",
+  "simulations": 10000,
+  "status": "planning_only_not_executed",
+  "test": "Two-sided scipy.stats.wilcoxon(method='auto'); positive median required for H2 detection. Family 7 uses conservative Bonferroni, not simulated Holm.",
+  "training_sizes": [
+    50,
+    100,
+    250,
+    347
+  ]
+}
