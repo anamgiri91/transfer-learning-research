@@ -1,0 +1,282 @@
+{
+  "review_date": "2026-10-04",
+  "base_commit": "90843d30adaafd0088b1eb437e5be2df5c4cf344",
+  "working_tree_revision": true,
+  "python": "3.14.7",
+  "platform": "macOS-26.6-arm64-arm-64bit-Mach-O",
+  "dependencies": "requirements-repro.txt",
+  "pip_install_passed": true,
+  "pip_check_passed": true,
+  "make_verify_passed": true,
+  "test_count": 161,
+  "registered_numeric_claims": 517,
+  "artifact_comparison": {
+    "baseline": "immutable review archive before any reconstruction",
+    "compared": 68,
+    "canonical_identical": 67,
+    "equivalent": [
+      {
+        "path": "results/tables/table11_random_encoder_draws.csv",
+        "relative_numeric_drift": 0.0,
+        "note": "Explanatory header updated; data values identical."
+      }
+    ],
+    "failures": []
+  },
+  "retraining": [
+    {
+      "cell": "T2v__scaffold__seed0__n50",
+      "command": "python scripts/run_finetune.py --arms T2v --seeds 0 --sizes 50",
+      "passed": false,
+      "seconds": 37.27,
+      "metrics": {
+        "mae": {
+          "saved": 0.6307239143527283,
+          "fresh": 0.6307239678752665,
+          "absolute_drift": 5.3522538179251455e-08
+        },
+        "pearson": {
+          "saved": 0.5294049469508,
+          "fresh": 0.5294048933212354,
+          "absolute_drift": 5.362956456700374e-08
+        },
+        "precision_at_10pct": {
+          "saved": 0.2,
+          "fresh": 0.1,
+          "absolute_drift": 0.1
+        },
+        "r2": {
+          "saved": 0.15695661696199148,
+          "fresh": 0.15695658235830434,
+          "absolute_drift": 3.4603687137924055e-08
+        },
+        "rmse": {
+          "saved": 0.8120503580433637,
+          "fresh": 0.8120503747091349,
+          "absolute_drift": 1.6665771207513558e-08
+        },
+        "spearman": {
+          "saved": 0.5458631660263832,
+          "fresh": 0.545571625786442,
+          "absolute_drift": 0.0002915402399411571
+        }
+      },
+      "max_prediction_absolute_drift": 1.430511474609375e-06,
+      "max_prediction_relative_drift": 2.230067931585976e-07,
+      "declared_metric_relative_tolerance": 1e-06,
+      "declared_prediction_relative_tolerance": 1e-06,
+      "row_identities_identical": true,
+      "labels_identical": true,
+      "selection_identical": true
+    },
+    {
+      "cell": "B3__scaffold__seed0__n347",
+      "command": "python scripts/run_dmpnn.py --seeds 0 --sizes 347",
+      "passed": false,
+      "seconds": 21.2,
+      "max_metric_relative_drift": 0.1,
+      "max_prediction_absolute_drift": 0.46234846115112305,
+      "max_prediction_relative_drift": 0.08420788852029222,
+      "row_identities_identical": true,
+      "labels_identical": true,
+      "selection_identical": true
+    }
+  ],
+  "full_reproduction_passed": false,
+  "not_executed": [
+    "Full original/amended sweeps",
+    "Six in-domain encoder pretraining runs",
+    "Live ChEMBL re-fetch",
+    "PubChem and UniProt analyses",
+    "Proposed T0ft experiment"
+  ],
+  "notes": [
+    "Fresh installation and isolated source/input archive; original outputs untouched.",
+    "Both direct API and exact CLI reproduce the T2v rank-metric discrepancy.",
+    "The historical five-cell report is retained as history, not evidence that the fresh installation passed.",
+    "The B3 discrepancy also occurs in the original .venv; it is not specific to the fresh pip installation.",
+    "2026-10-05: thread-count sensitivity is established, but the historical mismatch is not fully explained. Amendment 8 and its validation addendum quantify sensitivity without replacing saved outputs or changing tolerances; full_reproduction_passed remains false."
+  ],
+  "diagnostic_original_environment": {
+    "cell": "B3__scaffold__seed0__n347",
+    "original_environment_rerun_vs_saved_max_prediction_absolute_drift": 0.46234846115112305,
+    "original_environment_vs_fresh_max_prediction_absolute_drift": 0.0,
+    "saved_rmse": 0.6796525269226592,
+    "fresh_rmse": 0.6660770020653958,
+    "original_environment_rerun_rmse": 0.6660770020653958
+  },
+  "dependency_lock_sha256": "cf192e6226eab8e90f46bb73bff67d2c443295e8ed577e08b2772beeab8fe217",
+  "tested_source_sha256": {
+    "Makefile": "6fad9ac83119c073f629ae6af613465174d776192291a51aa39fbbe34fee1793",
+    "pyproject.toml": "3285869294084dd4c82fefa5281e3039da2672f3f1315580807ab6b250d9e216",
+    "requirements-repro.txt": "cf192e6226eab8e90f46bb73bff67d2c443295e8ed577e08b2772beeab8fe217",
+    "scripts/analyse_amended.py": "876cc2d50e621759ed319df45c62c4d106dc7dc308559d77b3b136b64ad0e94b",
+    "scripts/analyse_b3.py": "ee899fd15271bbfd9e45d0cdadda9387abf79b50cbd73d4ba5195d3934fd249d",
+    "scripts/analyse_cliffs.py": "d092b95523274a1b44a18bdccc90fc9f5e06ac1ca6e947e73269341450f9a858",
+    "scripts/analyse_endpoints.py": "5d6036af80e78ec1c0aeac3598b3b136095cfa0c1b1567571496848762fe0918",
+    "scripts/analyse_enrichment.py": "9f6f371340cfc4a5b36ab6fd4efff9f48da0deb493accc83d05081e30f6df0ee",
+    "scripts/analyse_h2.py": "1e3691f6b0bd5904c251009219f279f9e4b2b9724bb4708e973e0719fb1647db",
+    "scripts/analyse_indomain.py": "a017d8af248ea2d65437ff97560ebf8c14283602afeb8cf6a6ce2a36299923e2",
+    "scripts/analyse_tuning.py": "f3a61455321a79ac45ec99826d66c0bc5ed461f84419a1ed92ac995c60c9de78",
+    "scripts/audit_number_coverage.py": "51b9f3dfd4e880a0035e64cc96e350fc70a945061f5224077ca745cdac5cdaf6",
+    "scripts/audit_splits.py": "2d6ba9005daafc675583e0eef6534ee9a5b85eaa104534e92abe5180fb6578e1",
+    "scripts/build_splits.py": "434534e174eb0fe7c741e0678998cad049a23e18c34593b65c7d8e2dbd978917",
+    "scripts/curate_data.py": "0c3f53570c4e761b65ef405e2df231c6764e33b8fa693df712c791a265cbf603",
+    "scripts/fetch_data.py": "f7fa677d3531f7bda590930a1b8aec74621ebe4dd8ec719a3fe79d6cdd4026ae",
+    "scripts/fetch_indomain.py": "5ef37660440baaed6b5d3109dd73ea14658ddb19a6e973eff1ba31c27d0513b6",
+    "scripts/fetch_openbind.py": "3af6c7712eb960e4746d5ffc40f238b0850be9f102b361471a792d7f7abe72ab",
+    "scripts/make_report.py": "89222abbb59203fbdb4fabe62fdfb5f753ced99b6c4396d65a9460afb8685a5f",
+    "scripts/measure_contamination.py": "b15faf4e29a86cfa318f9429ace739604e31fb78a5fbf9b9b230fad330f26a3c",
+    "scripts/package_release.py": "cf13143a3861b7ae0acfd4ba404ef235ad64bfda5809dd8f0f4a25ee1c7db190",
+    "scripts/prepare_indomain.py": "aef4e021551e0684f5f0d5092a80509bcff9df14af9bab166954aab2b2c67d12",
+    "scripts/prepare_openbind.py": "4f978834a016de9cc173db16c990f122d8143718d312484130ad1f1475edd3ea",
+    "scripts/pretrain_indomain.py": "286897bc7339f7bb391c8678546f6e58480e29cdc89c2acf26767e9b9e1f74dd",
+    "scripts/prototype/fetch_and_prepare_data.py": "efcb371033e71f8e0bce5eeaede6ded65deb5c0964a7894122dd6f80b2ad3b1f",
+    "scripts/prototype/generate_reports.py": "4244434751081d09c66b30659497f1a8a2e8d6822c6db4114dc3a33acd052d7d",
+    "scripts/prototype/generate_splits.py": "128d0390cbe1b1b0baf3ea8eaaa4541059065a209afd0f4e85a7d010b9726634",
+    "scripts/prototype/run_benchmark.py": "892c5229268b15c8215b1b5dd1d57733d73c628cab3d73cf3b9d7c5eda218438",
+    "scripts/prototype/run_benchmarks.py": "82118b40e8766818992579d99c49cfe186fc79ebb567ae4a14b013066c46cfa9",
+    "scripts/render_manuscript_tables.py": "aa5ac3c0de1f2f4b6c14ea9f8310ec6a069dcd972203ebdb54984ed341f3decc",
+    "scripts/run_arms.py": "d8edd3a5ff193566b9981c86800f200f1450719bad72128e9ee0ff0f94bd8c5e",
+    "scripts/run_dmpnn.py": "7ce15a0587f7567d22373cf4acce5251b4c279f9572954090dfc2fd2fdd8898e",
+    "scripts/run_finetune.py": "753ced8cb3aeefe479ea901ff9e0a8b2c700182c51c98ad78ed698aa485dae7a",
+    "scripts/tune_arms.py": "59d407f4c8c9180c80424c94c1d46ea9617c21d6443a72bac2a430c8f126ba86",
+    "scripts/verify_citations.py": "b1df1b7a3a95291c0c08b805c9a97de2e6ba9bab7afc06d8963b6fca97e95e00",
+    "scripts/verify_consistency.py": "737e00cc7ee8a82a1c2be17ab244553cb3e0be67b8acd9cefe49c2bac381cac5",
+    "scripts/verify_manuscript.py": "256f500beb9f407a3a41d2d78a548a30412bbdbb2cc7b1617f06a3be44193c95",
+    "scripts/verify_reproducibility.py": "f5760c060069d4b67a784dde3eb3355b4e4e4b85ab0acac0eee065b6d3fd103f",
+    "scripts/verify_retrain.py": "a6c633f200b7438eeb86b94cbd11c7a58883e4d9464120012e5990a48e5716aa",
+    "scripts/verify_surrogate.py": "2b0c8063be23515871f79c5d24204034665c96c1497257d05f2b7074b21b7e79",
+    "src/evapro/__init__.py": "17d052076bea52124ae3e1cfd9e5ead3147c7753ff7553e36cd5f3cea17b4434",
+    "src/evapro/config.py": "c0bc5e739fe4c31d8e8091a06c3bd3163db8f0fb09d8748e1d549ed396e7e6be",
+    "src/evapro/data/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/evapro/data/curate.py": "08295a72950fed537ba6818d4f5ee96e5b57e57b2c3bc353c04f62a49377a86a",
+    "src/evapro/data/indomain.py": "37129f10553d78284c5026b6a7af591a3691c70e13cc9dd56c4dc6de3965352d",
+    "src/evapro/data/io.py": "b86855cce4098f0611ded4bd439b50ce93860b090570a9828290dc1ab5ddbed7",
+    "src/evapro/data/openbind.py": "2134038a19004f6acd954c966f79a3f1df61e7ca0b7d846174ef1f37d5d52355",
+    "src/evapro/data/splits.py": "a5ba34121cf1817a6beef2373a3fbadfc8465a68486b15fdbf0a2fa9d56dff35",
+    "src/evapro/evaluation/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/evapro/evaluation/cliffs.py": "1bc69821619dace44aaf45f51e442f8954bd35cdb83f5e949a5103c339468731",
+    "src/evapro/evaluation/contamination.py": "1d5a0915cf96530839da57a4466df34bc569d7f9567b54a1f43d503633ae2f03",
+    "src/evapro/evaluation/metrics.py": "1714a91c33f0ee2db218285bbe838ccd889e7bf70e6146e0801d08216c868500",
+    "src/evapro/evaluation/stats.py": "7092ee67903868ab598367e1b34b8a042b279c51eebbba16f8b22969ee943919",
+    "src/evapro/evaluation/trainer.py": "8b0358a0ae726476c288a752f971201b27ab8f724c0812c32b60df0206d0dd37",
+    "src/evapro/features/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/evapro/features/fingerprints.py": "a0079a4dea1c2c949dbc8141e111d07555bd070e103e7959b9f870c51f3039cd",
+    "src/evapro/features/graph3d.py": "030bc8024d6155f7796f8638f6d513b7f73f707b5acffcf115fb2be06578caf1",
+    "src/evapro/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/evapro/models/baselines.py": "b5877b8cd697ac40d77d97cf0f6d8c40dff0c88884d703f389649125841fb1e3",
+    "src/evapro/models/chemberta.py": "b19d6b8a88bddb3c05f2f5c007b9ca26dad5fbaf4a72d94f1a9fa635b145d5a7",
+    "src/evapro/models/geometric.py": "b6f87c47a55036d33fc201c677b568f0d909368b55837f9b86e0eb2006958a9d",
+    "src/evapro/models/multitask.py": "b5d296be02bbf1ca9d97ede17221324552b83fcee82ede9756a693c509c20f43",
+    "src/evapro/models/pretrained.py": "6db827f3e683266ad898419a1c8555798f9cefc1d0cab74041f3574256b3700d",
+    "src/evapro/utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/evapro/utils/seeding.py": "726b7cb28fcc105c672fd0308211d6b98c885e0f1f7c63cdb47201ec606df500",
+    "tests/test_citations.py": "4ff04cd4bcfc9588a82400f41d1cbafe49dab76aba942151eca03056506ee457",
+    "tests/test_cliffs.py": "8b87c85fb5c83d3e494ffb1e71b16ecc5b8f5918288352ceda97b116a097d6db",
+    "tests/test_consistency.py": "4491bd57624dc3ee0724c758faa23a84e40caca4b076106ed66aca77d602151d",
+    "tests/test_curate.py": "f898441db7c9b212ddfc637e16d700375969982b793612a3d4c093de95d9d5c5",
+    "tests/test_h2.py": "c4c87a5eadb321c5d14aae1ac81af927b191d6f3b206fa283d8733e611ec73df",
+    "tests/test_indomain.py": "e1a401d2dac6a21f308bf29de10d8aaed65604ca56224c11c25a0f8d5783fda8",
+    "tests/test_openbind_provenance.py": "c944dc6d7af595bdd7941316ad3d0f2502aa43f1337cf67802c81d7b88eaa6cd",
+    "tests/test_reproducibility.py": "d767dfaac03c6b71f689c79becf0da0459321956ca11e156daf00fc28cc5cb5b",
+    "tests/test_splits.py": "2f0ff7227fea1d6f1ff2a1b29fdacdef0c0d0995ed2b7bf2e4093197ca1a56d2",
+    "tests/test_stats.py": "8feb5ce9c109101fd0cd45622039bc622bdd7d5def5e99209f662b01f6e7a065"
+  },
+  "diagnosis_2026_10_05": {
+    "summary": "Controlled reruns establish sensitivity to CPU thread count and repeatability at tested settings. T2v shows float32-scale prediction drift with rank changes; B3 shows amplified differences in fitted predictions and stopping. This does not fully identify the cause of the historical mismatch or establish Accelerate as the cause.",
+    "B3__scaffold__seed0__n347_rmse_by_OMP_NUM_THREADS": {
+      "saved": 0.6796525269226592,
+      "unset (5)": 0.6660770020653958,
+      "1": 0.679015827517272,
+      "2": 0.6459799058227903,
+      "3": 0.6398358567124112,
+      "4": 0.6660770020653958,
+      "5": 0.6660770020653958,
+      "6": 0.6907425737066015,
+      "7": 0.6788356130829123,
+      "8": 0.6852827210815072,
+      "9": 0.6852827210815072,
+      "10": 0.6852827210815072,
+      "12": 0.6852827210815072,
+      "15": 0.6852827210815072
+    },
+    "T2v__scaffold__seed0__n50": {
+      "distinct_prediction_vectors_across_threads_unset_1_2_3_8": 5,
+      "max_abs_drift_vs_saved": {
+        "unset": 1.431e-06,
+        "1": 1.431e-06,
+        "2": 1.907e-06,
+        "3": 1.431e-06,
+        "8": 1.431e-06
+      },
+      "precision_at_10pct_all_settings": 0.1,
+      "cause_of_metric_change": "test rows 73 and 80 are predicted 6.4049935 and 6.4049931 in the saved run and exactly equal in the rerun; they straddle rank 10 of 98 and np.argsort breaks the tie"
+    },
+    "repeatability": "Same setting repeated: B3 2 runs unset and 3 runs at one thread, T2v 3 runs unset and 3 at one thread, all bit-identical. Four further one-thread B3 cells re-run against the pinned replicate: drift 0.0.",
+    "ruled_out": [
+      "fresh pip installation (same result in the original .venv)",
+      "run-to-run nondeterminism at a fixed thread count",
+      "Python hash seed",
+      "Accelerate thread cap (VECLIB_MAXIMUM_THREADS)",
+      "the command sandbox",
+      "stale files in checkpoints/"
+    ],
+    "unexplained": "None of the tested thread counts recovers the saved predictions of either cell, although the historical 2026-09-13 check passed. Thread count is an observed sensitivity, not a complete explanation. Historical machine/backend/thread metadata are insufficient to identify the remaining factor.",
+    "resolution": "plan.md Amendment 8; results in docs/numerical-sensitivity.json. The saved outputs are unchanged, no tolerance is changed, and the two cells still fail the retraining criterion against the saved outputs.",
+    "not_ruled_out": [
+      "Historical environment/backend or machine-state differences that were not recorded sufficiently to identify or exclude."
+    ]
+  },
+  "numerical_sensitivity_resolution": {
+    "date": "2026-10-05",
+    "status": "completed_with_explicit_limitations",
+    "protocol": "plan.md Amendment 8 and dated validation addendum",
+    "reports": [
+      "docs/numerical-sensitivity.json",
+      "docs/numerical-repeatability.json"
+    ],
+    "historical_full_reproduction_passed": false,
+    "primary_results_unchanged": true,
+    "tolerances_changed": false,
+    "independent_pinned_repeatability_passed": true,
+    "b3_exact_repeat_comparisons": 40,
+    "t2v_independent_fits": 2,
+    "enrichment_verdicts_robust_over_all_specified_tie_assignments": true,
+    "b3_vs_b1_robust_sizes": [
+      50,
+      100,
+      250,
+      347
+    ],
+    "unstable_claim": "B3 versus T2v paired-median direction at full data; no detectable difference under either setting.",
+    "limits": [
+      "Historical saved B3/T2v predictions are still not recovered.",
+      "Repeatability is empirical on the tested macOS arm64 environment, not a cross-platform guarantee.",
+      "B1 is held at saved precision on random and Butina because its historical predictions were not saved.",
+      "Sensitivity was specified after discovery of the failure and is not independent confirmation.",
+      "Thread count is an established sensitivity mechanism; the remaining historical mismatch and backend attribution are unresolved."
+    ],
+    "final_verification": {
+      "command": "PYTHONPATH=\"$PWD/src\" make verify PY=/private/tmp/evapro-repro-20261004/bin/python",
+      "exit_code": 0,
+      "tests_passed": 179,
+      "registered_numeric_claims": 536,
+      "log": "docs/publication-validation/numerical-final-verify.log",
+      "log_sha256": "8c889d18b1b90670d5d04ffc97fbd0bb8ef7b64fd06cd595bf6a4e53eb85e0c0",
+      "validated_file_sha256": {
+        "Makefile": "253e71d21ca002e7e21039e1063030bd250f0c677035350267cbcb2d76ea15bc",
+        "scripts/analyse_numerical_sensitivity.py": "5b0e704e94a6de49cb71aca5762ccaa246b74d441e087a3951b9641b1b190fd0",
+        "scripts/verify_numerical_repeatability.py": "078b3509348e924aa6e0e89e2f62bf0ffcc678ebd23be89c02ff398000eccf4b",
+        "scripts/run_dmpnn.py": "459811872fccc62c8c0ebabcaca25fe474357069406bd4301131855b46146a9c",
+        "scripts/run_finetune.py": "07b5a4cefca6eb914c0a53d6219219c80ef7867a13b46561d20d8e256fa9fa46",
+        "scripts/verify_manuscript.py": "9d1546340614e56c7f9421ae666a04484f234a38d0192f08f2f1d541f3fdea8e",
+        "src/evapro/evaluation/metrics.py": "2537bff4143de359a661c7eaf885be28bc95dfe05df86076dd3c817907ca58d5",
+        "tests/test_numerical_sensitivity.py": "21a076e7c1610cf23d26411384da8ae97ee4af08a1c0c693a7dd80e3f89d67dd",
+        "tests/test_stats.py": "1d59db8cebd9118b700876a78da15e214963914339dc25b8b2d54f760b16ed8d",
+        "docs/numerical-sensitivity.json": "82b6d1b81cc189dd508071392df0c9fb122d3ab74044025c19e381ba94a03fc3",
+        "docs/numerical-repeatability.json": "c18e35ca5a818eb0c4cb899c820a304a80d295ae3e2cbdffe3e79a7c531f8653"
+      }
+    }
+  }
+}

@@ -1,0 +1,98 @@
+/private/tmp/evapro-repro-20261004/bin/python -m pytest -q
+........................................................................ [ 40%]
+........................................................................ [ 80%]
+...................................                                      [100%]
+/private/tmp/evapro-repro-20261004/bin/python scripts/analyse_numerical_sensitivity.py --check
+Verified docs/numerical-sensitivity.json against prediction and metric artifacts
+
+-- A: Amendment 5 contrasts, saved vs one thread --
+  B3 vs B1  n= 50  saved +0.0927 Holm 0.0195   pinned +0.0793 Holm 0.0195   robust
+  B3 vs B1  n=100  saved +0.0903 Holm 0.0156   pinned +0.1039 Holm 0.0195   robust
+  B3 vs B1  n=250  saved +0.0734 Holm 0.0098   pinned +0.0716 Holm 0.0195   robust
+  B3 vs B1  n=347  saved +0.0486 Holm 0.0156   pinned +0.0339 Holm 0.0195   robust
+  B3 vs T2v n=347  saved +0.0088 Holm 0.6953   pinned -0.0086 Holm 0.3223   NOT ROBUST
+
+-- B: 101 of 810 prediction files are tie-sensitive at eps=1e-05 --
+  B2_descriptors_rf                Holm saved 0.2812  against 0.7500  for 0.2812  robust
+  T0r_untrained_encoder_probe      Holm saved 1.0000  against 1.0000  for 0.9531  robust
+  T1_chemberta_linear_probe        Holm saved 0.1250  against 0.3125  for 0.0781  robust
+  T2_chemberta_full_finetune       Holm saved 0.0234  against 0.0469  for 0.0234  robust
+  T4_indomain_probe                Holm saved 1.0000  against 1.0000  for 0.9531  robust
+  T5_chained_probe                 Holm saved 0.0781  against 0.3125  for 0.0781  robust
+  T2 (random)                      Holm saved 0.7617  against 1.0000  for 0.7617  robust
+  T2 (butina)                      Holm saved 0.7617  against 1.0000  for 0.7617  robust
+  T2v (scaffold)                   Holm saved 0.6250  against 1.0000  for 0.6250  robust
+  T4ft (scaffold)                  Holm saved 0.9922  against 1.0000  for 1.0000  robust
+  T5ft (scaffold)                  Holm saved 0.0195  against 0.0195  for 0.0195  robust
+
+-- Additional validation: all attainable hit-count assignments --
+  B2_descriptors_rf                configurations= 4  Holm [0.281250, 0.750000]  no detectable difference
+  T0r_untrained_encoder_probe      configurations= 2  Holm [0.953125, 1.000000]  no detectable difference
+  T1_chemberta_linear_probe        configurations= 4  Holm [0.078125, 0.312500]  no detectable difference
+  T2_chemberta_full_finetune       configurations=16  Holm [0.023438, 0.046875]  arm better
+  T4_indomain_probe                configurations= 8  Holm [0.953125, 1.000000]  no detectable difference
+  T5_chained_probe                 configurations= 8  Holm [0.078125, 0.312500]  no detectable difference
+  T2 (random)                      configurations= 1  Holm [0.656250, 1.000000]  no detectable difference
+  T2 (butina)                      configurations= 4  Holm [0.656250, 1.000000]  no detectable difference
+  T2v (scaffold)                   configurations= 2  Holm [0.625000, 1.000000]  no detectable difference
+  T4ft (scaffold)                  configurations= 4  Holm [0.738281, 1.000000]  no detectable difference
+  T5ft (scaffold)                  configurations= 4  Holm [0.019531, 0.019531]  arm better
+/private/tmp/evapro-repro-20261004/bin/python scripts/verify_numerical_repeatability.py --check
+Verified /Users/anamgiri/Desktop/Benchmarking Transfer Learning Efficacy on High-Fidelity Viral Protease Datasets- A Case Study on EV-A71/docs/numerical-repeatability.json against protected artifacts and training inputs
+/private/tmp/evapro-repro-20261004/bin/python scripts/render_manuscript_tables.py --check
+rendered tables: contamination, tuning, full_data, paired, curve, splits, audit, der, h2_interaction, der_uncertainty, amended_progress, amended_curve, amended_contrasts, amended_h2, per_seed, b3_curve, b3_contrasts, enrichment_robustness, median_reversal, surrogate, splits_extended, all_endpoints, enrichment, decontamination, tuned_comparison, indomain_curve, indomain_contrasts, random_draws, cliff_pairs, cliff_strata, cliff_paired
+manuscript tables are current.
+/private/tmp/evapro-repro-20261004/bin/python scripts/audit_splits.py
+  [ok  ] split integrity  30 files, 494 compounds, 0 compound and 0 scaffold leaks
+          n_test  compounds_shared  scaffolds_shared  nn_tanimoto_median  frac_nn_ge_07  frac_nn_ge_04
+split                                                                                                 
+butina      98.0                 0              13.0              0.5743         0.1735         0.9490
+random      98.0                 0              24.5              0.6952         0.4898         0.9643
+scaffold    98.0                 0               0.0              0.6484         0.2908         0.9541
+
+left as committed (data rows identical) results/tables/table0_split_audit.csv
+/private/tmp/evapro-repro-20261004/bin/python scripts/verify_manuscript.py
+[transformers] You passed `num_labels=1` which is incompatible to the `id2label` map of length `199`.
+  [ok  ] section 10         19 claims
+  [ok  ] section 3.1        13 claims
+  [ok  ] section 3.2        13 claims
+  [ok  ] section 3.3         4 claims
+  [ok  ] section 4.1         1 claims
+  [ok  ] section 5.1         6 claims
+  [ok  ] section 5.2        23 claims
+  [ok  ] section 5.3        41 claims
+  [ok  ] section 5.4        13 claims
+  [ok  ] section 5.5        35 claims
+  [ok  ] section 5.6        15 claims
+  [ok  ] section 5.7        26 claims
+  [ok  ] section 5.8         9 claims
+  [ok  ] section 6.1         4 claims
+  [ok  ] section 6.2        39 claims
+  [ok  ] section 6.3        44 claims
+  [ok  ] section 6.4        83 claims
+  [ok  ] section 6.5        27 claims
+  [ok  ] section 6.6        56 claims
+  [ok  ] section 6.7        22 claims
+  [ok  ] section 6.8        25 claims
+  [ok  ] section 8.1         8 claims
+  [ok  ] section 8.3         2 claims
+  [ok  ] section Abstract    4 claims
+  [ok  ] section cost        4 claims
+
+All 536 numeric claims verified against source artefacts.
+/private/tmp/evapro-repro-20261004/bin/python scripts/verify_citations.py
+  [ok  ] numbering                         18 items
+  [ok  ] reading-depth labels              18 items
+  [ok  ] orphan references                 18 items
+  [ok  ] dangling body citations           11 items
+  [ok  ] depth drift vs literature.md      18 items
+  [ok  ] [secondary]-with-a-number rule     3 items
+  [ok  ] claim-support register             8 items
+  [ok  ] figures embedded and numbered      5 items
+
+All citation checks passed over 18 references.
+/private/tmp/evapro-repro-20261004/bin/python scripts/verify_consistency.py
+[transformers] You passed `num_labels=1` which is incompatible to the `id2label` map of length `199`.
+  [ok  ] cross-document facts  26 statements over 9 documents
+
+Every summary statement agrees with the artefacts.
