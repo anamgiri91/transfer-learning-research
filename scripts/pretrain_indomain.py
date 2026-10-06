@@ -54,18 +54,33 @@ def main() -> int:
                     help="default 3e-4 for random init (T4), 3e-5 from ChemBERTa (T5)")
     ap.add_argument("--val-frac", type=float, default=0.15)
     ap.add_argument("--seed", type=int, default=0)
+    # plan.md Amendment 9. One --seed used to control the weight initialisation,
+    # the corpus validation split and the random-ablation draw at once, so an
+    # ablation condition could not be re-run while holding the other two fixed.
+    # Each defaults to --seed, so every historical command is unchanged.
+    ap.add_argument("--init-seed", type=int, default=None,
+                    help="seed the encoder initialisation and batch order only")
+    ap.add_argument("--split-seed", type=int, default=None,
+                    help="seed the corpus train/validation split only")
+    ap.add_argument("--draw-seed", type=int, default=None,
+                    help="seed the --drop-random draw only")
+    ap.add_argument("--tag-suffix", default="",
+                    help="appended to the output name, for replicate encoders")
     args = ap.parse_args()
+    init_seed = args.seed if args.init_seed is None else args.init_seed
+    split_seed = args.seed if args.split_seed is None else args.split_seed
+    draw_seed = args.seed if args.draw_seed is None else args.draw_seed
 
     pretrained = args.arm == "T5"
     lr = args.lr if args.lr is not None else (3e-5 if pretrained else 3e-4)
-    set_seed(args.seed)
+    set_seed(init_seed)
 
     df = pd.read_csv(CORPUS)
     n_all = len(df)
     if args.decontaminate:
         df = df[~df["contaminated"]].reset_index(drop=True)
     elif args.drop_random:
-        rng0 = np.random.default_rng(1000 + args.seed)
+        rng0 = np.random.default_rng(1000 + draw_seed)
         keep = rng0.permutation(len(df))[args.drop_random:]
         df = df.iloc[sorted(keep)].reset_index(drop=True)
     tasks = sorted(df["target_id"].unique())
@@ -73,7 +88,7 @@ def main() -> int:
 
     # Split by compound: a molecule measured against two targets must not
     # straddle the corpus folds.
-    rng = np.random.default_rng(args.seed)
+    rng = np.random.default_rng(split_seed)
     keys = df["inchikey"].unique()
     val_keys = set(rng.choice(keys, size=max(1, int(len(keys) * args.val_frac)),
                               replace=False).tolist())
@@ -118,10 +133,13 @@ def main() -> int:
     model.load_state_dict(best_state)
     MODELS.mkdir(exist_ok=True)
     tag = (f"indomain_{args.arm}" + ("_clean" if args.decontaminate else "")
-           + (f"_rand{args.drop_random}" if args.drop_random else ""))
+           + (f"_rand{args.drop_random}" if args.drop_random else "")
+           + args.tag_suffix)
     torch.save(model.state_dict(), MODELS / f"{tag}.pt")
     (MODELS / f"{tag}.json").write_text(json.dumps({
         "arm": args.arm, "decontaminated": args.decontaminate,
+        "init_seed": int(init_seed), "split_seed": int(split_seed),
+        "draw_seed": int(draw_seed), "tag_suffix": args.tag_suffix,
         "n_dropped_random": int(args.drop_random),
         "initialisation": "ChemBERTa-77M-MTR" if pretrained else "random",
         "tasks": tasks, "lr": lr, "batch_size": args.batch_size,
